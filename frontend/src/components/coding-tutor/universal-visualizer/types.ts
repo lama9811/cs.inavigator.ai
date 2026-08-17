@@ -45,7 +45,8 @@ export type NodeState =
   | "matched"
   | "queued"
   | "path"
-  | "inactive";
+  | "inactive"
+  | "skipped";
 
 export type EdgeType = "pointer" | "parent-child" | "graph-edge" | "branch";
 

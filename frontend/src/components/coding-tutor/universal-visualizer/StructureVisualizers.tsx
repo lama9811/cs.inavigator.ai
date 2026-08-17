@@ -221,6 +221,10 @@ function ArrayRow({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
   );
 }
 
+function isArrayRowNode(node: VisualNode): boolean {
+  return node.type === "array-cell";
+}
+
 function stepExample(step: Step): string {
   const value = step.state?.example;
   return typeof value === "string" ? value : "";
@@ -235,52 +239,105 @@ function isStringLikeStep(step: Step): boolean {
   const text = `${step.title} ${step.description} ${stepExample(step)}`.toLowerCase();
   if (step.concept !== "array") return false;
   if (text.includes("[") || text.includes("nums=") || text.includes("scores=")) return false;
-  return /string|word|character|letter|vowel|palindrome|sentence/.test(text);
+  return /string|word|character|letter|vowel|palindrome|sentence|email|prefix|course code|initial/.test(text);
+}
+
+function formatStringStateValue(value: string | number | boolean | undefined): string {
+  if (typeof value === "undefined") return "";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  return String(value);
+}
+
+function stringStateLabel(key: string): string {
+  return key.replace(/_/g, " ");
+}
+
+const STRING_STATE_PANEL_EXCLUDED = new Set([
+  "example",
+  "expected",
+  "final_result",
+  "index",
+  "output",
+  "result",
+  "returned",
+  "text",
+]);
+
+function StringStatePanel({ step, example, resultNode }: { step: Step; example: string; resultNode?: VisualNode }) {
+  const state = step.state || {};
+  const variables = Object.entries(state).filter(([key, value]) => !STRING_STATE_PANEL_EXCLUDED.has(key) && typeof value !== "undefined" && value !== "");
+  const resultSoFar = formatStringStateValue(state.result ?? state.output ?? resultNode?.value);
+  if (!example && !variables.length && !resultSoFar) return null;
+  return (
+    <aside className="ucv-array-state-panel ucv-string-state-panel" aria-label="String trace memory">
+      {example ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">example</span>
+          <strong className="ucv-array-state-panel-value">{example}</strong>
+        </div>
+      ) : null}
+      {variables.length ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.map(([key, value]) => (
+              <div className="ucv-array-state-panel-row" key={key}>
+                <span>{stringStateLabel(key)}</span>
+                <strong>{formatStringStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {resultSoFar ? (
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+        </div>
+      ) : null}
+    </aside>
+  );
 }
 
 function StringScanVisualizer({ step }: { step: Step }) {
   const example = stepExample(step);
-  const useWords = /word|sentence/.test(`${step.title} ${step.description}`.toLowerCase()) && !/character|letter|vowel/.test(step.title.toLowerCase());
   const charNodes = sortedByX(step.nodes).filter((node) => node.id.startsWith("char-") || node.meta?.role === "string-cell");
+  const tokenKind = String(charNodes[0]?.meta?.tokenKind || "");
+  const useWords = tokenKind === "word" || (/word|sentence/.test(`${step.title} ${step.description}`.toLowerCase()) && !/character|letter|vowel/.test(step.title.toLowerCase()));
   const tokens = (useWords ? example.split(/\s+/) : [...example]).filter(Boolean).slice(0, 14);
   const fallback = charNodes
     .map((node) => String(node.value))
     .slice(0, 14);
-  const visibleTokens = tokens.length ? tokens : fallback;
+  const visibleTokens = fallback.length ? fallback : tokens;
   const activeCharIndex = charNodes.findIndex((node) => node.state === "active" || node.state === "comparing" || isHighlighted(step, node.id));
   const activeIndex = Math.min(Math.max(activeCharIndex < 0 ? activeNodeIndex(step, visibleTokens.length) : activeCharIndex, 0), Math.max(visibleTokens.length - 1, 0));
   const resultNode = step.nodes.find((node) => node.id === "string-result" || node.meta?.role === "result");
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-string-canvas">
-      <div className="ucv-string-shell" aria-label="String scan visualizer">
-        <div className="ucv-string-source">
-          <span>source text</span>
-          <strong>{example || visibleTokens.join(useWords ? " " : "")}</strong>
-        </div>
-        <div className="ucv-string-ribbon" style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
-          {visibleTokens.map((token, index) => (
-            <StatusBlock
-              key={`${token}-${index}`}
-              node={{
-                id: `string-${index}`,
-                x: index,
-                y: 0,
-                value: token === " " ? "space" : token,
-                type: "array-cell",
-                label: useWords ? `word ${index}` : String(index),
-                state: index === activeIndex ? "active" : index < activeIndex ? "visited" : "default",
-              }}
-              step={step}
-              className="ucv-string-token"
-            />
-          ))}
-        </div>
-        <div className="ucv-string-cursor" style={{ "--ucv-cursor-index": activeIndex, "--ucv-token-count": Math.max(visibleTokens.length, 1) } as CSSProperties}>
-          <span>scan cursor</span>
-        </div>
-        <div className="ucv-string-result" aria-label="String result so far">
-          <span>result so far</span>
-          <strong>{String(resultNode?.value || step.state?.expected || "not changed yet")}</strong>
+      <div className="ucv-string-visual-layout" aria-label="String scan visualizer">
+        <StringStatePanel step={step} example={example || visibleTokens.join(useWords ? " " : "")} resultNode={resultNode} />
+        <div className="ucv-string-main-region">
+          <div className="ucv-string-ribbon" style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
+            {visibleTokens.map((token, index) => (
+              <StatusBlock
+                key={`${token}-${index}`}
+                node={{
+                  id: `string-${index}`,
+                  x: index,
+                  y: 0,
+                  value: token === " " ? "space" : token,
+                  type: "array-cell",
+                  label: useWords ? `word ${index}` : String(index),
+                  state: index === activeIndex ? "active" : index < activeIndex ? "visited" : "default",
+                }}
+                step={step}
+                className="ucv-string-token"
+              />
+            ))}
+          </div>
+          <div className="ucv-string-cursor" style={{ "--ucv-cursor-index": activeIndex, "--ucv-token-count": Math.max(visibleTokens.length, 1) } as CSSProperties}>
+            <span>scan cursor</span>
+          </div>
         </div>
       </div>
     </Canvas>
@@ -331,7 +388,7 @@ export function MathVisualizer({ step }: { step: Step }) {
             return (
               <div key={node.id} className="ucv-math-step">
                 <StatusBlock
-                  node={{ ...node, label: isResult ? "result" : index === 0 ? "start" : "change" }}
+                  node={{ ...node, label: visibleLabel(node, isResult ? "result" : index === 0 ? "start" : "step") }}
                   step={step}
                   className={`ucv-math-card ${isResult ? "ucv-math-card--result" : ""}`}
                 />
@@ -367,6 +424,9 @@ function TupleRows({ step }: { step: Step }) {
   if (step.nodes.some((node) => node.id.startsWith("tuple-swap-"))) {
     return <TupleSwapRows step={step} />;
   }
+  if (step.nodes.some((node) => node.id === "tuple-pair-result") && step.nodes.some((node) => node.id.startsWith("item-"))) {
+    return <TupleFirstLastRows step={step} />;
+  }
   const names = step.nodes.filter((node) => node.id.includes("name"));
   const scores = step.nodes.filter((node) => node.id.includes("score"));
   const pairs = step.nodes.filter((node) => node.id.includes("pair"));
@@ -386,12 +446,52 @@ function TupleRows({ step }: { step: Step }) {
   );
 }
 
+function TupleFirstLastRows({ step }: { step: Step }) {
+  const items = sortedByX(step.nodes.filter((node) => node.id.startsWith("item-")));
+  const result = step.nodes.find((node) => node.id === "tuple-pair-result");
+  const firstEdge = edgeBetween(step.edges, "item-0", "tuple-pair-result");
+  const lastEdge = edgeBetween(step.edges, "item-2", "tuple-pair-result");
+  const firstActive = Boolean(firstEdge && isEdgeActive(firstEdge, step));
+  const lastActive = Boolean(lastEdge && isEdgeActive(lastEdge, step));
+  return (
+    <div className="ucv-tuple-first-last-shell" aria-label="First and last pair visualizer">
+      <div className="ucv-tuple-first-last-items">
+        <ArrayRow step={step} nodes={items} />
+      </div>
+      <div className="ucv-tuple-first-last-connectors" aria-hidden="true">
+        <svg viewBox="0 0 560 96" preserveAspectRatio="none" role="presentation">
+          <defs>
+            <marker id="tuple-first-last-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" />
+            </marker>
+          </defs>
+          <path
+            className={firstActive ? "is-active" : ""}
+            d="M 110 8 C 145 40, 215 66, 270 86"
+            markerEnd="url(#tuple-first-last-arrow)"
+          />
+          <path
+            className={lastActive ? "is-active" : ""}
+            d="M 450 8 C 415 40, 345 66, 290 86"
+            markerEnd="url(#tuple-first-last-arrow)"
+          />
+        </svg>
+      </div>
+      {result ? <StatusBlock node={result} step={step} className="ucv-tuple-result ucv-tuple-first-last-output" /> : null}
+    </div>
+  );
+}
+
 function TupleSwapRows({ step }: { step: Step }) {
   const first = step.nodes.find((node) => node.id === "tuple-swap-original-0");
   const second = step.nodes.find((node) => node.id === "tuple-swap-original-1");
   const newFirst = step.nodes.find((node) => node.id === "tuple-swap-new-0");
   const newSecond = step.nodes.find((node) => node.id === "tuple-swap-new-1");
   const result = step.nodes.find((node) => node.id === "tuple-swap-result");
+  const secondToFirst = edgeBetween(step.edges, "tuple-swap-original-1", "tuple-swap-new-0");
+  const firstToSecond = edgeBetween(step.edges, "tuple-swap-original-0", "tuple-swap-new-1");
+  const secondToFirstActive = Boolean(secondToFirst && isEdgeActive(secondToFirst, step));
+  const firstToSecondActive = Boolean(firstToSecond && isEdgeActive(firstToSecond, step));
   return (
     <div className="ucv-tuple-swap-shell" aria-label="Tuple swap visualizer">
       <div className="ucv-tuple-swap-row">
@@ -399,8 +499,23 @@ function TupleSwapRows({ step }: { step: Step }) {
         {second ? <StatusBlock node={second} step={step} className="ucv-tuple-cell" /> : null}
       </div>
       <div className="ucv-tuple-swap-arrows" aria-hidden="true">
-        <span className={edgeBetween(step.edges, "tuple-swap-original-1", "tuple-swap-new-0") && isEdgeActive(edgeBetween(step.edges, "tuple-swap-original-1", "tuple-swap-new-0")!, step) ? "is-active" : ""} />
-        <span className={edgeBetween(step.edges, "tuple-swap-original-0", "tuple-swap-new-1") && isEdgeActive(edgeBetween(step.edges, "tuple-swap-original-0", "tuple-swap-new-1")!, step) ? "is-active" : ""} />
+        <svg viewBox="0 0 520 96" preserveAspectRatio="none" role="presentation">
+          <defs>
+            <marker id="tuple-swap-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" />
+            </marker>
+          </defs>
+          <path
+            className={secondToFirstActive ? "is-active" : ""}
+            d="M 345 8 C 320 34, 200 58, 108 86"
+            markerEnd="url(#tuple-swap-arrow)"
+          />
+          <path
+            className={firstToSecondActive ? "is-active" : ""}
+            d="M 175 8 C 205 36, 275 58, 292 86"
+            markerEnd="url(#tuple-swap-arrow)"
+          />
+        </svg>
       </div>
       <div className="ucv-tuple-swap-row">
         {newFirst ? <StatusBlock node={newFirst} step={step} className="ucv-tuple-cell" /> : null}
@@ -467,7 +582,10 @@ function ArrayTraceState({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
   if (!["array", "search", "sort", "binary-search", "two-pointers", "sliding-window"].includes(step.concept)) return null;
   const activeIndex = activeNodeIndex(step, nodes.length);
   const current = step.state?.current ?? nodes[activeIndex]?.value ?? "item";
-  const answer = step.state?.answer ?? step.state?.result ?? step.state?.swapped ?? step.state?.next ?? "not changed yet";
+  const hasReturned = step.state?.returned === true;
+  const answer = hasReturned
+    ? step.state?.final_result ?? step.state?.answer ?? step.state?.result ?? step.state?.swapped ?? step.state?.next ?? "none"
+    : "none yet";
   if (step.concept === "binary-search") {
     return (
       <div className="ucv-array-trace-state" aria-label="Binary search trace state">
@@ -533,10 +651,71 @@ function ArrayTraceState({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
         <strong>{String(current)}</strong>
       </div>
       <div className="ucv-array-trace-result">
-        <span>result so far</span>
+        <span>final result</span>
         <strong>{String(answer)}</strong>
       </div>
     </div>
+  );
+}
+
+function formatArrayStateValue(value: string | number | boolean | undefined): string {
+  if (typeof value === "undefined") return "";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  return String(value);
+}
+
+function arrayStateLabel(key: string): string {
+  return key.replace(/_/g, " ");
+}
+
+const ARRAY_STATE_PANEL_EXCLUDED = new Set([
+  "answer",
+  "current",
+  "example",
+  "final_result",
+  "index",
+  "result",
+  "returned",
+]);
+
+function shouldShowArrayStatePanel(step: Step): boolean {
+  return step.concept === "array" || step.concept === "search" || step.concept === "sort";
+}
+
+function ArrayStatePanel({ step }: { step: Step }) {
+  const state = step.state || {};
+  const variables = Object.entries(state).filter(([key, value]) => !ARRAY_STATE_PANEL_EXCLUDED.has(key) && typeof value !== "undefined" && value !== "");
+  const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.rotated ?? state.rotated_start ?? state.swapped ?? state.next);
+  const example = formatArrayStateValue(state.example);
+  if (!example && !variables.length && !resultSoFar) return null;
+  return (
+    <aside className="ucv-array-state-panel" aria-label="Array trace memory">
+      {example ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">example</span>
+          <strong className="ucv-array-state-panel-value">{example}</strong>
+        </div>
+      ) : null}
+      {variables.length ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.map(([key, value]) => (
+              <div className="ucv-array-state-panel-row" key={key}>
+                <span>{arrayStateLabel(key)}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {resultSoFar ? (
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+        </div>
+      ) : null}
+    </aside>
   );
 }
 
@@ -559,13 +738,26 @@ export function ArrayVisualizer({ step }: { step: Step }) {
   if (step.concept === "recursion") {
     return <RecursionView step={step} />;
   }
-  const nodes = sortedByX(step.nodes);
+  const nodes = sortedByX(step.nodes).filter(isArrayRowNode);
+  const showStatePanel = shouldShowArrayStatePanel(step);
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-array-canvas">
       {step.concept === "two-pointers" ? <div className="ucv-pointer-guide"><span>left moves forward</span><span>right moves backward</span></div> : null}
       {step.concept === "sliding-window" ? <div className="ucv-pointer-guide"><span>left edge</span><span>right edge</span></div> : null}
-      <ArrayRow step={step} nodes={nodes} />
-      <ArrayTraceState step={step} nodes={nodes} />
+      {showStatePanel ? (
+        <div className="ucv-array-visual-layout">
+          <ArrayStatePanel step={step} />
+          <div className="ucv-array-main-region">
+            <ArrayRow step={step} nodes={nodes} />
+            <ArrayTraceState step={step} nodes={nodes} />
+          </div>
+        </div>
+      ) : (
+        <>
+          <ArrayRow step={step} nodes={nodes} />
+          <ArrayTraceState step={step} nodes={nodes} />
+        </>
+      )}
       {step.concept === "binary-search" ? <div className="ucv-array-caption">Only the bright range can still contain the target.</div> : null}
       {step.concept === "sliding-window" ? <div className="ucv-array-caption">The window moves as one visible block.</div> : null}
     </Canvas>
@@ -610,12 +802,13 @@ type FlowCardData = {
 function FlowNodeCard({ data }: { data: FlowCardData }) {
   const { node, step, variant = "" } = data;
   const status = nodeStatus(node, step);
+  const muted = node.state === "inactive" || node.state === "skipped";
   return (
     <motion.div
       layout
       className={`ucv-flow-node-card ucv-flow-node-card--${status} ${variant}`}
       initial={{ opacity: 0, scale: 0.86 }}
-      animate={{ opacity: node.state === "inactive" ? 0.42 : 1, scale: status === "active" || status === "highlighted" ? 1.05 : 1 }}
+      animate={{ opacity: muted ? 0.62 : 1, scale: status === "active" || status === "highlighted" ? 1.05 : 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 24 }}
     >
       <Handle className="ucv-flow-handle" type="target" position={Position.Top} id="top-target" />
@@ -633,6 +826,7 @@ const nodeTypes = { visualNode: FlowNodeCard };
 function flowEdgeFromStep(edge: Edge, step: Step, rankdir: "TB" | "LR"): FlowEdge {
   const active = isEdgeActive(edge, step);
   const muted = edge.state === "inactive";
+  const skipped = edge.state === "skipped";
   const markerEnd = edge.type === "parent-child" ? undefined : { type: MarkerType.ArrowClosed };
   return {
     id: edgeId(edge),
@@ -641,7 +835,7 @@ function flowEdgeFromStep(edge: Edge, step: Step, rankdir: "TB" | "LR"): FlowEdg
     type: "smoothstep",
     animated: active,
     label: edge.label,
-    className: `ucv-flow-edge ${active ? "is-active" : ""} ${muted ? "is-muted" : ""}`,
+    className: `ucv-flow-edge ${active ? "is-active" : ""} ${muted ? "is-muted" : ""} ${skipped ? "is-skipped" : ""}`,
     markerEnd,
     sourceHandle: rankdir === "TB" ? "bottom-source" : "right-source",
     targetHandle: rankdir === "TB" ? "top-target" : "left-target",
@@ -721,7 +915,12 @@ export function HashTableVisualizer({ step }: { step: Step }) {
   const targets = step.nodes.filter((node) => node.id === "target" || node.id === "hash");
   const buckets = sortedByX(step.nodes.filter((node) => node.type === "hash-bucket"));
   const entries = step.nodes.filter((node) => node.type === "hash-entry" || node.id.startsWith("entry-"));
-  const bucketEntries = new Map<string, Node[]>();
+  const activeBucket = buckets.find((bucket) => bucket.state === "active" || bucket.state === "visited" || isHighlighted(step, bucket.id)) || buckets[0];
+  const activeEntry = entries.find((entry) => entry.state === "active" || entry.state === "comparing" || isHighlighted(step, entry.id)) || entries[0];
+  const keyText = String(step.state?.key || step.state?.lookup || step.state?.hash || targets[0]?.value || activeEntry?.value || "key").replace(/\s*->.*$/, "");
+  const bucketText = String(step.state?.bucket || activeBucket?.value || "?");
+  const resultText = String(step.state?.result || step.state?.lookup || activeEntry?.value || "not found yet");
+  const bucketEntries = new Map<string, VisualNode[]>();
   entries.forEach((entry, index) => {
     const bucketId = step.edges.find((edge) => edge.to === entry.id && edge.from.startsWith("bucket-"))?.from || "bucket-2";
     bucketEntries.set(bucketId, [...(bucketEntries.get(bucketId) || []), entry]);
@@ -732,13 +931,26 @@ export function HashTableVisualizer({ step }: { step: Step }) {
 
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-hash-canvas">
-      <div className="ucv-hash-flow">
-        {targets.map((node, index) => (
-          <div className="ucv-hash-flow-item" key={node.id}>
-            <StatusBlock node={node} step={step} className="ucv-hash-target" />
-            {index < targets.length - 1 ? <span className="ucv-inline-arrow is-active" aria-hidden="true" /> : null}
-          </div>
-        ))}
+      <div className="ucv-hash-operation" aria-label="Hash map operation">
+        <div className="ucv-hash-op-card is-active">
+          <span>key</span>
+          <strong>{keyText}</strong>
+        </div>
+        <span className="ucv-inline-arrow is-active" aria-hidden="true" />
+        <div className={`ucv-hash-op-card ${activeBucket ? "is-active" : ""}`}>
+          <span>hash chooses</span>
+          <strong>bucket {bucketText}</strong>
+        </div>
+        <span className="ucv-inline-arrow is-active" aria-hidden="true" />
+        <div className={`ucv-hash-op-card ${activeEntry ? "is-active" : ""}`}>
+          <span>compare chain</span>
+          <strong>{activeEntry ? String(activeEntry.value) : "empty"}</strong>
+        </div>
+        <span className="ucv-inline-arrow is-active" aria-hidden="true" />
+        <div className="ucv-hash-op-card ucv-hash-op-card--result">
+          <span>result</span>
+          <strong>{resultText}</strong>
+        </div>
       </div>
       <div className="ucv-bucket-row">
         {buckets.map((bucket) => {
@@ -750,7 +962,11 @@ export function HashTableVisualizer({ step }: { step: Step }) {
                 <div className="ucv-bucket-chain">
                   {chain.map((entry, index) => (
                     <div key={entry.id} className="ucv-chain-link">
-                      <StatusBlock node={entry} step={step} className="ucv-hash-entry" />
+                      <StatusBlock
+                        node={{ ...entry, label: index === 0 ? "first entry" : "next entry" }}
+                        step={step}
+                        className="ucv-hash-entry"
+                      />
                       {index < chain.length - 1 ? <span className="ucv-chain-arrow" aria-hidden="true" /> : null}
                     </div>
                   ))}
@@ -761,6 +977,10 @@ export function HashTableVisualizer({ step }: { step: Step }) {
             </div>
           );
         })}
+      </div>
+      <div className="ucv-hash-note">
+        <span>Why this works</span>
+        <strong>A hash map jumps to one bucket first. If two keys land there, it checks that bucket's chain instead of scanning the whole table.</strong>
       </div>
     </Canvas>
   );
@@ -874,19 +1094,20 @@ export function ConditionalFlowVisualizer({ step }: { step: Step }) {
     no ? { id: "false", type: "visualNode", position: { x: 670, y: 218 }, data: { node: no, step, variant: "ucv-flow-node-card--branch" } } : null,
     end ? { id: "end", type: "visualNode", position: { x: 895, y: 138 }, data: { node: { ...end, label: "" }, step, variant: "ucv-flow-node-card--terminator" } } : null,
   ].filter(Boolean) as FlowNode<FlowCardData>[];
-  const trueEdge = { id: "condition-true", from: "condition", to: "true", type: "branch" as const, label: "true", state: isEdgeActive({ id: "condition-true", from: "condition", to: "true", type: "branch" }, step) ? "active" as const : undefined };
-  const falseEdge = { id: "condition-false", from: "condition", to: "false", type: "branch" as const, label: "false", state: isEdgeActive({ id: "condition-false", from: "condition", to: "false", type: "branch" }, step) ? "active" as const : "inactive" as const };
+  const edgeState = (id: string, fallback?: Edge["state"]) => step.edges.find((edge) => edge.id === id)?.state || fallback;
+  const trueEdge = { id: "condition-true", from: "condition", to: "true", type: "branch" as const, label: "true", state: edgeState("condition-true") };
+  const falseEdge = { id: "condition-false", from: "condition", to: "false", type: "branch" as const, label: "false", state: edgeState("condition-false", "inactive") };
   const edges = [
-    { id: "start-input", from: "start", to: "input", type: "pointer" as const },
-    { id: "input-condition", from: "input", to: "condition", type: "pointer" as const },
+    { id: "start-input", from: "start", to: "input", type: "pointer" as const, state: edgeState("start-input") },
+    { id: "input-condition", from: "input", to: "condition", type: "pointer" as const, state: edgeState("input-condition") },
     trueEdge,
     falseEdge,
-    { id: "true-end", from: "true", to: "end", type: "pointer" as const, state: trueEdge.state },
-    { id: "false-end", from: "false", to: "end", type: "pointer" as const, state: falseEdge.state },
+    { id: "true-end", from: "true", to: "end", type: "pointer" as const, state: edgeState("true-end", trueEdge.state) },
+    { id: "false-end", from: "false", to: "end", type: "pointer" as const, state: edgeState("false-end", falseEdge.state) },
   ].map((edge) => flowEdgeFromStep(edge, step, "LR"));
   const ruleText = String(condition?.meta?.fullText || condition?.value || "");
   const inputText = String(input?.meta?.fullText || input?.value || "");
-  const resultText = String(yes?.meta?.fullText || yes?.value || "");
+  const resultText = String(step.state?.chosen_result || end?.meta?.fullText || end?.value || yes?.meta?.fullText || yes?.value || "");
   return (
     <FlowScene step={step} nodes={nodes} edges={edges} className="ucv-condition-canvas">
       <div className="ucv-condition-callout" aria-label="Full conditional rule">

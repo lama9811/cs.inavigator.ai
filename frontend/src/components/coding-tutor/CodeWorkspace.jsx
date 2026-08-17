@@ -54,7 +54,7 @@ const TERMINAL_DEFAULT_H = 240;
 const TERMINAL_H_KEY = "csnav.terminalHeight";
 
 function terminalResizeBounds(availableHeight = window.innerHeight) {
-  const isMobile = typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)")?.matches;
+  const isMobile = typeof window !== "undefined" && window.matchMedia?.("(max-width: 860px)")?.matches;
   const minHeight = isMobile ? TERMINAL_MOBILE_MIN_H : TERMINAL_MIN_H;
   const editorFloor = isMobile ? 260 : 180;
   const mobileMaxRatio = isMobile ? 0.52 : 1;

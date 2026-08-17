@@ -66,7 +66,7 @@ const WORKSPACE_GUIDE_MIN_W = 260;
 const WORKSPACE_GUIDE_MAX_W = 560;
 const WORKSPACE_GUIDE_DEFAULT_W = 340;
 const WORKSPACE_GUIDE_W_KEY = "csnav.workspaceGuideWidth";
-const WORKSPACE_GUIDE_MOBILE_QUERY = "(max-width: 640px)";
+const WORKSPACE_GUIDE_MOBILE_QUERY = "(max-width: 860px)";
 
 function readStoredWorkspaceGuideWidth() {
   try {

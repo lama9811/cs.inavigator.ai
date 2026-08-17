@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FaExternalLinkAlt, FaPause, FaPlay, FaRedoAlt, FaStepBackward, FaStepForward, FaTimes } from "react-icons/fa";
 import { generateStepsForConcept } from "./generators";
 import {
@@ -92,9 +92,43 @@ function conceptLabel(concept: ConceptType): string {
   return CONCEPTS.find((item) => item.id === concept)?.label || "Concept";
 }
 
+function isStringVisualStep(step: Step): boolean {
+  return step.nodes.some((node) => node.meta?.role === "string-cell");
+}
+
+function stringCurrentValue(step: Step): string {
+  const activeNodes = step.nodes
+    .filter((node) => node.meta?.role === "string-cell")
+    .filter((node) => node.state === "active" || step.highlights?.nodeIds?.includes(node.id));
+  if (activeNodes.length) return activeNodes.map((node) => String(node.value)).join(", ");
+  return "none";
+}
+
 function StateStrip({ step }: { step: Step }) {
   if (step.concept === "conditional") return null;
-  const hiddenKeys = new Set(["sample", "prompt_rule", "text", "input", "goal"]);
+  if (isStringVisualStep(step)) {
+    const hasReturned = step.state?.returned === true;
+    const finalResult = hasReturned
+      ? step.state?.final_result ?? step.state?.expected ?? step.state?.result ?? "none"
+      : "none yet";
+    return (
+      <div className="ucv-state-strip" aria-label="Current string state">
+        <div>
+          <span>index</span>
+          <strong>{String(step.state?.index ?? "0")}</strong>
+        </div>
+        <div>
+          <span>current item</span>
+          <strong>{stringCurrentValue(step)}</strong>
+        </div>
+        <div>
+          <span>final result</span>
+          <strong>{String(finalResult)}</strong>
+        </div>
+      </div>
+    );
+  }
+  const hiddenKeys = new Set(["sample", "prompt_rule", "text", "input", "goal", "final_result"]);
   const entries = Object.entries(step.state || {}).filter(([key]) => !hiddenKeys.has(key));
   if (!entries.length) return null;
   return (
@@ -111,6 +145,10 @@ function StateStrip({ step }: { step: Step }) {
 
 function WorkflowRail({ step }: { step: Step }) {
   const items = step.workflow || [];
+  const activeRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  }, [step.activeWorkflowId]);
   if (!items.length) return null;
   return (
     <div className="ucv-workflow" aria-label="Visualizer workflow">
@@ -121,7 +159,10 @@ function WorkflowRail({ step }: { step: Step }) {
           : state;
         return (
           <div key={item.id} className="ucv-workflow-step">
-            <div className={`ucv-workflow-node ucv-workflow-node--${state}`}>
+            <div
+              ref={state === "active" ? activeRef : null}
+              className={`ucv-workflow-node ucv-workflow-node--${state}`}
+            >
               <span className="ucv-workflow-dot" aria-hidden="true">{index + 1}</span>
               <span className="ucv-workflow-label">{item.label}</span>
             </div>
@@ -184,21 +225,43 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
   const [stepIndex, setStepIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
+  const [activeCaseId, setActiveCaseId] = useState("");
   const context = useMemo(() => contextFromProblem(activeProblem), [activeProblem]);
   const useAuthored = concept === initialConcept;
-  const steps = useMemo(() => generateStepsForConcept(concept, { ...context, useAuthored }), [concept, context, useAuthored]);
+  const allSteps = useMemo(() => generateStepsForConcept(concept, { ...context, useAuthored }), [concept, context, useAuthored]);
+  const hasConditionalSteps = allSteps.some((item) => item.concept === "conditional");
+  const caseOptions = useMemo(() => {
+    if (!hasConditionalSteps) return [];
+    const seen = new Map<string, string>();
+    allSteps.forEach((item) => {
+      const id = typeof item.state?.case_id === "string" ? item.state.case_id : "";
+      const label = typeof item.state?.case_label === "string" ? item.state.case_label : id;
+      if (id && !seen.has(id)) seen.set(id, label);
+    });
+    return Array.from(seen, ([id, label]) => ({ id, label }));
+  }, [allSteps, hasConditionalSteps]);
+  const selectedCaseId = caseOptions.some((item) => item.id === activeCaseId) ? activeCaseId : caseOptions[0]?.id || "";
+  const steps = useMemo(() => (
+    selectedCaseId ? allSteps.filter((item) => item.state?.case_id === selectedCaseId) : allSteps
+  ), [allSteps, selectedCaseId]);
   const step = steps[stepIndex] || steps[0];
 
   useEffect(() => {
     setConcept(initialConcept);
     setStepIndex(0);
     setPlaying(false);
+    setActiveCaseId("");
   }, [initialConcept, activeProblem?.id]);
 
   useEffect(() => {
     setStepIndex(0);
     setPlaying(false);
+    setActiveCaseId("");
   }, [concept]);
+
+  useEffect(() => {
+    if (stepIndex >= steps.length) setStepIndex(Math.max(0, steps.length - 1));
+  }, [stepIndex, steps.length]);
 
   useEffect(() => {
     if (!playing || stepIndex >= steps.length - 1) {
@@ -210,6 +273,27 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
   }, [playing, speed, stepIndex, steps.length]);
 
   if (!step) return null;
+  const displayedConcept = step.concept || concept;
+
+  const caseSwitcher = caseOptions.length > 1 ? (
+    <div className="ucv-case-switcher" role="group" aria-label="Conditional example cases">
+      {caseOptions.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={`ucv-case-button ${selectedCaseId === item.id ? "is-active" : ""}`}
+          onClick={() => {
+            setActiveCaseId(item.id);
+            setStepIndex(0);
+            setPlaying(false);
+          }}
+          aria-pressed={selectedCaseId === item.id}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  ) : null;
 
   const controls = (
     <footer className="ucv-controls" aria-label="Visualizer controls">
@@ -290,9 +374,9 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
         </div>
         <div className="ucv-header-actions">
           {isAuthoredProblem ? (
-            <div className="ucv-concept-pill" aria-label={`Visualizer concept: ${conceptLabel(concept)}`}>
+            <div className="ucv-concept-pill" aria-label={`Visualizer concept: ${conceptLabel(displayedConcept)}`}>
               <span>Concept</span>
-              <strong>{conceptLabel(concept)}</strong>
+              <strong>{conceptLabel(displayedConcept)}</strong>
             </div>
           ) : (
             <label>
@@ -321,6 +405,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
 
       <div className="ucv-main">
         <div className="ucv-stage">
+          {caseSwitcher}
           <WorkflowRail step={step} />
           <VisualizerCanvas step={step} />
           {mode === "panel" ? controls : null}

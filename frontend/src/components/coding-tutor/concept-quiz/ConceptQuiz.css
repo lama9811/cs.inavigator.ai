@@ -1212,15 +1212,7 @@ body.coding-dark .cq-question-kind.group-parsons {
   position: relative;
 }
 .cq-runner-full::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  background: var(--ct-border);
-  pointer-events: none;
-  z-index: 1;
+  content: none;
 }
 /* Header bar split to mirror the columns below: tabs (left) | progress (right). */
 .cq-runner-top {
@@ -1242,6 +1234,7 @@ body.coding-dark .cq-question-kind.group-parsons {
   justify-content: center;
   gap: 0.3rem;
   padding: 0.45rem 1.75rem;
+  border-left: 1px solid var(--ct-border);
 }
 @media (max-width: 860px) {
   .cq-runner-top {
@@ -1310,6 +1303,9 @@ body.coding-dark .cq-question-kind.group-parsons {
   display: flex;
   flex-direction: column;
 }
+.cq-runner-right {
+  border-left: 1px solid var(--ct-border);
+}
 /* No per-pane borders — the continuous center line on .cq-runner-full::before
    draws the split, unbroken from header through footer. */
 /* The scrolling content area of each pane. */
@@ -1357,6 +1353,10 @@ body.coding-dark .cq-question-kind.group-parsons {
     display: flex;
     flex-direction: column;
     border-bottom: 1px solid var(--ct-border);
+  }
+
+  .cq-runner-top-right {
+    border-left: 0;
   }
 
   .cq-runner-top-left,

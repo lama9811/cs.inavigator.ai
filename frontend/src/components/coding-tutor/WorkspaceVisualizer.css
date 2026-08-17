@@ -2297,6 +2297,133 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   }
 }
 
+@media (min-width: 641px) and (max-width: 860px) {
+  .workspace-visualizer-panel {
+    padding: 0.8rem;
+    overflow: auto;
+  }
+
+  .workspace-visualizer.is-panel {
+    max-width: none;
+  }
+
+  .workspace-visualizer-head {
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .workspace-visualizer-head h3 {
+    font-size: clamp(1.35rem, 3.2vw, 1.8rem);
+    line-height: 1.12;
+  }
+
+  .workspace-visualizer-head p {
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .workspace-visualizer-stage {
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    min-width: 0;
+  }
+
+  .workspace-visualizer-progress {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 0.25rem 1rem 0.35rem;
+    scroll-padding-inline: 1rem;
+    scrollbar-width: thin;
+  }
+
+  .workspace-visualizer-progress::before,
+  .workspace-visualizer-progress::after {
+    content: "";
+    flex: 0 0 0.35rem;
+  }
+
+  .workspace-visualizer-progress button {
+    flex: 0 0 auto;
+  }
+
+  .workspace-visual-diagram {
+    justify-content: start;
+    min-height: 320px;
+    padding: 1.25rem 1.5rem 2.8rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    place-items: center start;
+    scroll-padding-inline: 1.5rem;
+    scrollbar-gutter: stable both-edges;
+  }
+
+  .workspace-visual-diagram > * {
+    flex-shrink: 0;
+  }
+
+  .workspace-visual-track {
+    width: max-content;
+    max-width: none;
+    min-width: max(480px, 100%);
+    padding-block: 2.6rem 1.1rem;
+    padding-inline: 2rem;
+  }
+
+  .workspace-visual-row {
+    flex-wrap: nowrap !important;
+    width: max-content;
+    min-width: max-content;
+  }
+
+  .workspace-decision-flow {
+    min-width: 660px;
+  }
+
+  .workspace-visual-svg,
+  .workspace-visual-timeline,
+  .workspace-visual-table,
+  .workspace-visual-grid-cells,
+  .workspace-visual-call-stack {
+    min-width: 600px;
+  }
+
+  .workspace-tab-body--visualize .workspace-visualizer-panel {
+    padding-right: max(0.8rem, env(safe-area-inset-right, 0px));
+    padding-bottom: 4.5rem;
+  }
+
+  .workspace-visualizer-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 9;
+    margin-inline: -0.15rem;
+    background: color-mix(in srgb, var(--ct-panel, #fff) 96%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .workspace-visualizer-controls {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 0.15rem 1rem 0.25rem;
+    scroll-padding-inline: 1rem;
+    scrollbar-width: thin;
+  }
+
+  .workspace-visualizer-controls::before,
+  .workspace-visualizer-controls::after {
+    content: "";
+    flex: 0 0 0.2rem;
+  }
+
+  .workspace-visualizer-controls button {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0.5rem 0.72rem;
+    font-size: 0.78rem;
+  }
+}
+
 @media (max-width: 640px) {
   .workspace-visualizer-panel {
     padding: 0.65rem;
@@ -2325,6 +2452,7 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   .workspace-visualizer-stage {
     gap: 0.65rem;
     margin-top: 0.65rem;
+    min-width: 0;
   }
 
   .workspace-visualizer-backdrop {
@@ -2371,11 +2499,12 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   .workspace-visual-diagram {
     justify-content: start;
     min-height: 310px;
-    padding: 0.75rem;
+    padding: 1rem 1.2rem 2.7rem;
     overflow-x: auto;
     overflow-y: hidden;
     place-items: center start;
-    scroll-padding-inline: 20px;
+    scroll-padding-inline: 1.2rem;
+    scrollbar-gutter: stable both-edges;
   }
 
   .workspace-visual-diagram > * {
@@ -2383,8 +2512,17 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   }
 
   .workspace-visual-track {
-    min-width: 520px;
+    width: max-content;
+    max-width: none;
+    min-width: max(460px, 100%);
     padding-block: 2.6rem 1rem;
+    padding-inline: 1.65rem;
+  }
+
+  .workspace-visual-row {
+    flex-wrap: nowrap !important;
+    width: max-content;
+    min-width: max-content;
   }
 
   .workspace-decision-flow {
@@ -2396,7 +2534,7 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   .workspace-visual-table,
   .workspace-visual-grid-cells,
   .workspace-visual-call-stack {
-    min-width: min(520px, calc(100vw - 28px));
+    min-width: 560px;
   }
 
   .workspace-visualizer-step {
@@ -2420,14 +2558,28 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   .workspace-visualizer-progress {
     justify-content: flex-start;
     overflow-x: auto;
-    padding-bottom: 0.2rem;
+    padding: 0.2rem 0.85rem 0.25rem;
+    scroll-padding-inline: 0.85rem;
+  }
+
+  .workspace-visualizer-progress::before,
+  .workspace-visualizer-progress::after {
+    content: "";
+    flex: 0 0 0.3rem;
   }
 
   .workspace-visualizer-controls {
     flex-wrap: nowrap;
     justify-content: flex-start;
     overflow-x: auto;
-    padding-bottom: 0.2rem;
+    padding: 0.15rem 0.85rem 0.25rem;
+    scroll-padding-inline: 0.85rem;
+  }
+
+  .workspace-visualizer-controls::before,
+  .workspace-visualizer-controls::after {
+    content: "";
+    flex: 0 0 0.2rem;
   }
 
   .workspace-visualizer-controls button {

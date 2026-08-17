@@ -1,12 +1,12 @@
 import type { ConceptType, Edge, GeneratorContext, Node, Step, WorkflowStep } from "./types";
-import { insertTreeValue, layoutArray, layoutCircularGraph, layoutConditional, layoutHashBuckets, layoutTree } from "./layouts";
+import { insertTreeValue, layoutArray, layoutCircularGraph, layoutHashBuckets, layoutTree } from "./layouts";
 
 const WORKFLOW_LABELS: Record<ConceptType, string[]> = {
-  array: ["Load", "Index 0", "Compare", "Update", "Move", "Return"],
+  array: ["Load", "Read item", "Compare/update", "Move", "Last item", "Check result", "Return"],
   tuple: ["Load lists", "Align index", "Read pair", "Build tuple", "Save", "Return"],
   set: ["Load items", "Check memory", "First keep", "Duplicate check", "Update set", "Return"],
   "linked-list": ["Head", "Read node", "Save next", "Move current", "Null check", "Return"],
-  "hash-map": ["Choose key", "Hash bucket", "Compare entry", "Insert/update", "Lookup result", "Return"],
+  "hash-map": ["Choose key", "Hash bucket", "Check bucket", "Compare chain", "Insert/update", "Lookup result", "Return"],
   "binary-tree": ["Root", "Compare", "Follow", "Insert/visit", "Rebalance", "Check rule", "Finish"],
   graph: ["Start", "Visit", "Add neighbors", "Next node", "Skip repeat", "Trace path", "Finish"],
   search: ["Load", "Check item", "No match", "Move", "Match/stop", "Return"],
@@ -14,7 +14,7 @@ const WORKFLOW_LABELS: Record<ConceptType, string[]> = {
   conditional: ["Input", "Question", "True path", "False path", "Chosen result", "Return"],
   stack: ["Read 3", "Push +", "Read 2", "Push *", "Read 2", "Apply *", "Apply +", "Return"],
   queue: ["Line starts", "Join back", "Front waits", "Serve front", "Next front", "Finish"],
-  "two-pointers": ["Place pointers", "Compare pair", "Too small", "Move left", "Too large", "Return"],
+  "two-pointers": ["Place pointers", "Compare pair", "Too small", "Move left", "Too large", "Final check", "Return"],
   "sliding-window": ["Start", "Grow", "Measure", "Update best", "Slide", "Repeat", "Stop", "Return"],
   "binary-search": ["Range", "Middle", "Compare", "Discard half", "New range", "New middle", "Final check", "Return"],
   recursion: ["Call", "Check base", "Smaller call", "Stack grows", "Base returns", "Unwind", "Combine", "Return"],
@@ -47,6 +47,10 @@ const CONCEPT_STEP_TARGETS: Partial<Record<ConceptType, number>> = {
   "union-find": 7,
   intervals: 7,
   "bit-manipulation": 7,
+  array: 7,
+  search: 7,
+  sort: 7,
+  math: 4,
 };
 
 function targetStepCount(concept: string): number {
@@ -61,6 +65,151 @@ function workflowForConcept(concept: ConceptType, activeIndex: number): Workflow
     label,
     state: index < boundedActive ? "visited" : index === boundedActive ? "active" : "default",
   }));
+}
+
+function isRotationProblem(context: GeneratorContext = {}): boolean {
+  return /rotate/i.test(`${context.title || ""} ${context.prompt || ""} ${context.visualizer?.title || ""}`);
+}
+
+type VisualizerFamily =
+  | "array-dedupe"
+  | "array-dedupe-order"
+  | "array-filter"
+  | "array-comfort-count"
+  | "array-every-other"
+  | "array-find-index"
+  | "array-merge-names"
+  | "array-maximum-score"
+  | "array-max-min"
+  | "array-plant-care-days"
+  | "array-rotate"
+  | "array-running-total"
+  | "array-search"
+  | "array-smallest-positive"
+  | "array-swap"
+  | "array-sum-even"
+  | "array-threshold-count"
+  | "array-truthy-count"
+  | "binary-search"
+  | "bit-count"
+  | "conditional-flow"
+  | "dp-table"
+  | "graph-traversal"
+  | "graph-islands"
+  | "hash-complement"
+  | "hash-frequency"
+  | "hash-grouping"
+  | "hash-lookup"
+  | "heap-priority"
+  | "interval-merge"
+  | "linked-list-traverse"
+  | "math-count-digits"
+  | "math-grade-points"
+  | "math-last-digit"
+  | "math-round-groups"
+  | "matrix-traverse"
+  | "prefix-range"
+  | "queue-help-desk"
+  | "queue-fifo"
+  | "recursion-nested-list"
+  | "recursion-stack"
+  | "set-first-missing"
+  | "set-membership"
+  | "sliding-window"
+  | "stack-brackets"
+  | "stack-expression"
+  | "stack-min"
+  | "string-count-vowels"
+  | "string-count-words"
+  | "string-course-code"
+  | "string-initials"
+  | "string-normalize-emails"
+  | "string-palindrome"
+  | "string-prefix-search"
+  | "string-reverse-words"
+  | "string-run-compress"
+  | "string-scan"
+  | "trie-prefix"
+  | "tuple-first-last"
+  | "tuple-pair"
+  | "tuple-score-at-index"
+  | "tuple-swap"
+  | "two-pointers"
+  | "union-find";
+
+function visualizerFamilyText(context: GeneratorContext = {}): string {
+  return `${context.title || ""} ${context.topic || ""} ${context.prompt || ""} ${context.visualizer?.title || ""} ${context.visualizer?.caption || ""} ${context.visualizer?.concept || ""}`.toLowerCase();
+}
+
+export function detectVisualizerFamily(concept: string, context: GeneratorContext = {}): VisualizerFamily {
+  const text = visualizerFamilyText(context);
+  if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
+  if (/maximum score/.test(text)) return "array-maximum-score";
+  if (/sum even numbers/.test(text)) return "array-sum-even";
+  if (/remove duplicates keep order/.test(text)) return "array-dedupe-order";
+  if (/\bsmallest positive\b/.test(text) && !/missing/.test(text)) return "array-smallest-positive";
+  if (/\brunning total\b/.test(text)) return "array-running-total";
+  if (/\bfind index\b/.test(text)) return "array-find-index";
+  if (/\bmerge names\b/.test(text)) return "array-merge-names";
+  if (/temperature above threshold/.test(text)) return "array-threshold-count";
+  if (/truthy attendance/.test(text)) return "array-truthy-count";
+  if (/every other item/.test(text)) return "array-every-other";
+  if (/temperature comfort count/.test(text)) return "array-comfort-count";
+  if (/weekly plant care days/.test(text)) return "array-plant-care-days";
+  if (/first missing positive|missing positive/.test(text)) return "set-first-missing";
+  if (/count vowels?/.test(text)) return "string-count-vowels";
+  if (/reverse words?/.test(text)) return "string-reverse-words";
+  if (/count words?/.test(text)) return "string-count-words";
+  if (/valid course code shape|course code/.test(text)) return "string-course-code";
+  if (/\binitials?\b/.test(text)) return "string-initials";
+  if (/compress runs|run length|repeated adjacent|character plus count/.test(text)) return "string-run-compress";
+  if (/normalize email list|normalize emails?|email list/.test(text)) return "string-normalize-emails";
+  if (/prefix search|starts with|matching prefix/.test(text)) return "string-prefix-search";
+  if (/count islands|island|land.*water|water.*land/.test(text)) return "graph-islands";
+  if (/last digit/.test(text)) return "math-last-digit";
+  if (/count digits/.test(text)) return "math-count-digits";
+  if (/grade points needed/.test(text)) return "math-grade-points";
+  if (/round up lab groups/.test(text)) return "math-round-groups";
+  if (/pair names with scores/.test(text)) return "tuple-pair";
+  if (/student score pair/.test(text)) return "tuple-score-at-index";
+  if (/first last pair/.test(text)) return "tuple-first-last";
+  if (concept === "tuple") return isTupleSwapVisualizer(context) ? "tuple-swap" : "tuple-pair";
+  if (concept === "set") return "set-membership";
+  if (concept === "queue") return /help desk|ticket|support|serve|join/.test(text) ? "queue-help-desk" : "queue-fifo";
+  if (concept === "linked-list") return "linked-list-traverse";
+  if (concept === "binary-search") return "binary-search";
+  if (concept === "two-pointers") return "two-pointers";
+  if (concept === "sliding-window") return "sliding-window";
+  if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
+  if (concept === "matrix") return "matrix-traverse";
+  if (concept === "prefix-sum") return "prefix-range";
+  if (concept === "intervals") return "interval-merge";
+  if (concept === "heap") return "heap-priority";
+  if (concept === "trie") return "trie-prefix";
+  if (concept === "union-find") return "union-find";
+  if (concept === "dynamic-programming") return "dp-table";
+  if (concept === "bit-manipulation") return "bit-count";
+  if (concept === "binary-tree" || concept === "graph") return "graph-traversal";
+  if (concept === "stack") {
+    if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
+    if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
+    return "stack-expression";
+  }
+  if (concept === "hash-map") {
+    if (/two sum|complement|pair.*target|target.*pair/.test(text)) return "hash-complement";
+    if (/group|anagram|bucket by|categor/i.test(text)) return "hash-grouping";
+    if (/count|frequency|frequent|favorite|most common|occurrence/.test(text)) return "hash-frequency";
+    return "hash-lookup";
+  }
+  if (/palindrome/.test(text)) return "string-palindrome";
+  if (/string|word|text|vowel|character|letter/.test(text)) return "string-scan";
+  if (isRotationProblem(context)) return "array-rotate";
+  if (/duplicate|unique|repeat/.test(text)) return "array-dedupe";
+  if (/running total|prefix|cumulative/.test(text)) return "array-running-total";
+  if (/find|index|search|smallest positive|missing/.test(text)) return "array-search";
+  if (/maximum|minimum|max|min|largest|smallest|best/.test(text)) return "array-max-min";
+  if (/even|odd|filter|above|below|comfortable|count/.test(text)) return "array-filter";
+  return "array-swap";
 }
 
 function withNodeState(nodes: Node[], activeIds: string[], state: Node["state"] = "active"): Node[] {
@@ -144,9 +293,44 @@ function visualSearchText(context: GeneratorContext): string {
 
 function teachingSampleOverride(context: GeneratorContext, concept: string, state: Record<string, unknown> = {}): string {
   const title = visualSearchText(context);
+  const family = detectVisualizerFamily(concept, context);
   const raw = rawVisualInput(context, state);
   const hasLongList = parseFirstList(raw).length > 6 || Object.values(parseAllNamedLists(raw)).some((items) => items.length > 6);
   const hasLongText = raw.length > 14 && !raw.includes("=") && !parseFirstList(raw).length;
+
+  if (family === "array-maximum-score") return "scores=[72, 88, 91, 84]";
+  if (family === "array-sum-even") return "values=[1, 2, 3, 4]";
+  if (family === "array-dedupe-order") return "values=[3, 1, 3, 2]";
+  if (family === "array-smallest-positive") return "values=[-2, 4, 0, 3]";
+  if (family === "array-running-total") return "values=[2, 4, 1]";
+  if (family === "array-find-index") return "values=[5, 7, 9], target=7";
+  if (family === "array-merge-names") return "first=[Ada], second=[Grace, Katherine]";
+  if (family === "array-threshold-count") return "readings=[70, 82, 81], threshold=80";
+  if (family === "array-truthy-count") return "present=[true, false, true]";
+  if (family === "array-every-other") return "values=[10, 20, 30, 40, 50]";
+  if (family === "array-comfort-count") return "readings=[68, 72, 80], low=70, high=78";
+  if (family === "array-plant-care-days") return "readings=[20, 55, 30], days=[Mon, Tue, Wed], threshold=35";
+  if (family === "array-rotate") return "values=[1, 2, 3, 4], k=2";
+  if (family === "array-dedupe") return "values=[3, 1, 3, 2]";
+  if (family === "array-filter") return "values=[3, 8, 2, 6]";
+  if (family === "array-search") return "values=[8, 3, 6], target=6";
+  if (family === "array-max-min") return "values=[4, 9, 2]";
+  if (family === "set-first-missing") return "values=[1, 2, 0]";
+  if (family === "graph-islands") return "grid=[[1,1,0],[0,0,1],[1,0,1]]";
+  if (family === "hash-frequency" || family === "hash-grouping") return "items=[A, B, A]";
+  if (family === "hash-complement") return "nums=[2, 7], target=9";
+  if (family === "string-count-vowels") return "Code";
+  if (family === "string-reverse-words") return "red blue";
+  if (family === "string-count-words") return "red blue";
+  if (family === "string-course-code") return "COSC 352";
+  if (family === "string-initials") return "Ada Lovelace";
+  if (family === "string-run-compress") return "aaabbc";
+  if (family === "string-normalize-emails") return "emails=[Ada@MSU.edu, ada@msu.edu, Bo@MSU.edu]";
+  if (family === "string-prefix-search") return "words=[code, card, car], prefix=ca";
+  if (family === "string-palindrome") return "level";
+  if (family === "stack-min") return "commands=[push 3, push 1, push 2, min, pop, min]";
+  if (family === "recursion-nested-list") return "value=[1,[2,[3]]]";
+  if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
 
   if (title.includes("vowel")) return "Code";
   if (title.includes("palindrome")) return "level";
@@ -260,8 +444,43 @@ function visualSampleExpected(context: GeneratorContext, concept: string, state:
   const sample = compactVisualInput(context, concept, state);
   const raw = rawVisualInput(context, state);
   const title = `${context.title || ""} ${context.topic || ""} ${context.prompt || ""}`.toLowerCase();
+  const family = detectVisualizerFamily(concept, context);
   const override = teachingSampleOverride(context, concept, state);
   if (override) {
+    if (family === "array-maximum-score") return "91";
+    if (family === "array-sum-even") return "6";
+    if (family === "array-dedupe-order") return "[3, 1, 2]";
+    if (family === "array-smallest-positive") return "3";
+    if (family === "array-find-index") return "1";
+    if (family === "array-merge-names") return "[Ada, Grace, Katherine]";
+    if (family === "array-threshold-count") return "2";
+    if (family === "array-truthy-count") return "2";
+    if (family === "array-every-other") return "[10, 30, 50]";
+    if (family === "array-comfort-count") return "1";
+    if (family === "array-plant-care-days") return "[Mon, Wed]";
+    if (family === "array-rotate") return "[3, 4, 1, 2]";
+    if (family === "array-dedupe") return "[3, 1, 2]";
+    if (family === "array-filter") return "8 and 6 pass";
+    if (family === "array-running-total") return "[2, 6, 7]";
+    if (family === "array-search") return "index 2";
+    if (family === "array-max-min") return "9";
+    if (family === "set-first-missing") return "3";
+    if (family === "graph-islands") return "3";
+    if (family === "hash-frequency") return "A appears twice";
+    if (family === "hash-grouping") return "A group has 2";
+    if (family === "hash-complement") return "indexes 0 and 1";
+    if (family === "string-count-vowels") return "2";
+    if (family === "string-reverse-words") return "blue red";
+    if (family === "string-count-words") return "2";
+    if (family === "string-course-code") return "true";
+    if (family === "string-initials") return "AL";
+    if (family === "string-run-compress") return "a3b2c1";
+    if (family === "string-normalize-emails") return "[ada@msu.edu, bo@msu.edu]";
+    if (family === "string-prefix-search") return "[card, car]";
+    if (family === "string-palindrome") return "true";
+    if (family === "stack-min") return "1";
+    if (family === "recursion-nested-list") return "14";
+    if (family === "queue-help-desk") return "[Ana, Bo, none]";
     if (concept === "stack") return "7";
     if (concept === "queue") return "served Ana";
     if (concept === "hash-map") {
@@ -391,205 +610,207 @@ function visualPseudocodeForStep(
 
   if (concept === "conditional") {
     return [
-      `input = ${sample}`,
-      `condition = ${rule}`,
-      "if condition:",
-      "else:",
+      `read ${sample}`,
+      `ask whether ${rule}`,
+      "follow the true branch when the answer is yes",
+      "follow the false branch when the answer is no",
       sharedFinish,
     ];
   }
   if (concept === "stack") {
     return [
-      `tokens = ${sample}`,
-      "if token is a number: values.push(token)",
-      "if token is an operator: ops.push(token)",
-      "if top operator is ready: apply it",
-      "values.push(result)",
+      `read ${sample}`,
+      "put numbers on the value stack",
+      "put operators on the operator stack",
+      "apply an operator when it is ready",
+      "put the computed value back on the stack",
       sharedFinish,
     ];
   }
   if (concept === "queue") {
     return [
-      `commands = ${sample}`,
-      "if command == 'join': queue.append(item)",
-      "if command == 'serve': item = queue.pop(0)",
+      `read ${sample}`,
+      "add new arrivals to the back",
+      "serve the item at the front",
+      "keep the remaining order the same",
       sharedFinish,
     ];
   }
   if (concept === "linked-list") {
     return [
-      "current = head",
-      "value = current.value",
-      "next_node = current.next",
-      "current = next_node",
-      "while current is not null:",
+      "start at the head node",
+      "read the current node value",
+      "save the next link",
+      "move current to the next node",
+      "stop when there is no next node",
       sharedFinish,
     ];
   }
   if (concept === "hash-map") {
     return [
-      `items = ${sample}`,
-      "key = build_key(item)",
-      "if key in table:",
-      "table[key] = value",
+      `read ${sample}`,
+      "build the lookup key",
+      "check whether the key is already stored",
+      "store or update the value for that key",
       sharedFinish,
     ];
   }
   if (concept === "set" || topic.includes("set")) {
     return [
-      `items = ${sample}`,
-      "for item in items:",
-      "if item not in seen:",
-      "seen.add(item)",
+      `read ${sample}`,
+      "check each item",
+      "if the item is new, keep it",
+      "add the item to set memory",
       sharedFinish,
     ];
   }
   if (concept === "tuple" || topic.includes("tuple")) {
     return [
-      `items = ${sample}`,
-      "for index in range(length):",
-      "pair = (left[index], right[index])",
-      "pairs.append(pair)",
+      `read ${sample}`,
+      "line up matching indexes",
+      "combine the related values into one pair",
+      "save the pair in the result",
       sharedFinish,
     ];
   }
   if (concept === "binary-search") {
     return [
-      "left = 0; right = len(items) - 1",
-      "mid = (left + right) // 2",
-      "if items[mid] < target: left = mid + 1",
-      "if items[mid] > target: right = mid - 1",
+      "start with the full sorted range",
+      "check the middle value",
+      "discard the half that cannot contain the target",
+      "repeat with the smaller range",
       sharedFinish,
     ];
   }
   if (concept === "two-pointers") {
     return [
-      "left = 0; right = len(items) - 1",
-      "pair = (items[left], items[right])",
-      "if pair is too small: left += 1",
-      "if pair is too large: right -= 1",
+      "place one pointer on each side",
+      "compare the two pointed values",
+      "move the left pointer when the pair is too small",
+      "move the right pointer when the pair is too large",
       sharedFinish,
     ];
   }
   if (concept === "sliding-window") {
     return [
-      "left = 0; right = 0",
-      "window_total += entering",
-      "window_total -= leaving",
-      "best = max(best, window_total)",
+      "start with an empty window",
+      "add the entering value",
+      "remove the leaving value when the window slides",
+      "save the best window seen so far",
       sharedFinish,
     ];
   }
   if (concept === "recursion") {
     return [
-      "if base_case: return base_value",
-      "smaller = solve(smaller_input)",
-      "answer = combine(current_piece, smaller)",
-      "return answer",
+      "check whether this call can answer directly",
+      "make a smaller recursive call",
+      "wait for the smaller answer",
+      "combine this call with the returned answer",
+      "return the combined answer",
     ];
   }
   if (concept === "binary-tree") {
     return [
-      "node = root",
-      "value = node.value",
-      "if go_left: node = node.left",
-      "if go_right: node = node.right",
+      "start at the root node",
+      "read the current node value",
+      "follow the left branch when needed",
+      "follow the right branch when needed",
       sharedFinish,
     ];
   }
   if (concept === "graph") {
     return [
-      "frontier = [start]",
-      "node = frontier.pop(0)",
-      "visited.add(node)",
-      "frontier.extend(unvisited_neighbors)",
+      "start with the first node in the frontier",
+      "visit the next node",
+      "mark it as visited",
+      "add unvisited neighbors to the frontier",
       sharedFinish,
     ];
   }
   if (concept === "heap") {
     return [
-      "heap.append(item)",
-      "parent = parent_index(child)",
-      "if heap[child] outranks heap[parent]:",
-      "swap(child, parent)",
+      "add the new item at the bottom",
+      "compare it with its parent",
+      "swap upward if it outranks the parent",
+      "stop when the heap rule is restored",
       sharedFinish,
     ];
   }
   if (concept === "trie") {
     return [
-      "node = root",
-      "for char in word:",
-      "node = node.children[char]",
-      "node.is_word = true",
+      "start at the root",
+      "read the next character",
+      "follow or create that character branch",
+      "mark the last node as a word ending",
     ];
   }
   if (concept === "union-find") {
     return [
-      "parent[item] = item",
-      "root_a = find(a)",
-      "root_b = find(b)",
-      "if root_a != root_b: union(root_a, root_b)",
+      "start with each item in its own group",
+      "find the leader for the first item",
+      "find the leader for the second item",
+      "connect the groups when the leaders differ",
       sharedFinish,
     ];
   }
   if (concept === "dynamic-programming") {
     return [
-      "dp[base] = base_answer",
-      "for state in states:",
-      "candidate = use(dp[smaller_state])",
-      "dp[state] = best(candidate)",
+      "save the base answer",
+      "move to the next state",
+      "reuse smaller saved answers",
+      "save the best answer for this state",
       sharedFinish,
     ];
   }
   if (concept === "matrix") {
     return [
-      "row = current_row",
-      "col = current_col",
-      "value = grid[row][col]",
-      "answer = update(answer, value)",
+      "choose the current row",
+      "choose the current column",
+      "read the cell at that position",
+      "update the answer with that cell",
       sharedFinish,
     ];
   }
   if (concept === "prefix-sum") {
     return [
-      "running = 0",
-      "running += value",
-      "prefix[index] = running",
-      "range_sum = prefix[right] - prefix[left]",
+      "start the running total at zero",
+      "add the current value",
+      "save the prefix total at this index",
+      "subtract saved totals to answer the range",
       sharedFinish,
     ];
   }
   if (concept === "intervals") {
     return [
-      "intervals.sort()",
-      "current = intervals[0]",
-      "if next.start <= current.end:",
-      "current.end = max(current.end, next.end)",
+      "sort ranges by start time",
+      "keep the first range as current",
+      "compare the next range with current",
+      "merge overlapping ranges",
       sharedFinish,
     ];
   }
   if (concept === "bit-manipulation") {
     return [
-      "bits = binary(number)",
-      "bit = bits[index]",
-      "if bit == 1: count += 1",
-      "index += 1",
+      "write the number as bits",
+      "inspect the current bit",
+      "update the count when the bit is one",
+      "shift to the next bit",
       sharedFinish,
     ];
   }
   if (concept === "math") {
     return [
-      `values = ${sample}`,
-      "total = apply_formula(values)",
-      `if ${rule}: total = adjust(total)`,
+      `read ${sample}`,
+      "apply the formula step by step",
+      `adjust only if ${rule}`,
       sharedFinish,
     ];
   }
   return [
-    `input = ${sample}`,
-    `rule = ${rule}`,
-    "current = input[index]",
-    "answer = update(answer, current)",
+    `read ${sample}`,
+    `use the rule: ${rule}`,
+    "read the current item",
+    "update the answer if this item changes it",
     sharedFinish,
   ];
 }
@@ -598,29 +819,29 @@ function expandPseudocodeLines(lines: string[], concept: string): string[] {
   const target = targetStepCount(concept);
   if (lines.length >= target) return lines;
   const additions: Record<string, string[]> = {
-    conditional: ["chosen = true_value if condition else false_value", "return chosen"],
-    stack: ["ops.append(operator)", "values.append(number)", "right = values.pop()", "left = values.pop()", "values.append(apply(left, operator, right))", "return values[-1]"],
-    queue: ["front = queue[0] if queue else None", "return front"],
-    "hash-map": ["bucket = hash(key)", "entry = table[bucket]", "compare entry.key", "move to next entry", "table[key] = value", "return table[key]"],
-    set: ["seen.add(item)", "return seen"],
-    tuple: ["index += 1", "return pairs"],
-    "linked-list": ["save next_node", "use current.value", "current = next_node", "stop when current is null", "return result"],
-    recursion: ["call_stack.append(smaller_call)", "base_value returns", "answer = combine(current, smaller)", "return answer"],
-    "binary-search": ["left, right = next_range", "mid = (left + right) // 2", "return found_index"],
-    "two-pointers": ["sum = values[left] + values[right]", "move left or right", "compare the new pair", "save match or best", "return result"],
-    "sliding-window": ["best = max(best, window_value)", "left += 1", "return best"],
-    "binary-tree": ["result = update(result, node.value)", "check tree rule", "return result"],
-    graph: ["if neighbor not in visited: frontier.append(neighbor)", "skip already visited", "return visited"],
-    matrix: ["value = grid[row][col]", "answer = update(answer, value)", "row, col = next_cell(row, col)", "check bounds", "return result"],
-    "prefix-sum": ["prefix[index] = running", "range_sum = prefix[right] - prefix[left - 1]", "return range_sum"],
-    intervals: ["merged = merge_or_append(merged, current)", "move to next interval", "return merged"],
-    heap: ["heapify_up(heap, index)", "check parent rule", "return heap[0]"],
-    trie: ["node = node.children[char]", "reuse shared prefix", "return node.is_word"],
-    "union-find": ["parent[root_a] = root_b", "root = find(item)", "return count_roots(parent)"],
-    "dynamic-programming": ["read dp[smaller_state]", "candidate = combine(saved_answers)", "dp[state] = answer", "return dp[target]"],
-    "bit-manipulation": ["number >>= 1", "inspect next bit", "return result"],
-    math: ["total = adjust(total)", "return total"],
-    array: ["answer = update(answer, current)", "return answer"],
+    conditional: ["choose the branch that matched", "return the chosen value"],
+    stack: ["read the next token", "update the stack", "apply the ready operation", "put the result back", "return the top value"],
+    queue: ["read the front item", "keep the remaining order", "return the served item"],
+    "hash-map": ["choose the bucket for this key", "compare the stored key", "move to the next stored entry", "store the updated value", "return the lookup result"],
+    set: ["add the item to set memory", "return the kept values"],
+    tuple: ["move to the next index", "return the saved pairs"],
+    "linked-list": ["save the next link", "use the current value", "move to the saved next node", "stop when current is empty", "return the result"],
+    recursion: ["add the smaller call to the stack", "return the base value", "combine the current call with the smaller answer", "return the combined answer"],
+    "binary-search": ["keep the possible range", "check the new middle", "return the found index"],
+    "two-pointers": ["add the pointed values", "move the correct pointer", "compare the new pair", "save the match or best value", "return the result"],
+    "sliding-window": ["save the best window so far", "move the left edge", "return the best value"],
+    "binary-tree": ["update the result with this node", "check the tree rule", "return the result"],
+    graph: ["add unvisited neighbors to the frontier", "skip nodes already visited", "return the visited result"],
+    matrix: ["read the current cell", "update the answer with that value", "move to the next cell", "check the grid bounds", "return the result"],
+    "prefix-sum": ["save this prefix total", "subtract saved totals for the range", "return the range sum"],
+    intervals: ["save the merged range", "move to the next interval", "return the merged ranges"],
+    heap: ["move the value upward if needed", "check the parent rule", "return the top value"],
+    trie: ["follow the character branch", "reuse the shared prefix", "return whether the word was found"],
+    "union-find": ["connect one leader under the other", "find the compressed leader", "return the group count"],
+    "dynamic-programming": ["read a smaller saved answer", "combine saved answers into a candidate", "save the answer for this state", "return the target answer"],
+    "bit-manipulation": ["shift to the next bit", "inspect the next bit", "return the result"],
+    math: ["check whether an adjustment is needed", "return the computed value"],
+    array: ["update the answer with the current item", "return the answer"],
   };
   const expanded = [...lines];
   const fallback = additions[concept] || additions.array;
@@ -1821,80 +2042,80 @@ function topicBridgeStep(
 ): Record<string, unknown> {
   const topicCopy: Record<string, { title: string; body: string; code: string; action: string }> = {
     array: slot === "first-repeat"
-      ? { title: "Inspect the active item", body: "Read the highlighted value before deciding whether it changes the answer.", code: "item = values[index]", action: "inspect" }
-      : { title: "Update and move", body: "Save the new state, then move the active index forward.", code: "answer = updated; index += 1", action: "update" },
+      ? { title: "Inspect the active item", body: "Read the highlighted value before deciding whether it changes the answer.", code: "read the highlighted item", action: "inspect" }
+      : { title: "Update and move", body: "Save the new state, then move the active index forward.", code: "save the change, then move forward", action: "update" },
     search: slot === "first-repeat"
-      ? { title: "Check for a match", body: "Compare the active item with the target or condition.", code: "if item matches target", action: "check" }
-      : { title: "Move after no match", body: "If this item is not enough, advance to the next candidate.", code: "index += 1", action: "move" },
+      ? { title: "Check for a match", body: "Compare the active item with the target or condition.", code: "ask whether the item matches the target", action: "check" }
+      : { title: "Move after no match", body: "If this item is not enough, advance to the next candidate.", code: "move to the next item", action: "move" },
     sort: slot === "first-repeat"
-      ? { title: "Compare the pair", body: "Only the highlighted pair can swap during this step.", code: "if left > right", action: "compare" }
+      ? { title: "Compare the pair", body: "Only the highlighted pair can swap during this step.", code: "ask whether the left value is greater", action: "compare" }
       : { title: "Place the value", body: "After the move, the value is closer to its sorted position.", code: "swap or keep", action: "place" },
     tuple: slot === "first-repeat"
-      ? { title: "Align the index", body: "Use the same position in each collection so related values stay paired.", code: "left[i], right[i]", action: "align" }
-      : { title: "Save the pair", body: "Package the related values together before moving to the next index.", code: "pairs.append((a, b))", action: "pair" },
+      ? { title: "Align the index", body: "Use the same position in each collection so related values stay paired.", code: "read matching values at the same index", action: "align" }
+      : { title: "Save the pair", body: "Package the related values together before moving to the next index.", code: "save the paired values", action: "pair" },
     matrix: slot === "first-repeat"
-      ? { title: "Read row and column", body: "A matrix step needs both coordinates before reading the cell.", code: "grid[row][col]", action: "cell" }
+      ? { title: "Read row and column", body: "A matrix step needs both coordinates before reading the cell.", code: "read the cell at this row and column", action: "cell" }
       : { title: "Move to the next cell", body: "Advance column or row in a predictable order.", code: "advance row/column", action: "next cell" },
     math: slot === "first-repeat"
-      ? { title: "Apply the rule", body: "Use the formula or comparison on the active number.", code: "value = formula(value)", action: "formula" }
-      : { title: "Check the computed result", body: "Compare the computed value with the expected output shape.", code: "return value", action: "check result" },
+      ? { title: "Apply the rule", body: "Use the formula or comparison on the active number.", code: "apply the formula to this value", action: "formula" }
+      : { title: "Check the computed result", body: "Compare the computed value with the expected output shape.", code: "return the computed value", action: "check result" },
     "prefix-sum": slot === "first-repeat"
-      ? { title: "Add into running total", body: "The current value changes the saved prefix total.", code: "running += value", action: "add" }
-      : { title: "Save the prefix", body: "Store the total so a later range answer can reuse it.", code: "prefix[i] = running", action: "save" },
+      ? { title: "Add into running total", body: "The current value changes the saved prefix total.", code: "add the current value to the running total", action: "add" }
+      : { title: "Save the prefix", body: "Store the total so a later range answer can reuse it.", code: "save the running total at this index", action: "save" },
     intervals: slot === "first-repeat"
-      ? { title: "Compare boundaries", body: "The next start is compared with the saved end.", code: "next.start <= current.end", action: "compare" }
+      ? { title: "Compare boundaries", body: "The next start is compared with the saved end.", code: "ask whether the next range overlaps", action: "compare" }
       : { title: "Carry merged state", body: "Keep the merged range or start a separate one before moving on.", code: "merge or append", action: "carry" },
     heap: slot === "first-repeat"
       ? { title: "Compare with parent", body: "The inserted value checks whether it outranks its parent.", code: "compare child and parent", action: "compare" }
       : { title: "Bubble or stop", body: "Swap upward only while the heap rule is broken.", code: "swap with parent", action: "bubble" },
     trie: slot === "first-repeat"
-      ? { title: "Follow character edge", body: "Each character chooses one branch from the current trie node.", code: "node = node[char]", action: "char" }
-      : { title: "Mark word state", body: "At the last character, mark or check the word-ending node.", code: "node.is_word = true", action: "word" },
+      ? { title: "Follow character edge", body: "Each character chooses one branch from the current trie node.", code: "follow the branch for this character", action: "char" }
+      : { title: "Mark word state", body: "At the last character, mark or check the word-ending node.", code: "mark this node as a word ending", action: "word" },
     "union-find": slot === "first-repeat"
-      ? { title: "Find each leader", body: "Before connecting items, find the group leader for each one.", code: "find(a), find(b)", action: "find" }
-      : { title: "Union the groups", body: "If the leaders differ, connect one group under the other.", code: "parent[root_a] = root_b", action: "union" },
+      ? { title: "Find each leader", body: "Before connecting items, find the group leader for each one.", code: "find the leader for both items", action: "find" }
+      : { title: "Union the groups", body: "If the leaders differ, connect one group under the other.", code: "connect one group under the other", action: "union" },
     "dynamic-programming": slot === "first-repeat"
-      ? { title: "Read saved cells", body: "A DP cell gets its answer from smaller cells that were already solved.", code: "use previous dp values", action: "reuse" }
-      : { title: "Fill the current cell", body: "Store this small answer so future cells can reuse it.", code: "dp[i] = answer", action: "fill" },
+      ? { title: "Read saved cells", body: "A DP cell gets its answer from smaller cells that were already solved.", code: "reuse earlier saved answers", action: "reuse" }
+      : { title: "Fill the current cell", body: "Store this small answer so future cells can reuse it.", code: "save the answer for this state", action: "fill" },
     "bit-manipulation": slot === "first-repeat"
-      ? { title: "Inspect one bit", body: "Only the highlighted bit decides whether the mask or count changes.", code: "bit = n & 1", action: "inspect bit" }
-      : { title: "Shift to continue", body: "Move to the next bit after saving the current change.", code: "n >>= 1", action: "shift" },
+      ? { title: "Inspect one bit", body: "Only the highlighted bit decides whether the mask or count changes.", code: "read the current bit", action: "inspect bit" }
+      : { title: "Shift to continue", body: "Move to the next bit after saving the current change.", code: "shift to the next bit", action: "shift" },
     conditional: slot === "first-repeat"
       ? { title: "Test the active branch", body: "Use the condition result to decide which branch stays active for this exact input.", code: "if condition is true or false", action: "branch" }
       : { title: "Ignore the other branch", body: "The branch that does not match is skipped, so it should not change the result.", code: "skip the unmatched branch", action: "skip" },
     stack: slot === "first-repeat"
-      ? { title: "Check the top only", body: "Stack operations look at the newest item first; older items wait underneath.", code: "top = stack[-1]", action: "peek" }
+      ? { title: "Check the top only", body: "Stack operations look at the newest item first; older items wait underneath.", code: "read the top item", action: "peek" }
       : { title: "Update after the operation", body: "After push or pop, the top pointer changes to the item now visible.", code: "update top", action: "update top" },
     queue: slot === "first-repeat"
-      ? { title: "Check the front", body: "Queue operations serve the oldest item first, even after new items join the back.", code: "front = queue[0]", action: "front" }
-      : { title: "Preserve waiting order", body: "The remaining items keep their order after the front item leaves.", code: "queue = queue[1:]", action: "order" },
+      ? { title: "Check the front", body: "Queue operations serve the oldest item first, even after new items join the back.", code: "read the front item", action: "front" }
+      : { title: "Preserve waiting order", body: "The remaining items keep their order after the front item leaves.", code: "remove the front and keep the rest in order", action: "order" },
     "hash-map": slot === "first-repeat"
-      ? { title: "Look up before update", body: "Check the table for the key before changing what the table stores.", code: "if key in table", action: "lookup" }
-      : { title: "Store for later", body: "After the update, future steps can use the stored key instead of scanning again.", code: "table[key] = value", action: "store" },
+      ? { title: "Look up before update", body: "Check the table for the key before changing what the table stores.", code: "ask whether this key is already stored", action: "lookup" }
+      : { title: "Store for later", body: "After the update, future steps can use the stored key instead of scanning again.", code: "store the value for this key", action: "store" },
     set: slot === "first-repeat"
-      ? { title: "Ask membership", body: "The set answers whether this value has already appeared.", code: "item in seen", action: "check" }
-      : { title: "Update memory", body: "Add the value only when the rule says it should be remembered.", code: "seen.add(item)", action: "remember" },
+      ? { title: "Ask membership", body: "The set answers whether this value has already appeared.", code: "ask whether this item is in set memory", action: "check" }
+      : { title: "Update memory", body: "Add the value only when the rule says it should be remembered.", code: "add this item to set memory", action: "remember" },
     "linked-list": slot === "first-repeat"
-      ? { title: "Save the next link", body: "Before moving a node pointer, notice which next link keeps the chain connected.", code: "next_node = current.next", action: "save next" }
-      : { title: "Move current safely", body: "After the next link is known, current can move without losing the rest of the list.", code: "current = next_node", action: "move" },
+      ? { title: "Save the next link", body: "Before moving a node pointer, notice which next link keeps the chain connected.", code: "save the next link", action: "save next" }
+      : { title: "Move current safely", body: "After the next link is known, current can move without losing the rest of the list.", code: "move to the saved next node", action: "move" },
     recursion: slot === "first-repeat"
-      ? { title: "Make the smaller call", body: "The current call pauses while a smaller version of the problem runs.", code: "answer = solve(smaller)", action: "call" }
-      : { title: "Unwind one answer", body: "When the smaller answer returns, this call combines only its own piece.", code: "return combine(answer)", action: "unwind" },
+      ? { title: "Make the smaller call", body: "The current call pauses while a smaller version of the problem runs.", code: "call the smaller version", action: "call" }
+      : { title: "Unwind one answer", body: "When the smaller answer returns, this call combines only its own piece.", code: "return the combined answer", action: "unwind" },
     "binary-search": slot === "first-repeat"
-      ? { title: "Compare the middle", body: "The middle value decides which half of the sorted range can be ignored.", code: "compare nums[mid]", action: "compare" }
-      : { title: "Shrink the range", body: "Move left or right so the next step searches only possible answers.", code: "left/right = mid +/- 1", action: "shrink" },
+      ? { title: "Compare the middle", body: "The middle value decides which half of the sorted range can be ignored.", code: "compare the middle value with the target", action: "compare" }
+      : { title: "Shrink the range", body: "Move left or right so the next step searches only possible answers.", code: "keep only the possible half", action: "shrink" },
     "two-pointers": slot === "first-repeat"
       ? { title: "Evaluate the pair", body: "Use the two highlighted values together before moving either pointer.", code: "check left and right", action: "pair check" }
       : { title: "Move one pointer", body: "Only one pointer moves, based on what the comparison proved.", code: "left += 1 or right -= 1", action: "move" },
     "sliding-window": slot === "first-repeat"
-      ? { title: "Add entering item", body: "The right edge brings one new value into the window.", code: "total += entering", action: "enter" }
-      : { title: "Remove leaving item", body: "The left edge removes one old value so the window size or rule stays valid.", code: "total -= leaving", action: "leave" },
+      ? { title: "Add entering item", body: "The right edge brings one new value into the window.", code: "add the entering value", action: "enter" }
+      : { title: "Remove leaving item", body: "The left edge removes one old value so the window size or rule stays valid.", code: "remove the leaving value", action: "leave" },
     "binary-tree": slot === "first-repeat"
-      ? { title: "Choose a child link", body: "The current node comparison tells you whether to follow left or right.", code: "node = node.left/right", action: "follow" }
+      ? { title: "Choose a child link", body: "The current node comparison tells you whether to follow left or right.", code: "follow the matching child link", action: "follow" }
       : { title: "Use the visited node", body: "Once the target node or leaf is reached, update the result for this path.", code: "update result", action: "visit" },
     graph: slot === "first-repeat"
-      ? { title: "Add neighbors", body: "Neighbors enter the frontier only if they have not already been visited.", code: "queue.add(neighbor)", action: "frontier" }
-      : { title: "Skip repeats", body: "Visited memory prevents the same node from being processed again.", code: "if neighbor not in visited", action: "visited" },
+      ? { title: "Add neighbors", body: "Neighbors enter the frontier only if they have not already been visited.", code: "add unvisited neighbors to the frontier", action: "frontier" }
+      : { title: "Skip repeats", body: "Visited memory prevents the same node from being processed again.", code: "skip neighbors already visited", action: "visited" },
   };
   const fallback = slot === "first-repeat"
     ? { title: "Trace the next state", body: "Move one pointer, lookup, branch, or stored value so the repeated pattern is visible.", code: "apply the next step", action: "trace" }
@@ -1949,6 +2170,10 @@ function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string,
     "prefix-sum",
     "intervals",
     "bit-manipulation",
+    "tuple",
+    "math",
+    "search",
+    "sort",
   ]);
   if (!generatedConcepts.has(concept)) return false;
   if (rawSteps.length >= targetStepCount(concept)) return false;
@@ -1995,6 +2220,892 @@ function generateAuthoredVisualizerSteps(concept: string, context: GeneratorCont
         example: displayedExample,
         expected: displayedExpected,
         ...(concept === "conditional" ? { rule: relevantRule(context) } : {}),
+      },
+    }, index + 1);
+  });
+}
+
+function arrayStateCard(
+  id: string,
+  label: string,
+  value: string | number,
+  x: number,
+  y: number,
+  state: Node["state"] = "default",
+  role = "memory",
+): Node {
+  return { id, x, y, value, type: "logic-node", label, state, meta: { role } };
+}
+
+function arrayCells(
+  values: Array<string | number | boolean>,
+  activeIndexesValue: number[] = [],
+  visitedThrough = -1,
+  options: { y?: number; labels?: string[]; startX?: number; gap?: number } = {},
+): Node[] {
+  const displayValues = values.map((value) => typeof value === "boolean" ? String(value) : value);
+  const activeSet = new Set(activeIndexesValue);
+  return layoutArray(displayValues as Array<string | number>, {
+    y: options.y ?? 230,
+    startX: options.startX,
+    gap: options.gap,
+  }).map((node, nodeIndex) => ({
+    ...node,
+    label: options.labels?.[nodeIndex] ?? String(nodeIndex),
+    state: activeSet.has(nodeIndex) ? "active" as const : nodeIndex <= visitedThrough ? "visited" as const : "default" as const,
+  }));
+}
+
+function arrayStep(
+  index: number,
+  phase: {
+    title: string;
+    desc: string;
+    code: string[];
+    line: number;
+    nodes: Node[];
+    edges?: Edge[];
+    activeIds?: string[];
+    state: Record<string, string | number | boolean>;
+  },
+  workflowLabels: string[],
+): Step {
+  const activeIds = phase.activeIds || phase.nodes.filter((node) => node.state === "active" || node.state === "matched").map((node) => node.id);
+  const activeCodeLine = phase.code[phase.line - 1] || "";
+  const returned = phase.state.returned === true || /\breturn\b/i.test(activeCodeLine);
+  return step({
+    concept: "array",
+    title: phase.title,
+    description: phase.desc,
+    nodes: phase.nodes,
+    edges: phase.edges || [],
+    highlights: {
+      nodeIds: activeIds,
+      edgeIds: (phase.edges || []).filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`),
+      lineNumbers: [phase.line],
+    },
+    code: phase.code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(workflowLabels, index),
+    state: { ...phase.state, returned },
+  }, index + 1);
+}
+
+export function generateMaximumScoreSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Use the first score as the starting best", "For each score in the list", "If this score is greater than best", "Save this score as the new best", "Return the saved best score"];
+  const values = [72, 88, 91, 84];
+  const phases = [
+    { i: 0, best: "empty", result: "not ready", title: context.title || "Maximum Score", desc: "Load the score list. No best score has been chosen yet.", line: 1 },
+    { i: 0, best: "72", result: "not ready", title: "Start with 72", desc: "Use the first score as the starting best value.", line: 1 },
+    { i: 1, best: "88", result: "not ready", title: "Update to 88", desc: "88 is greater than 72, so best changes to 88.", line: 4 },
+    { i: 2, best: "91", result: "not ready", title: "Update to 91", desc: "91 is greater than 88, so best changes again.", line: 4 },
+    { i: 3, best: "91", result: "not ready", title: "Keep 91", desc: "84 is not greater than 91, so best does not change.", line: 3 },
+    { i: 3, best: "91", result: "not ready", title: "Finish scan", desc: "Every score has been compared with the saved best.", line: 2 },
+    { i: 3, best: "91", result: "91", title: "Return 91", desc: "Return the largest score found in the list.", line: 5 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], index > 0 ? phase.i : -1),
+      arrayStateCard("best-card", "best", phase.best, 340, 385, phase.best !== "empty" ? "active" : "default"),
+      arrayStateCard("result-card", "result", phase.result, 585, 385, phase.result === "91" ? "matched" : "default", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, "best-card", ...(phase.result === "91" ? ["result-card"] : [])],
+    state: { example: "[72, 88, 91, 84]", index: phase.i, best: phase.best, result: phase.result, final_result: "91" },
+  }, labels));
+}
+
+export function generateSumEvenNumbersSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start the total at 0", "For each value in the list", "If the value is even", "Add the value to the total", "Return the total"];
+  const values = [1, 2, 3, 4];
+  const phases = [
+    { i: 0, total: 0, result: "not ready", title: context.title || "Sum Even Numbers", desc: "Start with total at 0 before checking any values.", line: 1 },
+    { i: 0, total: 0, result: "not ready", title: "Skip 1", desc: "1 is odd, so it is not added.", line: 3 },
+    { i: 1, total: 2, result: "not ready", title: "Add 2", desc: "2 is even, so total changes from 0 to 2.", line: 4 },
+    { i: 2, total: 2, result: "not ready", title: "Skip 3", desc: "3 is odd, so total stays 2.", line: 3 },
+    { i: 3, total: 6, result: "not ready", title: "Add 4", desc: "4 is even, so total changes from 2 to 6.", line: 4 },
+    { i: 3, total: 6, result: "not ready", title: "Finish scan", desc: "All numbers have been checked once.", line: 2 },
+    { i: 3, total: 6, result: "6", title: "Return total", desc: "Return the sum of only the even values.", line: 5 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i),
+      arrayStateCard("total-card", "total", phase.total, 340, 385, "active"),
+      arrayStateCard("result-card", "result", phase.result, 585, 385, phase.result === "6" ? "matched" : "default", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, "total-card", ...(phase.result === "6" ? ["result-card"] : [])],
+    state: { example: "[1, 2, 3, 4]", current: values[phase.i], total: phase.total, result: phase.result, final_result: "6" },
+  }, labels));
+}
+
+export function generateArrayDedupeOrderSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start with an empty seen set", "Start with an empty result list", "For each value in the given values", "If the value has not been seen", "Add the value to the result list", "Add the value to the seen set", "Return the result list"];
+  const values = [3, 1, 3, 2];
+  const phases = [
+    { i: 0, seen: "empty", result: "[]", title: context.title || "Remove Duplicates Keep Order", desc: "Start with empty set memory and an empty result list.", line: 1 },
+    { i: 0, seen: "{3}", result: "[3]", title: "Keep 3", desc: "The first 3 is new, so it is kept and remembered.", line: 5 },
+    { i: 1, seen: "{3, 1}", result: "[3, 1]", title: "Keep 1", desc: "1 has not appeared before, so append it.", line: 5 },
+    { i: 2, seen: "{3, 1}", result: "[3, 1]", title: "Skip duplicate 3", desc: "The second 3 is already in seen, so result does not change.", line: 4 },
+    { i: 3, seen: "{3, 1, 2}", result: "[3, 1, 2]", title: "Keep 2", desc: "2 is new, so it becomes the next kept value.", line: 5 },
+    { i: 3, seen: "{3, 1, 2}", result: "[3, 1, 2]", title: "Finish scan", desc: "The list has been scanned without changing the original order.", line: 3 },
+    { i: 3, seen: "{3, 1, 2}", result: "[3, 1, 2]", title: "Return kept order", desc: "Return only the first occurrence of each value.", line: 7 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i),
+      arrayStateCard("seen-card", "seen", phase.seen, 300, 385, "active"),
+      arrayStateCard("result-card", "result", phase.result, 585, 385, phase.result === "[3, 1, 2]" ? "matched" : "default", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, "seen-card", "result-card"],
+    state: { example: "[3, 1, 3, 2]", seen: phase.seen, result: phase.result, final_result: "[3, 1, 2]" },
+  }, labels));
+}
+
+export function generateSmallestPositiveSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start without a smallest positive value", "For each value in the list", "If the value is positive", "Keep the smaller positive value", "Return the smallest positive value"];
+  const values = [-2, 4, 0, 3];
+  const phases = [
+    { i: 0, smallest: "empty", result: "not ready", title: context.title || "Smallest Positive", desc: "Start without a saved positive value.", line: 1 },
+    { i: 0, smallest: "empty", result: "not ready", title: "Skip -2", desc: "-2 is not positive, so it cannot be the answer.", line: 3 },
+    { i: 1, smallest: "4", result: "not ready", title: "Save 4", desc: "4 is the first positive value, so it becomes smallest.", line: 4 },
+    { i: 2, smallest: "4", result: "not ready", title: "Skip 0", desc: "0 is not positive, so smallest stays 4.", line: 3 },
+    { i: 3, smallest: "3", result: "not ready", title: "Update to 3", desc: "3 is positive and smaller than 4, so smallest changes.", line: 4 },
+    { i: 3, smallest: "3", result: "not ready", title: "Finish scan", desc: "Every value has been tested against the positive rule.", line: 2 },
+    { i: 3, smallest: "3", result: "3", title: "Return 3", desc: "Return the smallest positive value found.", line: 5 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i),
+      arrayStateCard("smallest-card", "smallest", phase.smallest, 340, 385, phase.smallest !== "empty" ? "active" : "default"),
+      arrayStateCard("result-card", "result", phase.result, 585, 385, phase.result === "3" ? "matched" : "default", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, "smallest-card", ...(phase.result === "3" ? ["result-card"] : [])],
+    state: { example: "[-2, 4, 0, 3]", current: values[phase.i], smallest: phase.smallest, result: phase.result, final_result: "3" },
+  }, labels));
+}
+
+export function generateFindIndexSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Remember the target value", "Check each index from left to right", "If the current value equals the target", "Return the current index", "Return -1 if no match is found"];
+  const values = [5, 7, 9];
+  const phases = [
+    { i: 0, result: "not found yet", title: context.title || "Find Index", desc: "Start at index 0 and look for target 7.", line: 1 },
+    { i: 0, result: "no match", title: "Check index 0", desc: "5 is not 7, so keep scanning.", line: 3 },
+    { i: 1, result: "checking", title: "Move to index 1", desc: "The next cell is where the target appears.", line: 2 },
+    { i: 1, result: "match", title: "Match 7", desc: "The current value equals the target.", line: 3 },
+    { i: 1, result: "1", title: "Return index 1", desc: "Return the index where the target was found.", line: 4 },
+    { i: 1, result: "1", title: "Stop early", desc: "The scan stops after the match; index 2 does not need to run.", line: 4 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i - 1),
+      arrayStateCard("target-card", "target", 7, 300, 385, "default"),
+      arrayStateCard("result-card", "result", phase.result, 585, 385, phase.result === "1" ? "matched" : "default", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, ...(phase.result === "1" || phase.result === "match" ? ["result-card"] : [])],
+    state: { example: "[5, 7, 9], target=7", index: phase.i, current: values[phase.i], result: phase.result, final_result: "1" },
+  }, labels));
+}
+
+export function generateMergeNamesSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start with an empty result list", "Copy each name from the first list", "Add each name from the second list", "Return the merged list"];
+  const first = ["Ada"];
+  const second = ["Grace", "Katherine"];
+  const row = (items: string[], prefix: string, y: number, active: number[] = [], visited = -1) => arrayCells(items, active, visited, { y, startX: prefix === "first" ? 310 : 435, gap: 155 }).map((node) => ({
+    ...node,
+    id: `${prefix}-${node.id}`,
+    label: prefix === "first" ? `first ${node.label}` : `second ${node.label}`,
+  }));
+  const phases = [
+    { source: "first", active: 0, result: "[]", title: context.title || "Merge Names", desc: "Start with an empty result list.", line: 1 },
+    { source: "first", active: 0, result: "[Ada]", title: "Copy Ada", desc: "Copy the only name from the first list into result.", line: 2 },
+    { source: "second", active: 0, result: "[Ada]", title: "Read Grace", desc: "Now switch to the second list.", line: 3 },
+    { source: "second", active: 0, result: "[Ada, Grace]", title: "Append Grace", desc: "Grace is appended after Ada.", line: 3 },
+    { source: "second", active: 1, result: "[Ada, Grace]", title: "Read Katherine", desc: "Move to the last name in the second list.", line: 3 },
+    { source: "second", active: 1, result: "[Ada, Grace, Katherine]", title: "Append Katherine", desc: "Append the final second-list name.", line: 3 },
+    { source: "second", active: 1, result: "[Ada, Grace, Katherine]", title: "Return merged list", desc: "Return one list with first-list names followed by second-list names.", line: 4 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => {
+    const activeFirst = phase.source === "first" ? [phase.active] : [];
+    const activeSecond = phase.source === "second" ? [phase.active] : [];
+    return arrayStep(index, {
+      title: phase.title,
+      desc: phase.desc,
+      code,
+      line: phase.line,
+      nodes: [
+        ...row(first, "first", 185, activeFirst, phase.source === "second" ? 0 : phase.active - 1),
+        ...row(second, "second", 300, activeSecond, phase.source === "second" ? phase.active - 1 : -1),
+        arrayStateCard("result-card", "result", phase.result, 470, 440, phase.result.includes("Katherine") ? "matched" : "active", "result"),
+      ],
+      activeIds: [
+        ...(phase.source === "first" ? [`first-item-${phase.active}`] : [`second-item-${phase.active}`]),
+        "result-card",
+      ],
+      state: { example: "first=[Ada], second=[Grace, Katherine]", result: phase.result, final_result: "[Ada, Grace, Katherine]" },
+    }, labels);
+  });
+}
+
+export function generateThresholdCountSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start the count at 0", "For each temperature reading", "If the reading is above the threshold", "Add 1 to the count", "Return the count"];
+  const values = [70, 82, 81];
+  const phases = [
+    { i: 0, count: 0, result: "not ready", title: context.title || "Temperature Above Threshold", desc: "Use threshold 80 and start count at 0.", line: 1 },
+    { i: 0, count: 0, result: "not ready", title: "Check 70", desc: "70 is not above 80, so count stays 0.", line: 3 },
+    { i: 1, count: 1, result: "not ready", title: "Count 82", desc: "82 is above 80, so count changes to 1.", line: 4 },
+    { i: 2, count: 2, result: "not ready", title: "Count 81", desc: "81 is also above 80, so count changes to 2.", line: 4 },
+    { i: 2, count: 2, result: "not ready", title: "Finish readings", desc: "Each reading has been checked once.", line: 2 },
+    { i: 2, count: 2, result: "2", title: "Return count", desc: "Return the number of readings above the threshold.", line: 5 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i),
+      arrayStateCard("threshold-card", "threshold", 80, 300, 385),
+      arrayStateCard("count-card", "count", phase.count, 585, 385, "active"),
+    ],
+    activeIds: [`item-${phase.i}`, "count-card"],
+    state: { example: "[70, 82, 81], threshold=80", current: values[phase.i], count: phase.count, result: phase.result, final_result: "2" },
+  }, labels));
+}
+
+export function generateTruthyAttendanceSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start the count at 0", "For each attendance value", "If the value is true", "Add 1 to the count", "Return the count"];
+  const values = [true, false, true];
+  const phases = [
+    { i: 0, count: 0, result: "not ready", title: context.title || "Truthy Attendance", desc: "Start count at 0 before reading attendance values.", line: 1 },
+    { i: 0, count: 1, result: "not ready", title: "Count true", desc: "The first value is true, so count changes to 1.", line: 4 },
+    { i: 1, count: 1, result: "not ready", title: "Skip false", desc: "False does not add to the attendance count.", line: 3 },
+    { i: 2, count: 2, result: "not ready", title: "Count true again", desc: "The last value is true, so count changes to 2.", line: 4 },
+    { i: 2, count: 2, result: "not ready", title: "Finish attendance", desc: "Every attendance value has been checked.", line: 2 },
+    { i: 2, count: 2, result: "2", title: "Return 2", desc: "Return how many values were true.", line: 5 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i),
+      arrayStateCard("count-card", "count", phase.count, 450, 385, phase.result === "2" ? "matched" : "active", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, "count-card"],
+    state: { example: "[true, false, true]", current: String(values[phase.i]), count: phase.count, result: phase.result, final_result: "2" },
+  }, labels));
+}
+
+export function generateEveryOtherItemSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start with an empty result list", "Start at index 0", "While the index is inside the list", "Add the current item to the result list", "Move ahead by two indexes", "Return the result list"];
+  const values = [10, 20, 30, 40, 50];
+  const phases = [
+    { i: 0, result: "[]", title: context.title || "Every Other Item", desc: "Start at index 0 and prepare to jump by 2.", line: 2 },
+    { i: 0, result: "[10]", title: "Take index 0", desc: "Keep the first item because index 0 is part of the every-other pattern.", line: 4 },
+    { i: 2, result: "[10]", title: "Jump to index 2", desc: "Skip index 1 and move directly to index 2.", line: 5 },
+    { i: 2, result: "[10, 30]", title: "Take index 2", desc: "Keep 30 as the next every-other item.", line: 4 },
+    { i: 4, result: "[10, 30]", title: "Jump to index 4", desc: "Skip index 3 and move to the last valid every-other index.", line: 5 },
+    { i: 4, result: "[10, 30, 50]", title: "Take index 4", desc: "Keep 50 as the last selected item.", line: 4 },
+    { i: 4, result: "[10, 30, 50]", title: "Return result", desc: "Return the values from indexes 0, 2, and 4.", line: 6 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i),
+      arrayStateCard("result-card", "result", phase.result, 450, 385, phase.result === "[10, 30, 50]" ? "matched" : "active", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, "result-card"],
+    state: { example: "[10, 20, 30, 40, 50]", index: phase.i, result: phase.result, final_result: "[10, 30, 50]" },
+  }, labels));
+}
+
+export function generateComfortCountSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start the count at 0", "For each temperature reading", "If the reading is inside the comfort range", "Add 1 to the count", "Return the count"];
+  const values = [68, 72, 80];
+  const phases = [
+    { i: 0, count: 0, result: "not ready", title: context.title || "Temperature Comfort Count", desc: "Comfort means between 70 and 78 inclusive.", line: 1 },
+    { i: 0, count: 0, result: "not ready", title: "Skip 68", desc: "68 is below 70, so it is not comfortable.", line: 3 },
+    { i: 1, count: 1, result: "not ready", title: "Count 72", desc: "72 is inside the comfort range, so count changes to 1.", line: 4 },
+    { i: 2, count: 1, result: "not ready", title: "Skip 80", desc: "80 is above 78, so count stays 1.", line: 3 },
+    { i: 2, count: 1, result: "not ready", title: "Finish readings", desc: "Every temperature has been checked against both bounds.", line: 2 },
+    { i: 2, count: 1, result: "1", title: "Return 1", desc: "Return the number of comfortable readings.", line: 5 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => arrayStep(index, {
+    title: phase.title,
+    desc: phase.desc,
+    code,
+    line: phase.line,
+    nodes: [
+      ...arrayCells(values, [phase.i], phase.i),
+      arrayStateCard("range-card", "range", "70 to 78", 300, 385),
+      arrayStateCard("count-card", "count", phase.count, 585, 385, phase.result === "1" ? "matched" : "active", "result"),
+    ],
+    activeIds: [`item-${phase.i}`, "count-card"],
+    state: { example: "[68, 72, 80], low=70, high=78", current: values[phase.i], count: phase.count, result: phase.result, final_result: "1" },
+  }, labels));
+}
+
+export function generatePlantCareDaysSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start with an empty care-days list", "Check each reading with its matching day", "If the reading is below the threshold", "Add the matching day to care days", "Return the care-days list"];
+  const readings = [20, 55, 30];
+  const days = ["Mon", "Tue", "Wed"];
+  const phases = [
+    { i: 0, result: "[]", title: context.title || "Weekly Plant Care Days", desc: "Align each reading with the day at the same index.", line: 1 },
+    { i: 0, result: "[Mon]", title: "Keep Mon", desc: "20 is below 35, so Monday is a care day.", line: 4 },
+    { i: 1, result: "[Mon]", title: "Read Tue", desc: "Move to Tuesday and check its reading.", line: 2 },
+    { i: 1, result: "[Mon]", title: "Skip Tue", desc: "55 is not below 35, so Tuesday is not kept.", line: 3 },
+    { i: 2, result: "[Mon]", title: "Read Wed", desc: "Move to Wednesday and check its reading.", line: 2 },
+    { i: 2, result: "[Mon, Wed]", title: "Keep Wed", desc: "30 is below 35, so Wednesday is kept.", line: 4 },
+    { i: 2, result: "[Mon, Wed]", title: "Return care days", desc: "Return only days whose matching reading is below the threshold.", line: 5 },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => {
+    const dayNodes = arrayCells(days, [phase.i], phase.i, { y: 180, startX: 300, gap: 145 }).map((node) => ({ ...node, id: `day-${node.id}`, label: `day ${node.label}` }));
+    const readingNodes = arrayCells(readings, [phase.i], phase.i, { y: 295, startX: 300, gap: 145 }).map((node) => ({ ...node, id: `reading-${node.id}`, label: `reading ${node.label}` }));
+    return arrayStep(index, {
+      title: phase.title,
+      desc: phase.desc,
+      code,
+      line: phase.line,
+      nodes: [
+        ...dayNodes,
+        ...readingNodes,
+        arrayStateCard("threshold-card", "threshold", 35, 255, 445),
+        arrayStateCard("result-card", "care days", phase.result, 560, 445, phase.result === "[Mon, Wed]" ? "matched" : "active", "result"),
+      ],
+      edges: [{ id: "day-reading", from: `day-item-${phase.i}`, to: `reading-item-${phase.i}`, type: "pointer", state: "active" }],
+      activeIds: [`day-item-${phase.i}`, `reading-item-${phase.i}`, "result-card"],
+      state: { example: "readings=[20, 55, 30], days=[Mon, Tue, Wed]", threshold: 35, result: phase.result, final_result: "[Mon, Wed]" },
+    }, labels);
+  });
+}
+
+export function generateArrayDedupeSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "Start with an empty seen set",
+    "Start with an empty result list",
+    "Read the current item",
+    "If the item has not been seen",
+    "Add it to result and remember it",
+    "Move to the next index",
+    "Return the result list",
+  ];
+  const values = [3, 1, 3, 2];
+  const phases = [
+    { index: 0, seen: "", result: "[]", title: context.title || "Remove duplicates", desc: "Start with an empty result and empty set memory.", line: 1 },
+    { index: 0, seen: "3", result: "[3]", title: "Keep first 3", desc: "3 is new, so it is added to result and remembered.", line: 5 },
+    { index: 1, seen: "3, 1", result: "[3, 1]", title: "Keep 1", desc: "1 has not appeared before, so it also joins the result.", line: 5 },
+    { index: 2, seen: "3, 1", result: "[3, 1]", title: "Skip repeated 3", desc: "The set already contains 3, so the result does not change.", line: 4 },
+    { index: 3, seen: "3, 1, 2", result: "[3, 1, 2]", title: "Keep 2", desc: "2 is new, so it becomes the last kept value.", line: 5 },
+    { index: 3, seen: "3, 1, 2", result: "[3, 1, 2]", title: "Return unique order", desc: "The result keeps the first copy of each value in the original order.", line: 7 },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "array",
+    title: phase.title,
+    description: phase.desc,
+    nodes: layoutArray(values).map((node, nodeIndex) => ({
+      ...node,
+      label: nodeIndex === phase.index ? "current item" : String(nodeIndex),
+      state: nodeIndex === phase.index ? "active" : nodeIndex < phase.index ? "visited" : "default",
+    })),
+    edges: [],
+    highlights: { nodeIds: [`item-${phase.index}`], lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: { example: "[3, 1, 3, 2]", index: phase.index, current: values[phase.index], seen: phase.seen || "empty", result: phase.result, final_result: "[3, 1, 2]" },
+  }, index + 1));
+}
+
+export function generateArrayFilterSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start with an empty result list", "Read the current item", "If the item passes the rule", "Add the item to the result list", "Move to the next index", "Return the result list"];
+  const values = [3, 8, 2, 6];
+  const phases = [
+    { index: 0, result: "[]", title: context.title || "Filter values", desc: "Start with an empty result and one rule to test.", line: 1 },
+    { index: 0, result: "[]", title: "Check 3", desc: "3 does not pass this teaching rule, so result stays empty.", line: 3 },
+    { index: 1, result: "[8]", title: "Keep 8", desc: "8 passes the rule, so append it to the result.", line: 4 },
+    { index: 2, result: "[8]", title: "Skip 2", desc: "2 fails the rule, so the scan moves on without changing result.", line: 3 },
+    { index: 3, result: "[8, 6]", title: "Keep 6", desc: "6 passes and becomes the next saved value.", line: 4 },
+    { index: 3, result: "[8, 6]", title: "Return filtered result", desc: "The final answer is the kept values, not the full input.", line: 6 },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "array",
+    title: phase.title,
+    description: phase.desc,
+    nodes: layoutArray(values).map((node, nodeIndex) => ({
+      ...node,
+      label: nodeIndex === phase.index ? "current item" : String(nodeIndex),
+      state: nodeIndex === phase.index ? "active" : nodeIndex < phase.index ? "visited" : "default",
+    })),
+    edges: [],
+    highlights: { nodeIds: [`item-${phase.index}`], lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: { example: "[3, 8, 2, 6]", index: phase.index, current: values[phase.index], result: phase.result, final_result: "[8, 6]" },
+  }, index + 1));
+}
+
+export function generateArrayRunningTotalSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Start the total at 0", "Read the current item", "Add the item to the total", "Save the new total in the result list", "Move to the next index", "Return the result list"];
+  const values = [2, 4, 1];
+  const phases = [
+    { index: 0, total: 0, result: "[]", title: context.title || "Running total", desc: "Start before reading the first value.", line: 1 },
+    { index: 0, total: 2, result: "[2]", title: "Add 2", desc: "The total changes from 0 to 2, then saves the first prefix.", line: 3 },
+    { index: 1, total: 6, result: "[2, 6]", title: "Add 4", desc: "Add the next value to the saved total instead of starting over.", line: 3 },
+    { index: 2, total: 7, result: "[2, 6, 7]", title: "Add 1", desc: "The last value updates the total one more time.", line: 3 },
+    { index: 2, total: 7, result: "[2, 6, 7]", title: "Save final prefix", desc: "Each position now stores the sum up to that position.", line: 4 },
+    { index: 2, total: 7, result: "[2, 6, 7]", title: "Return totals", desc: "Return the list of saved totals.", line: 6 },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "array",
+    title: phase.title,
+    description: phase.desc,
+    nodes: layoutArray(values).map((node, nodeIndex) => ({
+      ...node,
+      state: nodeIndex === phase.index ? "active" : nodeIndex < phase.index ? "visited" : "default",
+    })),
+    edges: [],
+    highlights: { nodeIds: [`item-${phase.index}`], lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: { example: "[2, 4, 1]", index: phase.index, current: values[phase.index], total: phase.total, result: phase.result, final_result: "[2, 6, 7]" },
+  }, index + 1));
+}
+
+export function generateArraySearchSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Remember the target value", "Read the current item", "If the item matches the target", "Return the current index", "Move to the next index", "Return -1 if no match is found"];
+  const values = [8, 3, 6];
+  const phases = [
+    { index: 0, title: context.title || "Find a value", desc: "Start at index 0 and look for the target 6.", line: 1, answer: "not found yet" },
+    { index: 0, title: "Check 8", desc: "8 is not the target, so keep searching.", line: 3, answer: "no match" },
+    { index: 1, title: "Move to index 1", desc: "The scan advances one cell after no match.", line: 5, answer: "no match" },
+    { index: 1, title: "Check 3", desc: "3 is not the target either.", line: 3, answer: "no match" },
+    { index: 2, title: "Check 6", desc: "6 matches the target, so the search can stop here.", line: 3, answer: "match at 2" },
+    { index: 2, title: "Return index 2", desc: "The answer is the position where the target was found.", line: 4, answer: "2" },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "array",
+    title: phase.title,
+    description: phase.desc,
+    nodes: layoutArray(values).map((node, nodeIndex) => ({
+      ...node,
+      state: nodeIndex === phase.index ? "active" : nodeIndex < phase.index ? "visited" : "default",
+    })),
+    edges: [],
+    highlights: { nodeIds: [`item-${phase.index}`], lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: { example: "[8, 3, 6], target=6", index: phase.index, current: values[phase.index], target: 6, result: phase.answer, final_result: "2" },
+  }, index + 1));
+}
+
+export function generateArrayMaxMinSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["Use the first value as the starting best", "Read the current item", "If the item is better than best", "Save the item as the new best", "Move to the next index", "Return the saved best value"];
+  const values = [4, 9, 2];
+  const phases = [
+    { index: 0, best: 4, title: context.title || "Track best value", desc: "Initialize best from the first value.", line: 1 },
+    { index: 0, best: 4, title: "Compare 4", desc: "The first item equals best, so nothing changes.", line: 3 },
+    { index: 1, best: 4, title: "Read 9", desc: "Move to the next item and compare it with the saved best.", line: 2 },
+    { index: 1, best: 9, title: "Update best", desc: "9 is larger than 4, so best changes to 9.", line: 4 },
+    { index: 2, best: 9, title: "Check 2", desc: "2 is not larger than 9, so the saved best stays put.", line: 3 },
+    { index: 2, best: 9, title: "Return best", desc: "After every item has been checked, return the saved best value.", line: 6 },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "array",
+    title: phase.title,
+    description: phase.desc,
+    nodes: layoutArray(values).map((node, nodeIndex) => ({
+      ...node,
+      state: nodeIndex === phase.index ? "active" : nodeIndex < phase.index ? "visited" : "default",
+    })),
+    edges: [],
+    highlights: { nodeIds: [`item-${phase.index}`], lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: { example: "[4, 9, 2]", index: phase.index, current: values[phase.index], best: phase.best, final_result: "9" },
+  }, index + 1));
+}
+
+type StringVisualPhase = {
+  active: number[];
+  visited?: number[];
+  title: string;
+  desc: string;
+  line: number;
+  result: string;
+  state?: Record<string, string | number | boolean>;
+};
+
+function stringTokenNodes(
+  tokens: string[],
+  phase: StringVisualPhase,
+  tokenKind: "char" | "word" = "char",
+): Node[] {
+  const gap = tokenKind === "word" ? 150 : 76;
+  const width = Math.max((tokens.length - 1) * gap, 0);
+  const startX = 450 - width / 2;
+  const active = new Set(phase.active);
+  const visited = new Set(phase.visited || []);
+  return tokens.map((token, index) => ({
+    id: `char-${index}`,
+    x: startX + index * gap,
+    y: 250,
+    value: token === " " ? "space" : token,
+    type: "array-cell",
+    label: tokenKind === "word" ? `word ${index}` : String(index),
+    state: active.has(index) ? "active" as const : visited.has(index) ? "visited" as const : "default" as const,
+    meta: { role: "string-cell", tokenKind },
+  }));
+}
+
+function buildStringVisualSteps({
+  context,
+  sample,
+  tokens,
+  code,
+  phases,
+  tokenKind = "char",
+  expected,
+}: {
+  context: GeneratorContext;
+  sample: string;
+  tokens: string[];
+  code: string[];
+  phases: StringVisualPhase[];
+  tokenKind?: "char" | "word";
+  expected: string;
+}): Step[] {
+  return phases.map((phase, index) => {
+    const nodes = stringTokenNodes(tokens, phase, tokenKind);
+    nodes.push({
+      id: "string-result",
+      x: 620,
+      y: 385,
+      value: phase.result || "not changed yet",
+      type: "logic-node",
+      label: index === phases.length - 1 ? "final result" : "result so far",
+      state: index === phases.length - 1 ? "matched" : phase.result && phase.result !== "not changed yet" ? "active" : "default",
+      meta: { role: "result" },
+    });
+    return step({
+      concept: "array",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: phase.active.map((itemIndex) => `char-${itemIndex}`), lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: {
+        example: sample,
+        index: phase.active.join(", "),
+        result: phase.result,
+        expected,
+        final_result: expected,
+        returned: index === phases.length - 1,
+        ...(phase.state || {}),
+      },
+    }, index + 1);
+  });
+}
+
+export function generateStringScanSteps(context: GeneratorContext = {}): Step[] {
+  const family = detectVisualizerFamily("array", context);
+
+  if (family === "string-reverse-words") {
+    return buildStringVisualSteps({
+      context,
+      sample: "red blue",
+      tokens: ["red", "blue"],
+      tokenKind: "word",
+      expected: "blue red",
+      code: [
+        "split the sentence into words",
+        "read the last word first",
+        "add it to the result sentence",
+        "read the previous word",
+        "add it after the first result word",
+        "return the reversed sentence",
+      ],
+      phases: [
+        { active: [0, 1], title: context.title || "Split words", desc: "The sentence becomes two word pieces: red and blue.", line: 1, result: "not changed yet", state: { words: "[red, blue]", result_sentence: "" } },
+        { active: [1], visited: [1], title: "Read blue", desc: "Start from the last word because the output is reversed.", line: 2, result: "blue", state: { result_sentence: "blue" } },
+        { active: [1], visited: [1], title: "Add blue", desc: "blue becomes the first word in the result.", line: 3, result: "blue", state: { result_sentence: "blue" } },
+        { active: [0], visited: [1], title: "Read red", desc: "Move left to the remaining word.", line: 4, result: "blue", state: { result_sentence: "blue" } },
+        { active: [0], visited: [0, 1], title: "Add red", desc: "Add red after blue.", line: 5, result: "blue red", state: { result_sentence: "blue red" } },
+        { active: [0, 1], visited: [0, 1], title: "Return blue red", desc: "Every word has moved into reversed order.", line: 6, result: "blue red", state: { result_sentence: "blue red" } },
+      ],
+    });
+  }
+
+  if (family === "string-palindrome") {
+    return buildStringVisualSteps({
+      context,
+      sample: "level",
+      tokens: [..."level"],
+      expected: "true",
+      code: [
+        "place one pointer at each end",
+        "compare the two outside letters",
+        "move both pointers inward after a match",
+        "compare the next pair",
+        "stop when the pointers meet",
+        "return true because no mismatch was found",
+      ],
+      phases: [
+        { active: [0, 4], title: context.title || "Compare l and l", desc: "The first and last letters match.", line: 2, result: "match", state: { left: 0, right: 4, status: "match" } },
+        { active: [1, 3], visited: [0, 4], title: "Move inward", desc: "Both pointers move toward the middle.", line: 3, result: "match", state: { left: 1, right: 3, status: "match" } },
+        { active: [1, 3], visited: [0, 1, 3, 4], title: "Compare e and e", desc: "The next pair also matches.", line: 4, result: "match", state: { left: 1, right: 3, status: "match" } },
+        { active: [2], visited: [0, 1, 3, 4], title: "Reach middle", desc: "The middle v has no partner left to check.", line: 5, result: "still true", state: { left: 2, right: 2, status: "no mismatch" } },
+        { active: [0, 1, 2, 3, 4], visited: [0, 1, 2, 3, 4], title: "Return true", desc: "No compared pair was different.", line: 6, result: "true", state: { status: "palindrome" } },
+      ],
+    });
+  }
+
+  if (family === "string-count-words") {
+    return buildStringVisualSteps({
+      context,
+      sample: "red blue",
+      tokens: ["red", "blue"],
+      tokenKind: "word",
+      expected: "2",
+      code: [
+        "start word count at zero",
+        "read the next word",
+        "if the word is not empty, increase count",
+        "move to the next word",
+        "stop after the last word",
+        "return the word count",
+      ],
+      phases: [
+        { active: [0], title: context.title || "Read red", desc: "red is a word, so the count increases.", line: 2, result: "count = 1", state: { count: 1 } },
+        { active: [1], visited: [0], title: "Move to blue", desc: "The scan moves to the next word.", line: 4, result: "count = 1", state: { count: 1 } },
+        { active: [1], visited: [0, 1], title: "Count blue", desc: "blue is another word, so the count becomes 2.", line: 3, result: "count = 2", state: { count: 2 } },
+        { active: [1], visited: [0, 1], title: "Finish words", desc: "There are no more words to read.", line: 5, result: "count = 2", state: { count: 2 } },
+        { active: [0, 1], visited: [0, 1], title: "Return 2", desc: "The sentence has two words.", line: 6, result: "2", state: { count: 2 } },
+      ],
+    });
+  }
+
+  if (family === "string-course-code") {
+    return buildStringVisualSteps({
+      context,
+      sample: "COSC 352",
+      tokens: [..."COSC 352"],
+      expected: "true",
+      code: [
+        "read the department letters",
+        "check that there are four uppercase letters",
+        "skip the separating space",
+        "read the course number",
+        "check that there are three digits",
+        "return whether the shape is valid",
+      ],
+      phases: [
+        { active: [0, 1, 2, 3], title: context.title || "Read COSC", desc: "The first part should be four department letters.", line: 1, result: "letters found", state: { letters: "COSC", digits: "" } },
+        { active: [0, 1, 2, 3], visited: [0, 1, 2, 3], title: "Letters valid", desc: "COSC has four uppercase letters.", line: 2, result: "letters ok", state: { letters: "COSC", digits: "", shape: "letters ok" } },
+        { active: [4], visited: [0, 1, 2, 3], title: "Skip space", desc: "The space separates the subject from the number.", line: 3, result: "shape still ok", state: { letters: "COSC", digits: "", shape: "space ok" } },
+        { active: [5, 6, 7], visited: [0, 1, 2, 3, 4], title: "Read 352", desc: "The last part should be the course number.", line: 4, result: "digits found", state: { letters: "COSC", digits: "352" } },
+        { active: [5, 6, 7], visited: [0, 1, 2, 3, 4, 5, 6, 7], title: "Digits valid", desc: "352 has three digits.", line: 5, result: "shape valid", state: { letters: "COSC", digits: "352", shape: "valid" } },
+        { active: [0, 1, 2, 3, 5, 6, 7], visited: [0, 1, 2, 3, 4, 5, 6, 7], title: "Return true", desc: "The code matches the expected course-code shape.", line: 6, result: "true", state: { shape: "valid" } },
+      ],
+    });
+  }
+
+  if (family === "string-initials") {
+    return buildStringVisualSteps({
+      context,
+      sample: "Ada Lovelace",
+      tokens: ["Ada", "Lovelace"],
+      tokenKind: "word",
+      expected: "AL",
+      code: [
+        "split the full name into words",
+        "read the first name",
+        "take its first letter",
+        "read the last name",
+        "take its first letter",
+        "return the initials",
+      ],
+      phases: [
+        { active: [0, 1], title: context.title || "Split name", desc: "The full name becomes first and last name parts.", line: 1, result: "not changed yet", state: { initials: "" } },
+        { active: [0], title: "Read Ada", desc: "The first word is Ada.", line: 2, result: "not changed yet", state: { initials: "" } },
+        { active: [0], visited: [0], title: "Take A", desc: "The first letter of Ada is A.", line: 3, result: "A", state: { initials: "A" } },
+        { active: [1], visited: [0], title: "Read Lovelace", desc: "Move to the last name.", line: 4, result: "A", state: { initials: "A" } },
+        { active: [1], visited: [0, 1], title: "Take L", desc: "The first letter of Lovelace is L.", line: 5, result: "AL", state: { initials: "AL" } },
+        { active: [0, 1], visited: [0, 1], title: "Return AL", desc: "Join the first letters in order.", line: 6, result: "AL", state: { initials: "AL" } },
+      ],
+    });
+  }
+
+  if (family === "string-normalize-emails") {
+    return buildStringVisualSteps({
+      context,
+      sample: "emails=[Ada@MSU.edu, ada@msu.edu, Bo@MSU.edu]",
+      tokens: ["Ada@MSU.edu", "ada@msu.edu", "Bo@MSU.edu"],
+      tokenKind: "word",
+      expected: "[ada@msu.edu, bo@msu.edu]",
+      code: [
+        "start with an empty cleaned list",
+        "read the next email",
+        "make it lowercase",
+        "if it is new, keep it",
+        "skip duplicates",
+        "return the cleaned list",
+      ],
+      phases: [
+        { active: [0], title: context.title || "Read first email", desc: "Start with Ada@MSU.edu.", line: 2, result: "not changed yet", state: { cleaned: "[]" } },
+        { active: [0], visited: [0], title: "Lowercase first email", desc: "Ada@MSU.edu becomes ada@msu.edu.", line: 3, result: "[ada@msu.edu]", state: { cleaned: "[ada@msu.edu]" } },
+        { active: [1], visited: [0], title: "Read duplicate", desc: "The next email normalizes to the same value.", line: 2, result: "[ada@msu.edu]", state: { cleaned: "[ada@msu.edu]" } },
+        { active: [1], visited: [0, 1], title: "Skip duplicate", desc: "ada@msu.edu is already in the cleaned list.", line: 5, result: "[ada@msu.edu]", state: { cleaned: "[ada@msu.edu]" } },
+        { active: [2], visited: [0, 1], title: "Read Bo email", desc: "Bo@MSU.edu is a different address after lowercasing.", line: 2, result: "[ada@msu.edu]", state: { cleaned: "[ada@msu.edu]" } },
+        { active: [2], visited: [0, 1, 2], title: "Keep bo email", desc: "bo@msu.edu is new, so it is added.", line: 4, result: "[ada@msu.edu, bo@msu.edu]", state: { cleaned: "[ada@msu.edu, bo@msu.edu]" } },
+        { active: [0, 1, 2], visited: [0, 1, 2], title: "Return cleaned list", desc: "The result keeps one normalized copy of each email.", line: 6, result: "[ada@msu.edu, bo@msu.edu]" },
+      ],
+    });
+  }
+
+  if (family === "string-prefix-search") {
+    return buildStringVisualSteps({
+      context,
+      sample: "words=[code, card, car], prefix=ca",
+      tokens: ["code", "card", "car"],
+      tokenKind: "word",
+      expected: "[card, car]",
+      code: [
+        "read the prefix ca",
+        "check the next word",
+        "if the word starts with ca, keep it",
+        "otherwise skip it",
+        "move to the next word",
+        "return matching words",
+      ],
+      phases: [
+        { active: [0], title: context.title || "Check code", desc: "code starts with co, not ca.", line: 2, result: "[]", state: { prefix: "ca", matches: "[]" } },
+        { active: [0], visited: [0], title: "Skip code", desc: "code does not match the prefix.", line: 4, result: "[]", state: { prefix: "ca", matches: "[]" } },
+        { active: [1], visited: [0], title: "Check card", desc: "card starts with ca.", line: 2, result: "[]", state: { prefix: "ca", matches: "[]" } },
+        { active: [1], visited: [0, 1], title: "Keep card", desc: "Add card to the matching words.", line: 3, result: "[card]", state: { prefix: "ca", matches: "[card]" } },
+        { active: [2], visited: [0, 1], title: "Check car", desc: "car also starts with ca.", line: 2, result: "[card]", state: { prefix: "ca", matches: "[card]" } },
+        { active: [2], visited: [0, 1, 2], title: "Keep car", desc: "Add car to the matching words.", line: 3, result: "[card, car]", state: { prefix: "ca", matches: "[card, car]" } },
+        { active: [1, 2], visited: [0, 1, 2], title: "Return matches", desc: "Only the words with the prefix ca are returned.", line: 6, result: "[card, car]", state: { prefix: "ca", matches: "[card, car]" } },
+      ],
+    });
+  }
+
+  return buildStringVisualSteps({
+    context,
+    sample: "Code",
+    tokens: [..."Code"],
+    expected: "2",
+    code: [
+      "start vowel count at zero",
+      "read the next character",
+      "make the character lowercase",
+      "if it is a vowel, increase count",
+      "move to the next character",
+      "return the vowel count",
+    ],
+    phases: [
+      { active: [0], title: context.title || "Read C", desc: "C becomes c, and c is not a vowel.", line: 2, result: "count = 0", state: { count: 0, normalized: "c" } },
+      { active: [1], visited: [0], title: "Read o", desc: "o is a vowel, so the count increases.", line: 4, result: "count = 1", state: { count: 1, normalized: "o" } },
+      { active: [2], visited: [0, 1], title: "Read d", desc: "d is not a vowel, so the count stays the same.", line: 4, result: "count = 1", state: { count: 1, normalized: "d" } },
+      { active: [3], visited: [0, 1, 2], title: "Read e", desc: "e is a vowel, so the count increases again.", line: 4, result: "count = 2", state: { count: 2, normalized: "e" } },
+      { active: [3], visited: [0, 1, 2, 3], title: "Finish scan", desc: "The scan stops after the last character.", line: 5, result: "count = 2", state: { count: 2 } },
+      { active: [0, 1, 2, 3], visited: [0, 1, 2, 3], title: "Return 2", desc: "Return the saved vowel count.", line: 6, result: "2", state: { count: 2 } },
+    ],
+  });
+}
+
+export function generateStringRunCompressSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "start with an empty compressed result",
+    "start the first character run",
+    "count how many times the run repeats",
+    "if the next character matches, grow the run",
+    "when the character changes, save the finished run",
+    "return the compressed text",
+  ];
+  const chars = ["a", "a", "a", "b", "b", "c"];
+  const phases = [
+    { active: [0], run: [0], current: "a", count: 1, output: "", title: context.title || "Start the first run", desc: "The first a starts a run with count 1.", line: 2 },
+    { active: [1], run: [0, 1], current: "a", count: 2, output: "", title: "Read another a", desc: "The next character matches current, so the same run grows to 2.", line: 4 },
+    { active: [2], run: [0, 1, 2], current: "a", count: 3, output: "", title: "Grow a to 3", desc: "A third a still matches, so count becomes 3.", line: 4 },
+    { active: [3], run: [3], current: "b", count: 1, output: "a3", title: "Emit a3", desc: "b starts a new run, so the finished a run is saved as a3.", line: 5 },
+    { active: [4], run: [3, 4], current: "b", count: 2, output: "a3", title: "Grow b to 2", desc: "The second b matches the current run, so count becomes 2.", line: 4 },
+    { active: [5], run: [5], current: "c", count: 1, output: "a3b2", title: "Emit b2", desc: "c starts a new run, so b2 is saved before counting c.", line: 5 },
+    { active: [5], run: [5], current: "c", count: 1, output: "a3b2c1", title: "Return a3b2c1", desc: "The final c run is saved with count 1, then the pieces join together.", line: 6 },
+  ];
+  return phases.map((phase, index) => {
+    const nodes = stringTokenNodes(chars, { ...phase, active: phase.active, visited: phase.run }, "char").map((node, nodeIndex) => ({
+      ...node,
+      label: phase.active.includes(nodeIndex) ? "current char" : String(nodeIndex),
+      state: phase.active.includes(nodeIndex) ? "active" as const : phase.run.includes(nodeIndex) ? "visited" as const : "default" as const,
+    }));
+    nodes.push(
+      { id: "run-card", x: 315, y: 345, value: `${phase.current} x ${phase.count}`, type: "logic-node", label: "current run", state: "active", meta: { role: "memory" } },
+      { id: "output-card", x: 600, y: 345, value: phase.output || "empty", type: "logic-node", label: "compressed output", state: phase.output ? "matched" : "default", meta: { role: "result" } },
+    );
+    const edges: Edge[] = [
+      { id: "char-run", from: `char-${phase.active[0]}`, to: "run-card", type: "pointer", state: "active" },
+      { id: "run-output", from: "run-card", to: "output-card", type: "pointer", state: phase.output ? "active" : "default" },
+    ];
+    return step({
+      concept: "array",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges,
+      highlights: { nodeIds: [`char-${phase.active[0]}`, "run-card", ...(phase.output ? ["output-card"] : [])], edgeIds: edges.filter((edge) => edge.state === "active").map((edge) => edge.id || ""), lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: {
+        example: "aaabbc",
+        text: "aaabbc",
+        index: phase.active.join(", "),
+        current_run: `${phase.current} x ${phase.count}`,
+        output: phase.output || "empty",
+        expected: "a3b2c1",
+        final_result: "a3b2c1",
+        returned: index === phases.length - 1,
       },
     }, index + 1);
   });
@@ -2086,18 +3197,129 @@ export function generateArraySwapSteps(context: GeneratorContext = {}): Step[] {
       activeLine: 4,
       state: { next: "compare 8 and 2" },
     }, 6),
+    step({
+      concept: "array",
+      title: "Return the updated list",
+      description: "The trace ends only after the list state matches the result the prompt asks for.",
+      nodes: withNodeState(secondSwap, ["item-0", "item-1", "item-2"], "visited"),
+      edges: [],
+      highlights: { nodeIds: ["item-0", "item-1", "item-2"], lineNumbers: [4] },
+      code: [...code, "return values"],
+      activeLine: 5,
+      state: { result: "[3, 6, 8, 2, 5]" },
+    }, 7),
   ];
 }
 
-export function generateTupleSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["left_value = left[index]", "right_value = right[index]", "pair = (left_value, right_value)", "pairs.append(pair)", "index += 1", "return pairs"];
+export function generateArrayRotationSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "Keep k inside the list length",
+    "Find where the last k items begin",
+    "Take the tail section",
+    "Keep the head section",
+    "Place the tail before the head",
+    "Return the rotated list",
+  ];
+  const original = [1, 2, 3, 4];
+  const rotated = [3, 4, 1, 2];
+  const mark = (values: number[], activeIds: string[], state: "active" | "visited" | "comparing" = "active") => withNodeState(layoutArray(values), activeIds, state);
   const phases = [
-    { active: 0, title: context.title || "Tuple pairs", desc: "Start by lining up index 0 in both collections." },
-    { active: 0, title: "Read matching values", desc: "Take one value from each collection at the same index." },
-    { active: 0, title: "Save the first pair", desc: "Package the matching values into one tuple-style result." },
-    { active: 1, title: "Move to index 1", desc: "The index moves together in both collections so the relationship stays aligned." },
-    { active: 1, title: "Build another pair", desc: "Repeat the same read-and-package rule for the next position." },
-    { active: 2, title: "Return all pairs", desc: "The final answer is the collection of saved pairs, not just one highlighted value." },
+    {
+      values: original,
+      active: ["item-0", "item-1", "item-2", "item-3"],
+      title: context.title || "Rotate list right",
+      desc: "Start with a small teaching list and k = 2 so the wraparound is visible.",
+      line: 1,
+      state: { list: "[1, 2, 3, 4]", k: 2 },
+    },
+    {
+      values: original,
+      active: ["item-0", "item-1", "item-2", "item-3"],
+      title: "Normalize k",
+      desc: "k stays 2 because rotating a length-4 list right by 2 is already inside the list length.",
+      line: 1,
+      state: { length: 4, k: 2 },
+    },
+    {
+      values: original,
+      active: ["item-2"],
+      title: "Find the split point",
+      desc: "The last k values will move to the front. Here the split happens before index 2.",
+      line: 2,
+      state: { split_index: 2 },
+    },
+    {
+      values: original,
+      active: ["item-2", "item-3"],
+      title: "Take the tail",
+      desc: "The tail [3, 4] is the part that wraps around to the front.",
+      line: 3,
+      state: { tail: "[3, 4]" },
+    },
+    {
+      values: original,
+      active: ["item-0", "item-1"],
+      title: "Keep the head",
+      desc: "The head [1, 2] keeps its order, but it moves behind the tail.",
+      line: 4,
+      state: { head: "[1, 2]" },
+    },
+    {
+      values: [3, 4, 1, 2],
+      active: ["item-0", "item-1"],
+      title: "Tail moves first",
+      desc: "The wrapped tail becomes the first part of the new list.",
+      line: 5,
+      state: { rotated_start: "[3, 4]" },
+    },
+    {
+      values: rotated,
+      active: ["item-2", "item-3"],
+      title: "Head follows",
+      desc: "Append the old head after the moved tail to finish the rotation.",
+      line: 5,
+      state: { rotated: "[3, 4, 1, 2]" },
+    },
+    {
+      values: rotated,
+      active: ["item-0", "item-1", "item-2", "item-3"],
+      title: "Return rotated list",
+      desc: "The result is the full rotated list, not just the piece that moved.",
+      line: 6,
+      state: { result: "[3, 4, 1, 2]" },
+    },
+  ];
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => step({
+    concept: "array",
+    title: phase.title,
+    description: phase.desc,
+    nodes: mark(phase.values, phase.active, index >= 4 ? "visited" : "active"),
+    edges: [],
+    highlights: { nodeIds: phase.active, lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(labels, index),
+    state: { example: "[1, 2, 3, 4], k=2", ...phase.state, final_result: "[3, 4, 1, 2]" },
+  }, index + 1));
+}
+
+export function generateTupleSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "read the name at this index",
+    "read the matching score",
+    "join them into one pair",
+    "save the pair in the result",
+    "move to the next index",
+    "return all saved pairs",
+  ];
+  const phases = [
+    { active: 0, title: "Line up index 0", desc: "Start with the first name and the first score because they belong together.", state: { example: "names=[Ada, Grace], scores=[95, 88]", result_so_far: "[]" } },
+    { active: 0, title: "Read Ada and 95", desc: "Take one value from each collection at the same index.", state: { index: 0, name: "Ada", score: 95 } },
+    { active: 0, title: "Save Ada:95", desc: "Package the matching values into one tuple-style result.", state: { result_so_far: "[Ada:95]" } },
+    { active: 1, title: "Move to index 1", desc: "Move both lists together so the relationship stays aligned.", state: { index: 1, result_so_far: "[Ada:95]" } },
+    { active: 1, title: "Save Grace:88", desc: "Build the next pair from the next matching name and score.", state: { result_so_far: "[Ada:95, Grace:88]" } },
+    { active: 1, title: "Return both pairs", desc: "The final answer is the collection of saved pairs, not just one highlighted value.", state: { final_result: "[Ada:95, Grace:88]" } },
   ];
   return phases.map((phase, index) => {
     const active = phase.active;
@@ -2111,13 +3333,135 @@ export function generateTupleSteps(context: GeneratorContext = {}): Step[] {
       highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [Math.min(index + 1, code.length)] },
       code,
       activeLine: Math.min(index + 1, code.length),
-      state: { pair_index: active },
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: { pair_index: active, ...phase.state },
     }, index + 1);
   });
 }
 
+export function generateTupleSwapSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "read the first item",
+    "read the second item",
+    "put the old second item first",
+    "put the old first item second",
+    "build the swapped pair",
+    "return the swapped pair",
+  ];
+  const phases = [
+    { title: "Read original pair", desc: "Start with [lab, lecture] so the order change is visible.", line: 1, state: { original: "[lab, lecture]", final_result: "none yet" } },
+    { title: "Hold lab", desc: "Save the first value before moving anything.", line: 1, state: { first: "lab", final_result: "none yet" } },
+    { title: "Hold lecture", desc: "Save the second value too. The swap needs both values.", line: 2, state: { second: "lecture", final_result: "none yet" } },
+    { title: "Move lecture first", desc: "The old second value becomes the new first value.", line: 3, state: { new_first: "lecture", final_result: "none yet" } },
+    { title: "Move lab second", desc: "The old first value becomes the new second value.", line: 4, state: { new_second: "lab", result_so_far: "[lecture, lab]" } },
+    { title: "Return swapped pair", desc: "The result has the same two values in the opposite order.", line: 6, state: { final_result: "[lecture, lab]" } },
+  ];
+  return phases.map((phase, index) => {
+    const visual = authoredTupleSwapVisual({}, context, index);
+    return step({
+      concept: "tuple",
+      title: phase.title,
+      description: phase.desc,
+      nodes: visual.nodes,
+      edges: visual.edges,
+      highlights: {
+        nodeIds: visual.highlights,
+        edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`),
+        lineNumbers: [phase.line],
+      },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateStudentScorePairSteps(): Step[] {
+  const code = [
+    "read the requested index",
+    "move to that name",
+    "read the score at the same index",
+    "join the name and score",
+    "return that one pair",
+  ];
+  const names = ["Ana", "Bo"];
+  const scores = [90, 82];
+  const active = 1;
+  const labels = ["Read index", "Find name", "Find score", "Build pair", "Return pair"];
+  const phases = [
+    { title: "Read requested index", desc: "The prompt asks for index 1, so only that position should be returned.", activeNodes: ["tuple-index"], state: { example: "index=1", final_result: "none yet" } },
+    { title: "Find Bo", desc: "Index 1 in the names list points to Bo.", activeNodes: ["tuple-name-1"], state: { index: 1, name: "Bo", final_result: "none yet" } },
+    { title: "Find score 82", desc: "Use the same index in the scores list so the score still matches the name.", activeNodes: ["tuple-name-1", "tuple-score-1"], state: { index: 1, score: 82, final_result: "none yet" } },
+    { title: "Build Bo:82", desc: "Join the two matching values into the requested pair.", activeNodes: ["tuple-pair-1"], state: { result_so_far: "Bo:82", final_result: "none yet" } },
+    { title: "Return Bo:82", desc: "Only the requested index is returned, not every possible pair.", activeNodes: ["tuple-pair-1"], state: { final_result: "Bo:82" } },
+  ];
+  const nodes: Node[] = [
+    { id: "tuple-index", x: 170, y: 250, value: "1", type: "logic-node", label: "requested index", state: "default", meta: { role: "memory" } },
+    ...names.flatMap((name, index) => [
+      { id: `tuple-name-${index}`, x: 380, y: 175 + index * 110, value: name, type: "array-cell" as const, label: `name ${index}`, state: index < active ? "visited" as const : "default" as const, meta: { role: "tuple-cell" } },
+      { id: `tuple-score-${index}`, x: 575, y: 175 + index * 110, value: scores[index], type: "array-cell" as const, label: `score ${index}`, state: index < active ? "visited" as const : "default" as const, meta: { role: "tuple-cell" } },
+      { id: `tuple-pair-${index}`, x: 780, y: 175 + index * 110, value: `${name}:${scores[index]}`, type: "array-cell" as const, label: index === active ? "returned pair" : "not returned", state: "default" as const, meta: { role: "tuple-pair" } },
+    ]),
+  ];
+  const edges: Edge[] = [
+    { id: "index-name", from: "tuple-index", to: "tuple-name-1", type: "pointer", state: "default" },
+    { id: "name-score", from: "tuple-name-1", to: "tuple-score-1", type: "pointer", state: "default" },
+    { id: "score-pair", from: "tuple-score-1", to: "tuple-pair-1", type: "pointer", state: "default" },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "tuple",
+    title: phase.title,
+    description: phase.desc,
+    nodes: withNodeState(nodes, phase.activeNodes, "active"),
+    edges: withEdgeState(edges, index >= 1 ? edges.slice(0, Math.min(index, edges.length)).map((edge) => edge.id || "") : [], "active"),
+    highlights: { nodeIds: phase.activeNodes, edgeIds: index >= 1 ? edges.slice(0, Math.min(index, edges.length)).map((edge) => edge.id || "") : [], lineNumbers: [Math.min(index + 1, code.length)] },
+    code,
+    activeLine: Math.min(index + 1, code.length),
+    workflow: workflowFromLabels(labels, index),
+    state: phase.state,
+  }, index + 1));
+}
+
+export function generateFirstLastPairSteps(): Step[] {
+  const code = [
+    "read the first item",
+    "read the last item",
+    "put first and last together",
+    "return the pair",
+  ];
+  const values = ["pen", "notebook", "charger"];
+  const labels = ["Read first", "Read last", "Build pair", "Return pair"];
+  const phases = [
+    { title: "Read pen", desc: "The first item is at the left edge of the list.", active: ["item-0"], pair: "none yet", result: "none yet" },
+    { title: "Read charger", desc: "The last item is at the right edge of the list.", active: ["item-2"], pair: "none yet", result: "none yet" },
+    { title: "Build first-last pair", desc: "Keep only the two edge values and leave the middle item out.", active: ["item-0", "item-2", "tuple-pair-result"], pair: "[pen, charger]", result: "none yet" },
+    { title: "Return pair", desc: "The returned pair is the first item followed by the last item.", active: ["tuple-pair-result"], pair: "[pen, charger]", result: "[pen, charger]" },
+  ];
+  const baseNodes: Node[] = [
+    ...linearNodes(values, [], { y: 210, maxWidth: 480, labels: ["first", "middle", "last"], role: "tuple-cell" }),
+    { id: "tuple-pair-result", x: 450, y: 360, value: "[pen, charger]", type: "logic-node", label: "first-last pair", state: "default", meta: { role: "tuple-pair" } },
+  ];
+  const edges: Edge[] = [
+    { id: "first-result", from: "item-0", to: "tuple-pair-result", type: "pointer", state: "default" },
+    { id: "last-result", from: "item-2", to: "tuple-pair-result", type: "pointer", state: "default" },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "tuple",
+    title: phase.title,
+    description: phase.desc,
+    nodes: withNodeState(baseNodes, phase.active, "active"),
+    edges: withEdgeState(edges, index >= 2 ? ["first-result", "last-result"] : [], "active"),
+    highlights: { nodeIds: phase.active, edgeIds: index >= 2 ? ["first-result", "last-result"] : [], lineNumbers: [Math.min(index + 1, code.length)] },
+    code,
+    activeLine: Math.min(index + 1, code.length),
+    workflow: workflowFromLabels(labels, index),
+    state: { example: "items=[pen, notebook, charger]", pair_so_far: phase.pair, final_result: phase.result },
+  }, index + 1));
+}
+
 export function generateSetSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["item = values[index]", "already_seen = item in seen", "if not already_seen: result.append(item)", "if not already_seen: seen.add(item)", "index += 1", "return result"];
+  const code = ["read the current item", "ask whether set memory already has it", "if it is new, keep it in the result", "add new items to set memory", "move to the next item", "return the kept result"];
   const phases = [
     { active: 0, title: context.title || "Set membership", desc: "Start with the first value and an empty memory set." },
     { active: 1, title: "Check the next value", desc: "Ask whether this value has appeared before." },
@@ -2141,6 +3485,88 @@ export function generateSetSteps(context: GeneratorContext = {}): Step[] {
       state: { checking: active },
     }, index + 1);
   });
+}
+
+export function generateFirstMissingPositiveSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "start with empty positive-number memory",
+    "read each value",
+    "if the value is positive, remember it",
+    "start checking at 1",
+    "while the candidate is already remembered",
+    "move to the next candidate",
+    "return the first missing positive",
+  ];
+  const values = [1, 2, 0];
+  const baseValues = layoutArray(values, { gap: 96 }).map((node) => ({ ...node, y: 135 }));
+  const setNode = (id: string, value: string | number, x: number, y: number, label: string, state: Node["state"] = "default"): Node => ({
+    id,
+    value,
+    x,
+    y,
+    label,
+    type: "set-item",
+    state,
+    meta: { role: "memory" },
+  });
+  const logicNode = (id: string, value: string | number, x: number, y: number, label: string, state: Node["state"] = "default", role = "flow-step"): Node => ({
+    id,
+    value,
+    x,
+    y,
+    label,
+    type: "logic-node",
+    state,
+    meta: { role },
+  });
+  const buildNodes = (
+    activeValueIds: string[],
+    seen: number[],
+    candidate: number | null,
+    result: string,
+    extraActive: string[] = [],
+  ): Node[] => {
+    const valueNodes = baseValues.map((node) => ({
+      ...node,
+      state: activeValueIds.includes(node.id) ? "active" as const : Number(node.value) > 0 && seen.includes(Number(node.value)) ? "visited" as const : node.value === 0 && activeValueIds.includes(node.id) ? "comparing" as const : "default" as const,
+    }));
+    const memoryNodes = seen.map((value, index) => setNode(`positive-${value}`, value, 455 + index * 105, 140, "stored positive", extraActive.includes(`positive-${value}`) ? "active" : "visited"));
+    return [
+      ...valueNodes,
+      logicNode("filter-rule", "keep only > 0", 210, 295, "positive filter", extraActive.includes("filter-rule") ? "active" : "default"),
+      logicNode("positive-memory", seen.length ? `{${seen.join(", ")}}` : "empty", 560, 295, "positive set", seen.length ? "visited" : "default", "memory"),
+      ...(candidate !== null ? [logicNode("candidate-check", candidate, 360, 430, "candidate to test", extraActive.includes("candidate-check") ? "active" : "default")] : []),
+      logicNode("result-node", result, 655, 430, "first missing", result === "not found yet" ? "default" : "matched", "result"),
+      ...memoryNodes,
+    ];
+  };
+  const edgesFor = (candidate: number | null, foundResult = false): Edge[] => [
+    { id: "filter-memory", from: "filter-rule", to: "positive-memory", type: "pointer", state: "active" },
+    ...(candidate !== null ? [{ id: "candidate-memory", from: "candidate-check", to: "positive-memory", type: "pointer", state: "active" as const }] : []),
+    ...(foundResult ? [{ id: "candidate-result", from: "candidate-check", to: "result-node", type: "pointer", state: "active" as const }] : []),
+  ];
+  const phases = [
+    { title: context.title || "Read the input", desc: "Use a compact sample: [1, 2, 0]. The answer should be 3.", nodes: buildNodes(["item-0", "item-1", "item-2"], [], null, "not found yet"), edges: [], line: 1, state: { positives: "empty", candidate: "" } },
+    { title: "Store positive 1", desc: "1 is positive, so it goes into the set of numbers that exist.", nodes: buildNodes(["item-0"], [1], null, "not found yet", ["filter-rule", "positive-1"]), edges: edgesFor(null), line: 3, state: { positives: "{1}", candidate: "" } },
+    { title: "Store positive 2", desc: "2 is positive too, so it is stored beside 1.", nodes: buildNodes(["item-1"], [1, 2], null, "not found yet", ["filter-rule", "positive-2"]), edges: edgesFor(null), line: 3, state: { positives: "{1, 2}", candidate: "" } },
+    { title: "Ignore 0", desc: "0 cannot be the smallest positive answer, so it stays out of the set.", nodes: buildNodes(["item-2"], [1, 2], null, "not found yet", ["filter-rule"]), edges: edgesFor(null), line: 3, state: { positives: "{1, 2}", ignored: "0" } },
+    { title: "Check candidate 1", desc: "Candidate 1 is already in the set, so it is not missing.", nodes: buildNodes([], [1, 2], 1, "not found yet", ["candidate-check", "positive-1"]), edges: edgesFor(1), line: 5, state: { candidate: 1, decision: "present" } },
+    { title: "Check candidate 2", desc: "Candidate 2 is also present, so move to the next positive integer.", nodes: buildNodes([], [1, 2], 2, "not found yet", ["candidate-check", "positive-2"]), edges: edgesFor(2), line: 6, state: { candidate: 2, decision: "present" } },
+    { title: "Check candidate 3", desc: "3 is not in the set. This is the first missing positive.", nodes: buildNodes([], [1, 2], 3, "3", ["candidate-check"]), edges: edgesFor(3, true), line: 5, state: { candidate: 3, decision: "missing" } },
+    { title: "Return 3", desc: "Return the first positive number that did not appear in the input.", nodes: buildNodes([], [1, 2], 3, "3", ["candidate-check", "result-node"]), edges: edgesFor(3, true), line: 7, state: { result: "3" } },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "set",
+    title: phase.title,
+    description: phase.desc,
+    nodes: phase.nodes,
+    edges: phase.edges,
+    highlights: { nodeIds: phase.nodes.filter((node) => node.state === "active" || node.state === "matched").map((node) => node.id), edgeIds: phase.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || ""), lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: phase.state,
+  }, index + 1));
 }
 
 export function generateTreeInsertSteps(context: GeneratorContext = {}): Step[] {
@@ -2251,6 +3677,202 @@ export function generateTreeInsertSteps(context: GeneratorContext = {}): Step[] 
   ];
 }
 
+export function generateHashFrequencySteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "table = {}",
+    "item = items[index]",
+    "old_count = table.get(item, 0)",
+    "table[item] = old_count + 1",
+    "index += 1",
+    "return table or best_count",
+  ];
+  const items = ["A", "B", "A"];
+  const bucketStates = [
+    {},
+    { 2: ["A:1"] },
+    { 2: ["A:1"], 3: ["B:1"] },
+    { 2: ["A:2"], 3: ["B:1"] },
+  ] as Array<Record<number, string[]>>;
+  const phases = [
+    { idx: 0, buckets: bucketStates[0], title: context.title || "Count with a hash map", desc: "Start with an empty table before reading the first item.", line: 1, result: "empty" },
+    { idx: 0, buckets: bucketStates[1], title: "Store A once", desc: "A has no count yet, so store A:1.", line: 4, result: "A:1" },
+    { idx: 1, buckets: bucketStates[2], title: "Store B once", desc: "B uses its own key, so it gets a separate count.", line: 4, result: "A:1, B:1" },
+    { idx: 2, buckets: bucketStates[2], title: "Read A again", desc: "The table already has A, so read its old count before updating.", line: 3, result: "old A count is 1" },
+    { idx: 2, buckets: bucketStates[3], title: "Update A to 2", desc: "The repeated A changes the stored count from 1 to 2.", line: 4, result: "A:2, B:1" },
+    { idx: 2, buckets: bucketStates[3], title: "Use the count", desc: "Later code can read A's count directly from the table.", line: 3, result: "read A:2" },
+    { idx: 2, buckets: bucketStates[3], title: "Return counted state", desc: "The useful result is the map state, or the best value derived from it.", line: 6, result: "A appears twice" },
+  ];
+  return phases.map((phase, index) => {
+    const visual = layoutHashBuckets(5, phase.buckets);
+    const key = items[phase.idx];
+    const activeBucket = key === "B" ? "bucket-3" : "bucket-2";
+    const activeEntry = key === "B" ? "entry-3-0" : "entry-2-0";
+    return step({
+      concept: "hash-map",
+      title: phase.title,
+      description: phase.desc,
+      nodes: withNodeState(visual.nodes, [activeBucket, activeEntry], "active"),
+      edges: visual.edges,
+      highlights: { nodeIds: [activeBucket, activeEntry], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: { current: key, table: phase.result },
+    }, index + 1);
+  });
+}
+
+export function generateHashComplementSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "seen = {}",
+    "num = nums[index]",
+    "need = target - num",
+    "if need in seen: return [seen[need], index]",
+    "seen[num] = index",
+    "return no_pair",
+  ];
+  const nums = [2, 7];
+  const empty = layoutHashBuckets(5, {});
+  const withTwo = layoutHashBuckets(5, { 2: ["2:0"] });
+  const phases = [
+    { idx: 0, visual: empty, active: ["bucket-2"], title: context.title || "Find a complement", desc: "Start with target 9 and an empty table of numbers already seen.", line: 1, state: { target: 9, seen: "empty" } },
+    { idx: 0, visual: empty, active: ["bucket-2"], title: "Need 7", desc: "For num 2, the missing partner is 7. It is not stored yet.", line: 3, state: { num: 2, need: 7 } },
+    { idx: 0, visual: withTwo, active: ["bucket-2", "entry-2-0"], title: "Store 2", desc: "Save 2 with index 0 so a later value can find it.", line: 5, state: { seen: "2 -> 0" } },
+    { idx: 1, visual: withTwo, active: ["bucket-2", "entry-2-0"], title: "Need 2", desc: "For num 7, the missing partner is 2.", line: 3, state: { num: 7, need: 2 } },
+    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Find stored 2", desc: "2 is already in the table, so the pair is found without scanning again.", line: 4, state: { found: "2 at index 0" } },
+    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Pair with current index", desc: "The stored index 0 pairs with the current index 1.", line: 4, state: { pair: "0 and 1" } },
+    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Return both indexes", desc: "Return the stored index and the current index.", line: 4, state: { result: "[0, 1]" } },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "hash-map",
+    title: phase.title,
+    description: phase.desc,
+    nodes: withNodeState(phase.visual.nodes, phase.active, "active"),
+    edges: phase.visual.edges,
+    highlights: { nodeIds: phase.active, lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: phase.state,
+  }, index + 1));
+}
+
+export function generateGraphIslandsSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "islands = 0",
+    "for each cell in grid:",
+    "  if cell is land and not visited:",
+    "    islands += 1",
+    "    flood_fill(cell)",
+    "return islands",
+  ];
+  const grid = [
+    [1, 1, 0],
+    [0, 0, 1],
+    [1, 0, 1],
+  ];
+  const makeNodes = (activeCells: string[], visitedCells: string[], count: number, result = "not returned yet"): Node[] => {
+    const nodes: Node[] = [];
+    grid.forEach((row, rowIndex) => {
+      row.forEach((value, colIndex) => {
+        const id = `cell-${rowIndex}-${colIndex}`;
+        const isLand = value === 1;
+        nodes.push({
+          id,
+          x: 290 + colIndex * 110,
+          y: 125 + rowIndex * 96,
+          value: isLand ? "land" : "water",
+          type: "array-cell",
+          label: `${rowIndex},${colIndex}`,
+          state: activeCells.includes(id) ? "active" : visitedCells.includes(id) ? "visited" : isLand ? "default" : "inactive",
+          meta: { role: isLand ? "land" : "water" },
+        });
+      });
+    });
+    nodes.push(
+      { id: "frontier", x: 655, y: 165, value: activeCells.length ? activeCells.map((id) => id.replace("cell-", "").replace("-", ",")).join(" / ") : "empty", type: "logic-node", label: "flood-fill frontier", state: activeCells.length ? "active" : "default", meta: { role: "memory" } },
+      { id: "count", x: 655, y: 290, value: count, type: "logic-node", label: "islands counted", state: count > 0 ? "matched" : "default", meta: { role: "result" } },
+      { id: "result", x: 655, y: 415, value: result, type: "logic-node", label: "final answer", state: result === "not returned yet" ? "default" : "matched", meta: { role: "result" } },
+    );
+    return nodes;
+  };
+  const phases = [
+    { active: ["cell-0-0"], visited: [], count: 0, result: "not returned yet", title: context.title || "Scan the grid", desc: "Use a small grid with land and water. The scan moves cell by cell.", line: 2, state: { cell: "0,0", islands: 0 } },
+    { active: ["cell-0-0"], visited: ["cell-0-0"], count: 1, result: "not returned yet", title: "Start island 1", desc: "The first unvisited land cell starts a new island, so the count becomes 1.", line: 4, state: { islands: 1, started: "0,0" } },
+    { active: ["cell-0-1"], visited: ["cell-0-0", "cell-0-1"], count: 1, result: "not returned yet", title: "Flood-fill neighbor", desc: "The land at 0,1 touches the first cell, so it belongs to the same island.", line: 5, state: { islands: 1, visited: "0,0 and 0,1" } },
+    { active: ["cell-1-0", "cell-1-1"], visited: ["cell-0-0", "cell-0-1"], count: 1, result: "not returned yet", title: "Skip water", desc: "Water cells do not start islands and do not join the flood fill.", line: 3, state: { skipped: "water" } },
+    { active: ["cell-1-2"], visited: ["cell-0-0", "cell-0-1", "cell-1-2"], count: 2, result: "not returned yet", title: "Start island 2", desc: "The land at 1,2 is not connected to island 1, so it starts island 2.", line: 4, state: { islands: 2, started: "1,2" } },
+    { active: ["cell-2-2"], visited: ["cell-0-0", "cell-0-1", "cell-1-2", "cell-2-2"], count: 2, result: "not returned yet", title: "Join connected land", desc: "The land at 2,2 touches 1,2, so the count does not increase.", line: 5, state: { islands: 2, joined: "2,2" } },
+    { active: ["cell-2-0"], visited: ["cell-0-0", "cell-0-1", "cell-1-2", "cell-2-2", "cell-2-0"], count: 3, result: "not returned yet", title: "Start island 3", desc: "The land at 2,0 is separate, so it adds one more island.", line: 4, state: { islands: 3, started: "2,0" } },
+    { active: ["result"], visited: ["cell-0-0", "cell-0-1", "cell-1-2", "cell-2-2", "cell-2-0"], count: 3, result: "3", title: "Return 3 islands", desc: "The scan is done, and the saved island count is 3.", line: 6, state: { result: "3" } },
+  ];
+  return phases.map((phase, index) => {
+    const nodes = makeNodes(phase.active, phase.visited, phase.count, phase.result);
+    const edges: Edge[] = phase.active.includes("cell-0-1")
+      ? [{ id: "island-1-link", from: "cell-0-0", to: "cell-0-1", type: "pointer", state: "active" }]
+      : phase.active.includes("cell-2-2")
+        ? [{ id: "island-2-link", from: "cell-1-2", to: "cell-2-2", type: "pointer", state: "active" }]
+        : phase.active.includes("result")
+          ? [{ id: "count-result", from: "count", to: "result", type: "pointer", state: "active" }]
+          : [];
+    return step({
+      concept: "graph",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges,
+      highlights: { nodeIds: [...phase.active, "count", ...(phase.result !== "not returned yet" ? ["result"] : [])], edgeIds: edges.map((edge) => edge.id || ""), lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateHashGroupingSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "start with empty groups",
+    "build the group key for this item",
+    "create a group if the key is new",
+    "add the item to its matching group",
+    "move to the next item",
+    "return the grouped values",
+  ];
+  const buckets = [
+    {},
+    { 2: ["A:[A]"] },
+    { 2: ["A:[A]"], 3: ["B:[B]"] },
+    { 2: ["A:[A,A]"], 3: ["B:[B]"] },
+  ] as Array<Record<number, string[]>>;
+  const phases = [
+    { idx: 0, bucket: buckets[0], key: "A", title: context.title || "Group by key", desc: "Start with an empty map of groups.", line: 1, result: "empty" },
+    { idx: 0, bucket: buckets[1], key: "A", title: "Create group A", desc: "The first A creates a new group and joins it.", line: 4, result: "A: [A]" },
+    { idx: 1, bucket: buckets[2], key: "B", title: "Create group B", desc: "B has a different key, so it gets a different group.", line: 4, result: "A: [A], B: [B]" },
+    { idx: 2, bucket: buckets[2], key: "A", title: "Find existing group A", desc: "The second A reuses the group that already exists.", line: 2, result: "A group already exists" },
+    { idx: 2, bucket: buckets[3], key: "A", title: "Append to group A", desc: "The group changes from one A to two A values.", line: 4, result: "A: [A, A], B: [B]" },
+    { idx: 2, bucket: buckets[3], key: "A", title: "Keep separate groups", desc: "A and B remain separate keys even when one group grows.", line: 5, result: "two groups" },
+    { idx: 2, bucket: buckets[3], key: "A", title: "Return grouped values", desc: "The result keeps each key connected to the list of matching values.", line: 6, result: "A group has 2" },
+  ];
+  return phases.map((phase, index) => {
+    const visual = layoutHashBuckets(5, phase.bucket);
+    const activeBucket = phase.key === "B" ? "bucket-3" : "bucket-2";
+    const activeEntry = phase.key === "B" ? "entry-3-0" : "entry-2-0";
+    return step({
+      concept: "hash-map",
+      title: phase.title,
+      description: phase.desc,
+      nodes: withNodeState(visual.nodes, [activeBucket, activeEntry], "active"),
+      edges: visual.edges,
+      highlights: { nodeIds: [activeBucket, activeEntry], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: { key: phase.key, groups: phase.result },
+    }, index + 1);
+  });
+}
+
 export function generateHashMapCollisionSteps(context: GeneratorContext = {}): Step[] {
   const code = [
     "bucket = hash(key)",
@@ -2339,6 +3961,17 @@ export function generateHashMapCollisionSteps(context: GeneratorContext = {}): S
     }, 5),
     step({
       concept: "hash-map",
+      title: "Read the matching value",
+      description: "Once the key matches, the map reads the value stored with that key.",
+      nodes: withNodeState(collision.nodes, ["entry-2-1"], "active"),
+      edges: withEdgeState(collision.edges, ["entry-2-1-edge"], "active"),
+      highlights: { nodeIds: ["entry-2-1"], edgeIds: ["entry-2-1-edge"], lineNumbers: [3] },
+      code,
+      activeLine: 3,
+      state: { value: `value for ${secondKey}` },
+    }, 6),
+    step({
+      concept: "hash-map",
       title: "Use the stored value",
       description: "The table is useful because later code can retrieve the value without scanning every entry.",
       nodes: withNodeState(collision.nodes, ["entry-2-1"], "visited"),
@@ -2347,17 +3980,17 @@ export function generateHashMapCollisionSteps(context: GeneratorContext = {}): S
       code,
       activeLine: 4,
       state: { result: `found ${secondKey}` },
-    }, 6),
+    }, 7),
   ];
 }
 
 export function generateGraphTraversalSteps(context: GeneratorContext = {}): Step[] {
   const code = [
-    "frontier = [start]",
-    "node = frontier.pop(0)",
-    "visited.add(node)",
-    "frontier.extend(unvisited_neighbors)",
-    "while frontier:",
+    "start with the first node in the frontier",
+    "take the next node from the frontier",
+    "mark that node as visited",
+    "add unvisited neighbors to the frontier",
+    "continue while the frontier has nodes",
   ];
   const graph = layoutCircularGraph(["A", "B", "C", "D", "E"], [["A", "B"], ["A", "C"], ["B", "D"], ["C", "D"], ["D", "E"]]);
   const phases = [
@@ -2391,43 +4024,296 @@ export function generateGraphTraversalSteps(context: GeneratorContext = {}): Ste
 }
 
 export function generateConditionalSteps(context: GeneratorContext = {}): Step[] {
-  const code = [
-    "input_value = input",
-    "condition = test(input_value)",
-    "if condition: result = yes_value",
-    "else: result = no_value",
-    "return result",
+  type ConditionalCase = {
+    id: string;
+    label: string;
+    input: string;
+    condition: string;
+    trueResult: string;
+    falseResult: string;
+    chosenResult: string;
+    branch: "true" | "false";
+    code: string[];
+    steps: Array<{
+      title: string;
+      description: string;
+      active: string[];
+      edges: string[];
+      line: number;
+      result?: string;
+      skipped?: string[];
+      skippedEdges?: string[];
+      visited?: string[];
+      visitedEdges?: string[];
+    }>;
+  };
+
+  const titleText = `${context.title || ""} ${context.prompt || ""}`.toLowerCase();
+  const makeCase = (item: Omit<ConditionalCase, "steps">): ConditionalCase => {
+    const branchLabel = item.branch === "true" ? "true" : "false";
+    const oppositeLabel = item.branch === "true" ? "false" : "true";
+    const branchNode = item.branch;
+    const oppositeNode = item.branch === "true" ? "false" : "true";
+    const branchEdge = `condition-${item.branch}`;
+    const resultEdge = `${item.branch}-end`;
+    return {
+      ...item,
+      steps: [
+        { title: `Read ${item.input.split("=")[0]?.trim() || "input"}`, description: `Start with ${item.input}.`, active: ["input"], edges: ["start-input"], line: 1, result: "none yet" },
+        { title: "Ask the condition", description: `Check ${item.condition} before choosing a branch.`, active: ["condition"], edges: ["start-input", "input-condition"], line: 2, result: "none yet" },
+        { title: `Follow ${branchLabel} branch`, description: `This case makes the ${branchLabel} path run.`, active: [branchNode], edges: ["start-input", "input-condition", branchEdge], line: item.branch === "true" ? 3 : 4, result: "none yet" },
+        {
+          title: `Skip ${oppositeLabel} branch`,
+          description: `The ${oppositeLabel} path is crossed out for this input.`,
+          active: [],
+          edges: [],
+          skipped: [oppositeNode],
+          skippedEdges: [`condition-${oppositeNode}`, `${oppositeNode}-end`],
+          visited: [branchNode],
+          visitedEdges: ["start-input", "input-condition", branchEdge],
+          line: item.branch === "true" ? 3 : 4,
+          result: "none yet",
+        },
+        { title: `Choose ${item.chosenResult}`, description: `The active branch chooses ${item.chosenResult}.`, active: [branchNode, "end"], edges: ["start-input", "input-condition", branchEdge, resultEdge], line: item.branch === "true" ? 3 : 4, result: "none yet" },
+        { title: `Return ${item.chosenResult}`, description: `Return ${item.chosenResult}; the skipped branch does not run.`, active: ["end"], edges: ["start-input", "input-condition", branchEdge, resultEdge], line: item.code.length, result: item.chosenResult },
+      ],
+    };
+  };
+
+  let cases: ConditionalCase[];
+  if (/grade bucket/.test(titleText)) {
+    cases = [
+      makeCase({
+        id: "grade-b",
+        label: "84 gives B",
+        input: "score = 84",
+        condition: "score >= 80",
+        trueResult: "return B",
+        falseResult: "check score >= 70",
+        chosenResult: "B",
+        branch: "true",
+        code: ["read score", "ask whether score is at least 80", "if yes, choose B", "otherwise check the next grade rule", "return the chosen grade"],
+      }),
+      makeCase({
+        id: "grade-f",
+        label: "58 gives F",
+        input: "score = 58",
+        condition: "score >= 60",
+        trueResult: "return D",
+        falseResult: "return F",
+        chosenResult: "F",
+        branch: "false",
+        code: ["read score", "ask whether score is at least 60", "if yes, choose D", "otherwise choose F", "return the chosen grade"],
+      }),
+    ];
+  } else if (/clamp score/.test(titleText)) {
+    cases = [
+      makeCase({
+        id: "clamp-high",
+        label: "118 becomes 100",
+        input: "score = 118",
+        condition: "score > 100",
+        trueResult: "return 100",
+        falseResult: "check lower bound",
+        chosenResult: "100",
+        branch: "true",
+        code: ["read score", "ask whether score is above 100", "if yes, return 100", "otherwise check whether score is below 0", "return the clamped score"],
+      }),
+      makeCase({
+        id: "clamp-in-range",
+        label: "84 stays 84",
+        input: "score = 84",
+        condition: "score is outside 0 to 100",
+        trueResult: "clamp to a boundary",
+        falseResult: "return score",
+        chosenResult: "84",
+        branch: "false",
+        code: ["read score", "ask whether score is outside 0 to 100", "if yes, clamp to a boundary", "otherwise keep the score", "return the clamped score"],
+      }),
+    ];
+  } else if (/can vote/.test(titleText)) {
+    cases = [
+      makeCase({
+        id: "vote-yes",
+        label: "18 can vote",
+        input: "age = 18",
+        condition: "age >= 18",
+        trueResult: "return true",
+        falseResult: "return false",
+        chosenResult: "true",
+        branch: "true",
+        code: ["read age", "ask whether age is at least 18", "if yes, return true", "otherwise return false", "return the answer"],
+      }),
+      makeCase({
+        id: "vote-no",
+        label: "16 cannot vote",
+        input: "age = 16",
+        condition: "age >= 18",
+        trueResult: "return true",
+        falseResult: "return false",
+        chosenResult: "false",
+        branch: "false",
+        code: ["read age", "ask whether age is at least 18", "if yes, return true", "otherwise return false", "return the answer"],
+      }),
+    ];
+  } else if (/plant watering/.test(titleText)) {
+    cases = [
+      makeCase({
+        id: "plant-water",
+        label: "Dry soil waters",
+        input: "moisture = 28, sunny = false",
+        condition: "moisture < 30",
+        trueResult: "return water today",
+        falseResult: "check sunny window",
+        chosenResult: "water today",
+        branch: "true",
+        code: ["read moisture and sunlight", "ask whether soil is dry", "if yes, return water today", "otherwise check the sunny rule", "return the care message"],
+      }),
+      makeCase({
+        id: "plant-wait",
+        label: "Safe soil waits",
+        input: "moisture = 50, sunny = false",
+        condition: "moisture < 30",
+        trueResult: "return water today",
+        falseResult: "return check tomorrow",
+        chosenResult: "check tomorrow",
+        branch: "false",
+        code: ["read moisture and sunlight", "ask whether soil is dry", "if yes, return water today", "otherwise return check tomorrow", "return the care message"],
+      }),
+    ];
+  } else if (/late assignment/.test(titleText)) {
+    cases = [
+      makeCase({
+        id: "late-normal",
+        label: "Penalty stays positive",
+        input: "score = 86, days = 3",
+        condition: "86 - penalty >= 0",
+        trueResult: "return 71",
+        falseResult: "return 0",
+        chosenResult: "71",
+        branch: "true",
+        code: ["read score and late days", "subtract the late penalty", "ask whether the adjusted score is at least 0", "if yes, return the adjusted score", "otherwise return 0", "return the final score"],
+      }),
+      makeCase({
+        id: "late-zero",
+        label: "Penalty clamps to 0",
+        input: "score = 12, days = 4",
+        condition: "12 - penalty >= 0",
+        trueResult: "return adjusted score",
+        falseResult: "return 0",
+        chosenResult: "0",
+        branch: "false",
+        code: ["read score and late days", "subtract the late penalty", "ask whether the adjusted score is at least 0", "if yes, return the adjusted score", "otherwise return 0", "return the final score"],
+      }),
+    ];
+  } else if (/parking ticket/.test(titleText)) {
+    cases = [
+      makeCase({
+        id: "parking-ticketed",
+        label: "Weekday ticket",
+        input: "Tuesday, 10:00, 150 min, no permit",
+        condition: "parking is free today",
+        trueResult: "return 0",
+        falseResult: "add ticket fees",
+        chosenResult: "45",
+        branch: "false",
+        code: ["read day, hour, minutes, and permit", "ask whether parking is free", "if yes, return 0", "otherwise start with 20 dollars", "add long-parking and no-permit fees", "return the ticket total"],
+      }),
+      makeCase({
+        id: "parking-free",
+        label: "Weekend is free",
+        input: "Sunday, 13:00, 180 min, no permit",
+        condition: "parking is free today",
+        trueResult: "return 0",
+        falseResult: "add ticket fees",
+        chosenResult: "0",
+        branch: "true",
+        code: ["read day, hour, minutes, and permit", "ask whether parking is free", "if yes, return 0", "otherwise start with 20 dollars", "add any needed fees", "return the ticket total"],
+      }),
+    ];
+  } else {
+    const input = context.exampleInput || "age = 20";
+    const output = context.exampleOutput || "true";
+    cases = [
+      makeCase({
+        id: "true-case",
+        label: "True case",
+        input,
+        condition: context.constraints?.[0] || "condition is true",
+        trueResult: `return ${output}`,
+        falseResult: "return alternate result",
+        chosenResult: output,
+        branch: "true",
+        code: ["read input", "ask the condition", "if yes, use the true result", "otherwise use the false result", "return the chosen result"],
+      }),
+      makeCase({
+        id: "false-case",
+        label: "False case",
+        input: "alternate input",
+        condition: context.constraints?.[0] || "condition is false",
+        trueResult: `return ${output}`,
+        falseResult: "return alternate result",
+        chosenResult: "alternate result",
+        branch: "false",
+        code: ["read input", "ask the condition", "if yes, use the true result", "otherwise use the false result", "return the chosen result"],
+      }),
+    ];
+  }
+
+  const allEdges: Edge[] = [
+    { id: "start-input", from: "start", to: "input", type: "pointer" },
+    { id: "input-condition", from: "input", to: "condition", type: "pointer" },
+    { id: "condition-true", from: "condition", to: "true", type: "branch", label: "true" },
+    { id: "condition-false", from: "condition", to: "false", type: "branch", label: "false" },
+    { id: "true-end", from: "true", to: "end", type: "pointer" },
+    { id: "false-end", from: "false", to: "end", type: "pointer" },
   ];
-  const base = layoutConditional();
-  const input = context.exampleInput || "age = 20";
-  const output = context.exampleOutput || "true";
-  const condition = context.constraints?.[0] || "Does the input match the rule?";
-  const relabeled = base.nodes.map((node) => {
-    if (node.id === "input") return { ...node, value: input };
-    if (node.id === "condition") return { ...node, value: condition };
-    if (node.id === "yes") return { ...node, value: `return ${output}` };
-    if (node.id === "result") return { ...node, value: output };
-    return node;
+
+  return cases.flatMap((item) => {
+    const labels = item.steps.map((phase) => phase.title);
+    return item.steps.map((phase, index) => {
+      const inactiveBranch = item.branch === "true" ? "false" : "true";
+      const skippedNodes = new Set(phase.skipped || []);
+      const visitedNodes = new Set(phase.visited || []);
+      const skippedEdges = new Set(phase.skippedEdges || []);
+      const visitedEdges = new Set(phase.visitedEdges || []);
+      const edgeBase = allEdges.map((edge) => {
+        const id = edge.id || `${edge.from}-${edge.to}`;
+        if (skippedEdges.has(id)) return { ...edge, state: "skipped" as const };
+        if (visitedEdges.has(id)) return { ...edge, state: "visited" as const };
+        return edge;
+      });
+      const nodes: Node[] = [
+        { id: "start", x: 0, y: 140, value: "Start", type: "logic-node", state: phase.active.includes("start") ? "active" : "default", label: "start" },
+        { id: "input", x: 165, y: 130, value: item.input, type: "logic-node", state: phase.active.includes("input") ? "active" : "default", label: "input", meta: { fullText: item.input } },
+        { id: "condition", x: 380, y: 88, value: item.condition, type: "logic-node", state: phase.active.includes("condition") ? "active" : "default", label: "condition", meta: { fullText: item.condition } },
+        { id: "true", x: 670, y: 30, value: item.trueResult, type: "logic-node", state: phase.active.includes("true") ? "active" : skippedNodes.has("true") ? "skipped" : visitedNodes.has("true") ? "visited" : inactiveBranch === "true" ? "inactive" : "default", label: "true branch", meta: { fullText: item.trueResult } },
+        { id: "false", x: 670, y: 220, value: item.falseResult, type: "logic-node", state: phase.active.includes("false") ? "active" : skippedNodes.has("false") ? "skipped" : visitedNodes.has("false") ? "visited" : inactiveBranch === "false" ? "inactive" : "default", label: "false branch", meta: { fullText: item.falseResult } },
+        { id: "end", x: 895, y: 140, value: phase.result === "none yet" ? "not returned yet" : item.chosenResult, type: "logic-node", state: phase.active.includes("end") ? "matched" : "default", label: "result", meta: { fullText: phase.result === "none yet" ? "none yet" : item.chosenResult } },
+      ];
+      const built = step({
+        concept: "conditional",
+        title: phase.title,
+        description: phase.description,
+        nodes,
+        edges: withEdgeState(edgeBase, phase.edges, "active"),
+        highlights: { nodeIds: phase.active, edgeIds: phase.edges, lineNumbers: [phase.line] },
+        code: item.code,
+        activeLine: phase.line,
+        state: {
+          case_id: item.id,
+          case_label: item.label,
+          branch: item.branch,
+          input: item.input,
+          rule: item.condition,
+          chosen_result: phase.result || "none yet",
+          final_result: index === item.steps.length - 1 ? item.chosenResult : "none yet",
+        },
+        workflow: workflowFromLabels(labels, index),
+      }, index + 1);
+      return { ...built, id: `${item.id}-${built.id}` };
+    });
   });
-  const phases = [
-    { title: context.title || "Conditional branch", description: "Start with the input and one question from the prompt.", active: ["input"], edges: [], line: 1 },
-    { title: "Ask the condition", description: "The condition is the fork. It decides which path stays alive.", active: ["condition"], edges: ["input-condition"], line: 2 },
-    { title: "Preview the true path", description: "If the condition is true, execution moves into the yes branch and skips the no branch.", active: ["yes"], edges: ["condition-yes"], line: 3 },
-    { title: "Compare the false path", description: "If the condition is false, execution would move into the no branch instead.", active: ["no"], edges: ["condition-no"], line: 4 },
-    { title: "Keep the chosen branch", description: "Only the branch that matches this sample contributes to the answer.", active: ["yes"], edges: ["condition-yes"], line: 3 },
-    { title: "Return the result", description: "The function returns the value from the chosen branch only.", active: ["result"], edges: ["yes-result"], line: 5 },
-  ];
-  return phases.map((phase, index) => step({
-    concept: "conditional",
-    title: phase.title,
-    description: phase.description,
-    nodes: withNodeState(relabeled, phase.active, "active"),
-    edges: withEdgeState(base.edges, phase.edges, "active"),
-    highlights: { nodeIds: phase.active, edgeIds: phase.edges, lineNumbers: [phase.line] },
-    code,
-    activeLine: phase.line,
-    state: { rule: condition, result: output },
-  }, index + 1));
 }
 
 function makeLinearNodes(values: Array<string | number>, active: string[], state: Node["state"], type: Node["type"] = "array-cell"): Node[] {
@@ -2483,8 +4369,83 @@ export function generateStackSteps(context: GeneratorContext = {}): Step[] {
   ];
 }
 
+export function generateMinStackSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "values = []",
+    "mins = []",
+    "push(3)",
+    "push(1)",
+    "push(2)",
+    "get_min()",
+    "pop()",
+    "return get_min()",
+  ];
+  const makeStackNodes = (values: number[], mins: number[], activeValue = -1, activeMin = -1, result = "not returned yet"): Node[] => {
+    const valueNodes = values.map((value, index) => ({
+      id: `value-${index}`,
+      x: 330,
+      y: 380 - index * 76,
+      value,
+      type: "stack-frame" as const,
+      label: index === values.length - 1 ? "top" : "value stack",
+      state: index === activeValue ? "active" as const : "default" as const,
+      meta: { role: "stack" },
+    }));
+    const minNodes = mins.map((value, index) => ({
+      id: `min-${index}`,
+      x: 585,
+      y: 380 - index * 76,
+      value,
+      type: "stack-frame" as const,
+      label: index === mins.length - 1 ? "current min" : "min stack",
+      state: index === activeMin ? "matched" as const : "default" as const,
+      meta: { role: "memory" },
+    }));
+    return [
+      { id: "value-label", x: 330, y: 120, value: "values", type: "logic-node", label: "main stack", state: "default", meta: { role: "memory" } },
+      { id: "min-label", x: 585, y: 120, value: "minimums", type: "logic-node", label: "parallel stack", state: "default", meta: { role: "memory" } },
+      ...valueNodes,
+      ...minNodes,
+      { id: "result", x: 455, y: 475, value: result, type: "logic-node", label: "returned min", state: result === "not returned yet" ? "default" : "matched", meta: { role: "result" } },
+    ];
+  };
+  const edges: Edge[] = [
+    { id: "value-min-rule", from: "value-label", to: "min-label", type: "pointer", state: "default" },
+  ];
+  const phases = [
+    { title: context.title || "Min stack starts empty", desc: "A min stack keeps normal values and a second stack of the minimum after each push.", values: [] as number[], mins: [] as number[], valueActive: -1, minActive: -1, line: 1, result: "not returned yet", state: { values: "empty", mins: "empty" } },
+    { title: "Push 3", desc: "3 enters the value stack. Because it is the only value, it is also the current minimum.", values: [3], mins: [3], valueActive: 0, minActive: 0, line: 3, result: "not returned yet", state: { top: 3, min: 3 } },
+    { title: "Push 1", desc: "1 is smaller than 3, so the minimum stack records 1 as the new minimum.", values: [3, 1], mins: [3, 1], valueActive: 1, minActive: 1, line: 4, result: "not returned yet", state: { top: 1, min: 1 } },
+    { title: "Push 2", desc: "2 goes on top, but the minimum is still 1. The min stack repeats 1 to stay aligned.", values: [3, 1, 2], mins: [3, 1, 1], valueActive: 2, minActive: 2, line: 5, result: "not returned yet", state: { top: 2, min: 1 } },
+    { title: "Read current minimum", desc: "get_min reads the top of the minimum stack without removing any value.", values: [3, 1, 2], mins: [3, 1, 1], valueActive: -1, minActive: 2, line: 6, result: "1", state: { returned: 1 } },
+    { title: "Pop top value", desc: "pop removes 2 from both stacks, so the value stack and min stack stay the same height.", values: [3, 1], mins: [3, 1], valueActive: 1, minActive: 1, line: 7, result: "not returned yet", state: { popped: 2, min: 1 } },
+    { title: "Minimum stays 1", desc: "After removing 2, the top of the minimum stack is still 1.", values: [3, 1], mins: [3, 1], valueActive: -1, minActive: 1, line: 8, result: "1", state: { min: 1 } },
+    { title: "Return 1", desc: "The final minimum is available in constant time from the top of the min stack.", values: [3, 1], mins: [3, 1], valueActive: -1, minActive: 1, line: 8, result: "1", state: { result: 1 } },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "stack",
+    title: phase.title,
+    description: phase.desc,
+    nodes: makeStackNodes(phase.values, phase.mins, phase.valueActive, phase.minActive, phase.result),
+    edges: withEdgeState(edges, index > 0 ? ["value-min-rule"] : [], "active"),
+    highlights: {
+      nodeIds: [
+        ...(phase.valueActive >= 0 ? [`value-${phase.valueActive}`] : []),
+        ...(phase.minActive >= 0 ? [`min-${phase.minActive}`] : []),
+        ...(phase.result !== "not returned yet" ? ["result"] : []),
+      ],
+      edgeIds: index > 0 ? ["value-min-rule"] : [],
+      lineNumbers: [phase.line],
+    },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(phases.map((item) => item.title), index),
+    state: phase.state,
+  }, index + 1));
+}
+
 export function generateQueueSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["queue = [first, second]", "queue.append(new_item)", "front = queue[0]", "served = queue.pop(0)", "front = queue[0]", "return served_order"];
+  const code = ["start with the waiting line", "add the new item at the back", "read the item at the front", "serve the front item", "the next item becomes front", "return the served order"];
   const sample = compactVisualInput(context, "queue", context.visualizer?.input || {});
   const teachingValues = indexableTeachingValues("queue", sample).map(String);
   const firstItem = teachingValues[0] || "Ana";
@@ -2501,6 +4462,183 @@ export function generateQueueSteps(context: GeneratorContext = {}): Step[] {
     step({ concept: "queue", title: "Next front appears", description: `After ${firstItem} leaves, ${secondItem} becomes the front without changing the order of the remaining line.`, nodes: withNodeState(served, ["item-0"], "active"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [5] }, code, activeLine: 5, state: { front: secondItem, back: thirdItem } }, 5),
     step({ concept: "queue", title: "Finish in waiting order", description: "The queue rule is first-in, first-out: the order of service follows the order of arrival.", nodes: withNodeState(served, ["item-0", "item-1"], "visited"), edges: [], highlights: { nodeIds: ["item-0", "item-1"], lineNumbers: [6] }, code, activeLine: 6, state: { rule: "FIFO" } }, 6),
   ];
+}
+
+export function generateHelpDeskQueueSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "read each help-desk command",
+    "if someone joins, add them to the back",
+    "if serving and someone is waiting, remove the front",
+    "if serving and nobody is waiting, record none",
+    "return the service result",
+  ];
+  const commands = ["join Ana", "join Bo", "serve", "serve", "serve"];
+  const phases = [
+    {
+      title: context.title || "Help Desk Queue",
+      desc: "Read the command list from left to right. Nobody is waiting yet.",
+      commandIndex: 0,
+      queue: [] as string[],
+      served: [] as string[],
+      line: 1,
+      action: "read first command",
+      activeIds: ["cmd-0"],
+    },
+    {
+      title: "Ana joins the back",
+      desc: "'join Ana' adds Ana to the rear. Because the line was empty, Ana is also the front.",
+      commandIndex: 0,
+      queue: ["Ana"],
+      served: [] as string[],
+      line: 2,
+      action: "enqueue",
+      activeIds: ["cmd-0", "queue-0"],
+    },
+    {
+      title: "Bo joins behind Ana",
+      desc: "'join Bo' adds Bo to the rear. Ana still waits at the front.",
+      commandIndex: 1,
+      queue: ["Ana", "Bo"],
+      served: [] as string[],
+      line: 2,
+      action: "enqueue",
+      activeIds: ["cmd-1", "queue-1"],
+    },
+    {
+      title: "Serve the front",
+      desc: "The first serve removes Ana because Ana arrived first.",
+      commandIndex: 2,
+      queue: ["Bo"],
+      served: ["Ana"],
+      line: 3,
+      action: "dequeue",
+      activeIds: ["cmd-2", "served-0"],
+    },
+    {
+      title: "Serve the next front",
+      desc: "After Ana leaves, Bo becomes the front and is served next.",
+      commandIndex: 3,
+      queue: [] as string[],
+      served: ["Ana", "Bo"],
+      line: 3,
+      action: "dequeue",
+      activeIds: ["cmd-3", "served-1"],
+    },
+    {
+      title: "Serve an empty queue",
+      desc: "The last serve finds nobody waiting, so the result records none.",
+      commandIndex: 4,
+      queue: [] as string[],
+      served: ["Ana", "Bo", "none"],
+      line: 4,
+      action: "empty serve",
+      activeIds: ["cmd-4", "served-2", "empty-line"],
+    },
+    {
+      title: "Return served order",
+      desc: "The output follows the service events exactly: Ana, then Bo, then none.",
+      commandIndex: 4,
+      queue: [] as string[],
+      served: ["Ana", "Bo", "none"],
+      line: 5,
+      action: "return",
+      activeIds: ["served-0", "served-1", "served-2"],
+    },
+  ];
+
+  function makeNodes(phase: typeof phases[number]): Node[] {
+    const commandNodes: Node[] = commands.map((command, index) => ({
+      id: `cmd-${index}`,
+      x: 140 + index * 145,
+      y: 130,
+      value: command,
+      label: index === phase.commandIndex ? "current command" : `command ${index + 1}`,
+      type: "logic-node",
+      state: index < phase.commandIndex ? "visited" : index === phase.commandIndex ? "active" : "default",
+    }));
+
+    const queueNodes: Node[] = phase.queue.length
+      ? phase.queue.map((name, index) => ({
+          id: `queue-${index}`,
+          x: 330 + index * 170,
+          y: 300,
+          value: name,
+          label: index === 0 ? "front" : index === phase.queue.length - 1 ? "rear" : `wait ${index + 1}`,
+          type: "array-cell",
+          state: "queued",
+        }))
+      : [{
+          id: "empty-line",
+          x: 420,
+          y: 300,
+          value: "empty",
+          label: "waiting line",
+          type: "logic-node",
+          state: "inactive",
+        }];
+
+    const servedNodes: Node[] = phase.served.length
+      ? phase.served.map((name, index) => ({
+          id: `served-${index}`,
+          x: 330 + index * 170,
+          y: 470,
+          value: name,
+          label: index === 0 ? "served first" : index === 1 ? "served next" : "empty result",
+          type: "logic-node",
+          state: name === "none" ? "comparing" : "matched",
+        }))
+      : [{
+          id: "served-empty",
+          x: 420,
+          y: 470,
+          value: "none yet",
+          label: "served output",
+          type: "logic-node",
+          state: "default",
+        }];
+
+    return [
+      { id: "rule-card", x: 220, y: 40, value: "front leaves first", label: "queue rule", type: "logic-node", state: "default" },
+      ...commandNodes,
+      { id: "queue-label", x: 160, y: 300, value: "waiting line", label: "queue", type: "logic-node", state: "default" },
+      ...queueNodes,
+      { id: "served-label", x: 160, y: 470, value: "served order", label: "result", type: "logic-node", state: phase.served.length ? "matched" : "default" },
+      ...servedNodes,
+    ];
+  }
+
+  return phases.map((phase, index) => {
+    const nodes = makeNodes(phase);
+    const queueEdgeIds = phase.queue.length > 1 ? phase.queue.slice(1).map((_, itemIndex) => `queue-${itemIndex}-queue-${itemIndex + 1}`) : [];
+    const servedEdgeIds = phase.served.length > 1 ? phase.served.slice(1).map((_, itemIndex) => `served-${itemIndex}-served-${itemIndex + 1}`) : [];
+    const edges: Edge[] = [
+      ...queueEdgeIds.map((id) => {
+        const [from, to] = id.split("-queue-");
+        return { id, from, to: `queue-${to}`, type: "pointer" as const, state: "queued" as const };
+      }),
+      ...servedEdgeIds.map((id) => {
+        const [from, to] = id.split("-served-");
+        return { id, from, to: `served-${to}`, type: "pointer" as const, state: "matched" as const };
+      }),
+    ];
+    return step({
+      concept: "queue",
+      title: phase.title,
+      description: phase.desc,
+      nodes: withNodeState(nodes, phase.activeIds, "active"),
+      edges,
+      highlights: { nodeIds: phase.activeIds, edgeIds: [...queueEdgeIds, ...servedEdgeIds], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: {
+        command: commands[phase.commandIndex],
+        waiting: phase.queue.length ? phase.queue.join(", ") : "empty",
+        served: phase.served.length ? phase.served.join(", ") : "none yet",
+        action: phase.action,
+      },
+    }, index + 1);
+  });
 }
 
 export function generateLinkedListSteps(context: GeneratorContext = {}): Step[] {
@@ -2533,17 +4671,24 @@ export function generateLinkedListSteps(context: GeneratorContext = {}): Step[] 
 }
 
 export function generateBinarySearchSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["left = 0; right = len(values) - 1", "mid = (left + right) // 2", "if values[mid] < target:", "  left = mid + 1", "if values[mid] > target:", "  right = mid - 1", "return mid"];
+  const code = [
+    "left = 0; right = len(values) - 1",
+    "mid = (left + right) // 2",
+    "if values[mid] < target: left = mid + 1",
+    "if values[mid] > target: right = mid - 1",
+    "if values[mid] == target: return mid",
+    "return left",
+  ];
   const values = [1, 3, 5, 7, 9, 11, 13];
   const phases = [
-    { left: 0, mid: 3, right: 6, target: 5, desc: "Start with the full sorted range. Only sorted data lets us remove half at a time.", line: 1, title: context.title || "Binary search" },
-    { left: 0, mid: 3, right: 6, target: 5, desc: "Check the middle value, 7, before moving either boundary.", line: 2, title: "Check middle" },
-    { left: 0, mid: 3, right: 6, target: 5, desc: "The target 5 is smaller than 7, so the answer cannot be to the right of mid.", line: 5, title: "Compare target" },
-    { left: 0, mid: 1, right: 2, target: 5, desc: "Move the right boundary left. The discarded half fades out.", line: 6, title: "Discard right half" },
-    { left: 0, mid: 1, right: 2, target: 5, desc: "Recompute mid inside the smaller range, then check 3.", line: 2, title: "Check new middle" },
-    { left: 2, mid: 2, right: 2, target: 5, desc: "3 is too small, so move left past it. One candidate remains.", line: 4, title: "Discard left value" },
-    { left: 2, mid: 2, right: 2, target: 5, desc: "The remaining value is 5, which matches the target.", line: 2, title: "Final check" },
-    { left: 2, mid: 2, right: 2, target: 5, desc: "Return the index of the match.", line: 7, title: "Return found" },
+    { left: 0, mid: 3, right: 6, target: 5, result: "", desc: "Start with the full sorted range. Only sorted data lets us remove half at a time.", line: 1, title: context.title || "Binary search" },
+    { left: 0, mid: 3, right: 6, target: 5, result: "", desc: "Check the middle value, 7, before moving either boundary.", line: 2, title: "Check middle" },
+    { left: 0, mid: 3, right: 6, target: 5, result: "", desc: "Target 5 is smaller than 7, so indexes 3 through 6 cannot be the answer.", line: 4, title: "Discard right half" },
+    { left: 0, mid: 1, right: 2, target: 5, result: "", desc: "The range shrinks to indexes 0 through 2.", line: 1, title: "Use new range" },
+    { left: 0, mid: 1, right: 2, target: 5, result: "", desc: "The new middle value is 3.", line: 2, title: "Check new middle" },
+    { left: 2, mid: 2, right: 2, target: 5, result: "", desc: "3 is too small, so move left to index 2. One candidate remains.", line: 3, title: "Discard left value" },
+    { left: 2, mid: 2, right: 2, target: 5, result: "match at index 2", desc: "The remaining value is 5, which matches the target.", line: 5, title: "Final check" },
+    { left: 2, mid: 2, right: 2, target: 5, result: "return index 2", desc: "Return index 2 because values[2] is the target.", line: 5, title: "Return index 2" },
   ];
   return phases.map((phase, index) => {
     const nodes = layoutArray(values).map((node, nodeIndex) => ({
@@ -2551,7 +4696,22 @@ export function generateBinarySearchSteps(context: GeneratorContext = {}): Step[
       state: nodeIndex < phase.left || nodeIndex > phase.right ? "inactive" as const : nodeIndex === phase.mid ? "active" as const : "default" as const,
       label: nodeIndex === phase.left ? "left" : nodeIndex === phase.mid ? "mid" : nodeIndex === phase.right ? "right" : String(nodeIndex),
     }));
-    return step({ concept: "binary-search", title: phase.title, description: phase.desc, nodes, edges: [], highlights: { nodeIds: [`item-${phase.mid}`], lineNumbers: [phase.line] }, code, activeLine: phase.line, state: { left: phase.left, mid: phase.mid, right: phase.right, target: phase.target } }, index + 1);
+    nodes.push(
+      { id: "target-card", x: 260, y: 430, value: phase.target, type: "logic-node", label: "target", state: "default", meta: { role: "memory" } },
+      { id: "range-card", x: 480, y: 430, value: `${phase.left} to ${phase.right}`, type: "logic-node", label: "search range", state: "default", meta: { role: "memory" } },
+      { id: "result-card", x: 700, y: 430, value: phase.result || "not returned yet", type: "logic-node", label: "result", state: phase.result ? "matched" : "default", meta: { role: "result" } },
+    );
+    return step({
+      concept: "binary-search",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: phase.result ? [{ id: "match-result", from: `item-${phase.mid}`, to: "result-card", type: "pointer", state: "active" }] : [],
+      highlights: { nodeIds: [`item-${phase.mid}`, ...(phase.result ? ["result-card"] : [])], edgeIds: phase.result ? ["match-result"] : [], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      state: { left: phase.left, mid: phase.mid, right: phase.right, target: phase.target, ...(phase.result ? { result: phase.result } : {}) },
+    }, index + 1);
   });
 }
 
@@ -2626,6 +4786,87 @@ export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
   });
 }
 
+export function generateNestedRecursionSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "def depth_sum(value, depth):",
+    "  if value is a number: return value * depth",
+    "  total = 0",
+    "  for child in value:",
+    "    total += depth_sum(child, depth + 1)",
+    "  return total",
+  ];
+  const frameNode = (id: string, x: number, y: number, label: string, value: string, state: Node["state"] = "default"): Node => ({
+    id,
+    x,
+    y,
+    label,
+    value,
+    type: "function-frame",
+    state,
+    meta: { role: "call-frame" },
+  });
+  const listNode = (id: string, x: number, y: number, label: string, value: string, state: Node["state"] = "default"): Node => ({
+    id,
+    x,
+    y,
+    label,
+    value,
+    type: "array-cell",
+    state,
+    meta: { role: "list-item" },
+  });
+  const build = (active: string[], returned: string[], total: string): { nodes: Node[]; edges: Edge[] } => {
+    const nodes: Node[] = [
+      listNode("root-list", 235, 95, "input", "[1,[2,[3]]]", active.includes("root-list") ? "active" : "visited"),
+      listNode("one", 130, 215, "depth 1", "1", active.includes("one") ? "active" : returned.includes("one") ? "matched" : "default"),
+      listNode("sub-list", 330, 215, "depth 2", "[2,[3]]", active.includes("sub-list") ? "active" : returned.includes("sub-list") ? "matched" : "default"),
+      listNode("two", 265, 335, "depth 2", "2", active.includes("two") ? "active" : returned.includes("two") ? "matched" : "default"),
+      listNode("deep-list", 455, 335, "depth 3", "[3]", active.includes("deep-list") ? "active" : returned.includes("deep-list") ? "matched" : "default"),
+      listNode("three", 455, 455, "depth 3", "3", active.includes("three") ? "active" : returned.includes("three") ? "matched" : "default"),
+      frameNode("frame-1", 705, 125, "call depth 1", "total = 0", active.includes("frame-1") ? "active" : "visited"),
+      frameNode("frame-2", 705, 245, "call depth 2", returned.includes("frame-2") ? "returns 13" : "waiting", active.includes("frame-2") ? "active" : returned.includes("frame-2") ? "matched" : "default"),
+      frameNode("frame-3", 705, 365, "call depth 3", returned.includes("frame-3") ? "returns 9" : "waiting", active.includes("frame-3") ? "active" : returned.includes("frame-3") ? "matched" : "default"),
+      { id: "total", x: 705, y: 505, value: total, type: "logic-node", label: "running total", state: total === "14" ? "matched" : "active", meta: { role: "result" } },
+    ];
+    const edges: Edge[] = [
+      { id: "root-one", from: "root-list", to: "one", type: "pointer", state: active.includes("one") || returned.includes("one") ? "active" : "default" },
+      { id: "root-sub", from: "root-list", to: "sub-list", type: "pointer", state: active.includes("sub-list") || returned.includes("sub-list") ? "active" : "default" },
+      { id: "sub-two", from: "sub-list", to: "two", type: "pointer", state: active.includes("two") || returned.includes("two") ? "active" : "default" },
+      { id: "sub-deep", from: "sub-list", to: "deep-list", type: "pointer", state: active.includes("deep-list") || returned.includes("deep-list") ? "active" : "default" },
+      { id: "deep-three", from: "deep-list", to: "three", type: "pointer", state: active.includes("three") || returned.includes("three") ? "active" : "default" },
+      { id: "frames", from: "frame-1", to: "frame-2", type: "pointer", state: active.includes("frame-2") || returned.includes("frame-2") ? "active" : "default" },
+      { id: "frames-deep", from: "frame-2", to: "frame-3", type: "pointer", state: active.includes("frame-3") || returned.includes("frame-3") ? "active" : "default" },
+    ];
+    return { nodes, edges };
+  };
+  const phases = [
+    { title: context.title || "Read nested list", desc: "Start with a small nested list so every recursive call can be shown.", active: ["root-list", "frame-1"], returned: [] as string[], total: "0", line: 1, state: { input: "[1,[2,[3]]]", depth: 1 } },
+    { title: "Use number 1", desc: "A number returns immediately: 1 at depth 1 contributes 1.", active: ["one", "frame-1"], returned: ["one"], total: "1", line: 2, state: { contribution: "1 x 1 = 1", total: 1 } },
+    { title: "Enter nested list", desc: "The nested list creates a new function frame at depth 2.", active: ["sub-list", "frame-2"], returned: ["one"], total: "1", line: 5, state: { depth: 2 } },
+    { title: "Use number 2", desc: "2 is inside depth 2, so it contributes 4.", active: ["two", "frame-2"], returned: ["one", "two"], total: "5", line: 2, state: { contribution: "2 x 2 = 4", total: 5 } },
+    { title: "Enter deeper list", desc: "The [3] list creates a third frame because recursion found another list.", active: ["deep-list", "frame-3"], returned: ["one", "two"], total: "5", line: 5, state: { depth: 3 } },
+    { title: "Use number 3", desc: "3 is at depth 3, so it contributes 9.", active: ["three", "frame-3"], returned: ["one", "two", "three"], total: "14", line: 2, state: { contribution: "3 x 3 = 9", total: 14 } },
+    { title: "Return from inner frames", desc: "The depth-3 frame returns 9, then the depth-2 frame combines it with 4.", active: ["frame-2", "frame-3"], returned: ["one", "two", "three", "frame-3", "deep-list", "frame-2", "sub-list"], total: "14", line: 6, state: { returned: "4 + 9 = 13" } },
+    { title: "Return total 14", desc: "The first frame combines 1 with 13 and returns 14.", active: ["total"], returned: ["one", "two", "three", "frame-3", "deep-list", "frame-2", "sub-list"], total: "14", line: 6, state: { result: 14 } },
+  ];
+  return phases.map((phase, index) => {
+    const visual = build(phase.active, phase.returned, phase.total);
+    const activeEdges = visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || "");
+    return step({
+      concept: "recursion",
+      title: phase.title,
+      description: phase.desc,
+      nodes: visual.nodes,
+      edges: visual.edges,
+      highlights: { nodeIds: phase.active, edgeIds: activeEdges, lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
 export function generateMatrixSteps(context: GeneratorContext = {}): Step[] {
   const code = ["row = current_row", "col = current_col", "value = grid[row][col]", "answer = update(answer, value)", "row, col = next_cell(row, col)", "if row < rows and col < cols: continue", "return answer"];
   const values = [1, 2, 3, 4, 5, 6];
@@ -2674,25 +4915,52 @@ export function generatePrefixSumSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateIntervalsSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["intervals.sort()", "current = intervals[0]", "next = intervals[index]", "if next.start <= current.end:", "current.end = max(current.end, next.end)", "else: merged.append(current)", "return merged"];
+  const code = [
+    "intervals.sort()",
+    "previous = intervals[0]",
+    "next = intervals[index]",
+    "if next.start < previous.end: return false",
+    "previous = next",
+    "return true",
+  ];
+  const intervalNodes = (activeIds: string[], overlapIds: string[] = [], result = "not decided"): Node[] => [
+    { id: "timeline", x: 455, y: 100, value: "9     10     11     12", type: "logic-node", label: "time line", state: "default", meta: { role: "memory" } },
+    { id: "a", x: 275, y: 220, value: "9-10", type: "array-cell", label: "A", state: activeIds.includes("a") ? "active" : "visited", meta: { role: "interval" } },
+    { id: "b", x: 445, y: 300, value: "10-11", type: "array-cell", label: "B", state: overlapIds.includes("b") ? "comparing" : activeIds.includes("b") ? "active" : "default", meta: { role: "interval" } },
+    { id: "c", x: 470, y: 390, value: "10-12", type: "array-cell", label: "C", state: overlapIds.includes("c") ? "comparing" : activeIds.includes("c") ? "active" : "default", meta: { role: "interval" } },
+    { id: "decision", x: 705, y: 300, value: result, type: "logic-node", label: "overlap check", state: result === "false" ? "matched" : activeIds.includes("decision") ? "active" : "default", meta: { role: "result" } },
+  ];
   const phases = [
-    { active: 0, title: context.title || "Intervals", desc: "Sort ranges by start time so comparisons happen left to right." },
-    { active: 0, title: "Keep the first range", desc: "The first interval becomes the current saved block." },
-    { active: 1, title: "Compare the next start", desc: "If the next start is before the saved end, the ranges overlap." },
-    { active: 1, title: "Merge overlap", desc: "Overlapping bars become one longer busy block." },
-    { active: 2, title: "Carry the merged block", desc: "Keep the merged interval as current before checking the next range." },
-    { active: 2, title: "Check a separate range", desc: "If a range starts after the saved end, it begins a new block." },
-    { active: 2, title: "Return merged ranges", desc: "The result is the list of carried blocks after every comparison." },
+    { active: ["a", "b", "c"], overlap: [], title: context.title || "Sort time ranges", desc: "Use a compact schedule: A 9-10, B 10-11, C 10-12.", line: 1, result: "not decided", state: { sorted: "A, B, C" } },
+    { active: ["a"], overlap: [], title: "Keep A as previous", desc: "A becomes the saved range to compare against the next class.", line: 2, result: "not decided", state: { previous: "A 9-10" } },
+    { active: ["a", "b"], overlap: [], title: "Compare A with B", desc: "B starts at 10 and A ends at 10, so they touch but do not overlap.", line: 4, result: "no overlap", state: { check: "10 < 10 is false" } },
+    { active: ["b"], overlap: [], title: "Carry B forward", desc: "Since B is safe with A, B becomes the previous range.", line: 5, result: "not decided", state: { previous: "B 10-11" } },
+    { active: ["b", "c"], overlap: ["b", "c"], title: "Compare B with C", desc: "C starts at 10 before B ends at 11, so these two classes overlap.", line: 4, result: "overlap found", state: { check: "10 < 11 is true" } },
+    { active: ["decision"], overlap: ["b", "c"], title: "Stop on conflict", desc: "One overlap is enough to make the study schedule invalid.", line: 4, result: "false", state: { conflict: "B overlaps C" } },
+    { active: ["decision"], overlap: ["b", "c"], title: "Return false", desc: "Return false because the schedule has a time conflict.", line: 4, result: "false", state: { result: "false" } },
   ];
   return phases.map((phase, index) => {
-    const active = phase.active;
-    const visual = authoredIntervalVisual({}, context, active);
-    return step({ concept: "intervals", title: phase.title, description: phase.desc, nodes: visual.nodes, edges: visual.edges, highlights: { nodeIds: visual.highlights, lineNumbers: [Math.min(index + 1, code.length)] }, code, activeLine: Math.min(index + 1, code.length), state: { active_range: active + 1 } }, index + 1);
+    const nodes = intervalNodes(phase.active, phase.overlap, phase.result);
+    const edges: Edge[] = phase.active.includes("decision") || phase.overlap.length
+      ? [{ id: "conflict-result", from: "c", to: "decision", type: "pointer", state: "active" }]
+      : [];
+    return step({
+      concept: "intervals",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges,
+      highlights: { nodeIds: [...phase.active, ...phase.overlap, ...(phase.result === "false" ? ["decision"] : [])], edgeIds: edges.map((edge) => edge.id || ""), lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
   });
 }
 
 export function generateHeapSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["heap.append(value)", "parent = parent_index(child)", "if heap[child] > heap[parent]:", "swap(child, parent)", "child = parent", "repeat until heap rule holds", "return heap[0]"];
+  const code = ["add the value at the next open spot", "find its parent", "compare child priority with parent priority", "swap upward when the child outranks the parent", "keep checking from the new position", "repeat until the heap rule holds", "return the top value"];
   const values = [50, 40, 30, 10, 25, 20];
   const before = treeFromArray(values.slice(0, 5), 0);
   const inserted = treeFromArray(values, 5);
@@ -2859,8 +5127,176 @@ export function generateBitSteps(context: GeneratorContext = {}): Step[] {
   });
 }
 
+function mathFlowNodes(items: Array<{ id: string; label: string; value: string | number }>): Node[] {
+  const gap = Math.min(128, Math.max(96, 720 / Math.max(items.length, 1)));
+  const totalWidth = Math.max(0, (items.length - 1) * gap);
+  const startX = 450 - totalWidth / 2;
+  return items.map((item, index) => ({
+    id: item.id,
+    x: startX + index * gap,
+    y: 260,
+    value: item.value,
+    type: "logic-node",
+    label: item.label,
+    state: index === 0 ? "visited" : "default",
+    meta: { role: "formula-cell" },
+  }));
+}
+
+function buildMathFlowSteps({
+  conceptTitle,
+  code,
+  nodes,
+  phases,
+}: {
+  conceptTitle: string;
+  code: string[];
+  nodes: Node[];
+  phases: Array<{
+    title: string;
+    description: string;
+    active: string;
+    line: number;
+    state: Record<string, string | number>;
+    visited?: string[];
+  }>;
+}): Step[] {
+  const labels = phases.map((phase) => phase.title);
+  return phases.map((phase, index) => step({
+    concept: "math",
+    title: phase.title,
+    description: phase.description,
+    nodes: withNodeState(nodes.map((node) => ({
+      ...node,
+      state: phase.visited?.includes(node.id) ? "visited" : node.state,
+    })), [phase.active], "active"),
+    edges: [],
+    highlights: { nodeIds: [phase.active], lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    workflow: workflowFromLabels(labels, index),
+    state: { problem: conceptTitle, ...phase.state },
+  }, index + 1));
+}
+
+export function generateLastDigitSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "read the number",
+    "look at the ones place",
+    "keep only that digit",
+    "return the digit",
+  ];
+  const nodes = mathFlowNodes([
+    { id: "math-number", label: "number", value: 384 },
+    { id: "math-ones", label: "ones place", value: "last digit" },
+    { id: "math-digit", label: "kept digit", value: 4 },
+    { id: "math-result", label: "result", value: 4 },
+  ]);
+  return buildMathFlowSteps({
+    conceptTitle: context.title || "Last Digit",
+    code,
+    nodes,
+    phases: [
+      { title: "Read 384", description: "Start with the full number before removing anything.", active: "math-number", line: 1, state: { example: "number=384", final_result: "none yet" } },
+      { title: "Find ones place", description: "The digit at the far right is the ones-place digit.", active: "math-ones", line: 2, visited: ["math-number"], state: { ones_place: 4, final_result: "none yet" } },
+      { title: "Keep 4", description: "Only the last digit is needed for the answer.", active: "math-digit", line: 3, visited: ["math-number", "math-ones"], state: { kept_digit: 4, final_result: "none yet" } },
+      { title: "Return 4", description: "Return the digit that was kept from the ones place.", active: "math-result", line: 4, visited: ["math-number", "math-ones", "math-digit"], state: { final_result: 4 } },
+    ],
+  });
+}
+
+export function generateCountDigitsSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "start count at zero",
+    "remove one digit from the right",
+    "increase count",
+    "repeat until no digits remain",
+    "return count",
+  ];
+  const nodes = mathFlowNodes([
+    { id: "math-start", label: "number", value: 5029 },
+    { id: "math-one", label: "after 1 digit", value: 502 },
+    { id: "math-two", label: "after 2 digits", value: 50 },
+    { id: "math-three", label: "after 3 digits", value: 5 },
+    { id: "math-four", label: "after 4 digits", value: 0 },
+    { id: "math-result", label: "result", value: 4 },
+  ]);
+  return buildMathFlowSteps({
+    conceptTitle: context.title || "Count Digits",
+    code,
+    nodes,
+    phases: [
+      { title: "Start count", description: "Begin with 5029 and count at 0.", active: "math-start", line: 1, state: { number_left: 5029, count: 0, final_result: "none yet" } },
+      { title: "Remove 9", description: "One digit was removed, so the count becomes 1.", active: "math-one", line: 2, visited: ["math-start"], state: { number_left: 502, count: 1, final_result: "none yet" } },
+      { title: "Remove 2", description: "A second digit was removed from the right.", active: "math-two", line: 3, visited: ["math-start", "math-one"], state: { number_left: 50, count: 2, final_result: "none yet" } },
+      { title: "Remove 0", description: "A zero digit still counts as a digit.", active: "math-three", line: 3, visited: ["math-start", "math-one", "math-two"], state: { number_left: 5, count: 3, final_result: "none yet" } },
+      { title: "Remove 5", description: "No digits remain after the fourth removal.", active: "math-four", line: 4, visited: ["math-start", "math-one", "math-two", "math-three"], state: { number_left: 0, count: 4, final_result: "none yet" } },
+      { title: "Return 4", description: "The count tells how many digits were removed.", active: "math-result", line: 5, visited: ["math-start", "math-one", "math-two", "math-three", "math-four"], state: { final_result: 4 } },
+    ],
+  });
+}
+
+export function generateGradePointsNeededSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "read current points and target points",
+    "subtract current from target",
+    "if the target is already met, use zero",
+    "return points still needed",
+  ];
+  const nodes = mathFlowNodes([
+    { id: "math-current", label: "current", value: 72 },
+    { id: "math-target", label: "target", value: 80 },
+    { id: "math-difference", label: "target - current", value: "80 - 72" },
+    { id: "math-needed", label: "needed", value: 8 },
+    { id: "math-result", label: "result", value: 8 },
+  ]);
+  return buildMathFlowSteps({
+    conceptTitle: context.title || "Grade Points Needed",
+    code,
+    nodes,
+    phases: [
+      { title: "Read points", description: "The student has 72 points and wants 80.", active: "math-current", line: 1, state: { current: 72, target: 80, final_result: "none yet" } },
+      { title: "Read target", description: "The target is the score we compare against.", active: "math-target", line: 1, visited: ["math-current"], state: { current: 72, target: 80, final_result: "none yet" } },
+      { title: "Subtract", description: "Find the gap between the target and the current score.", active: "math-difference", line: 2, visited: ["math-current", "math-target"], state: { gap: "80 - 72", final_result: "none yet" } },
+      { title: "Keep 8", description: "The gap is positive, so 8 more points are needed.", active: "math-needed", line: 3, visited: ["math-current", "math-target", "math-difference"], state: { points_needed: 8, final_result: "none yet" } },
+      { title: "Return 8", description: "Return the number of points still needed.", active: "math-result", line: 4, visited: ["math-current", "math-target", "math-difference", "math-needed"], state: { final_result: 8 } },
+    ],
+  });
+}
+
+export function generateRoundUpLabGroupsSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "read students and group size",
+    "count full groups",
+    "check leftover students",
+    "if leftovers exist, add one group",
+    "return total groups",
+  ];
+  const nodes = mathFlowNodes([
+    { id: "math-students", label: "students", value: 23 },
+    { id: "math-size", label: "group size", value: 5 },
+    { id: "math-full", label: "full groups", value: 4 },
+    { id: "math-leftover", label: "leftover", value: 3 },
+    { id: "math-extra", label: "extra group", value: "+1" },
+    { id: "math-result", label: "result", value: 5 },
+  ]);
+  return buildMathFlowSteps({
+    conceptTitle: context.title || "Round Up Lab Groups",
+    code,
+    nodes,
+    phases: [
+      { title: "Read students", description: "There are 23 students to place into groups.", active: "math-students", line: 1, state: { students: 23, group_size: 5, final_result: "none yet" } },
+      { title: "Read group size", description: "Each group can hold 5 students.", active: "math-size", line: 1, visited: ["math-students"], state: { students: 23, group_size: 5, final_result: "none yet" } },
+      { title: "Make 4 full groups", description: "Four full groups hold 20 students.", active: "math-full", line: 2, visited: ["math-students", "math-size"], state: { full_groups: 4, students_placed: 20, final_result: "none yet" } },
+      { title: "Find 3 leftovers", description: "Three students are still ungrouped after the full groups.", active: "math-leftover", line: 3, visited: ["math-students", "math-size", "math-full"], state: { leftover_students: 3, final_result: "none yet" } },
+      { title: "Add one group", description: "Any leftover students need one more group.", active: "math-extra", line: 4, visited: ["math-students", "math-size", "math-full", "math-leftover"], state: { total_groups: 5, final_result: "none yet" } },
+      { title: "Return 5", description: "Five groups are enough for all 23 students.", active: "math-result", line: 5, visited: ["math-students", "math-size", "math-full", "math-leftover", "math-extra"], state: { final_result: 5 } },
+    ],
+  });
+}
+
 export function generateMathSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["values = input", "total = first_operation(values)", "total = second_operation(total)", "if limit: total = clamp(total)", "result = format(total)", "return result"];
+  const code = ["read the given numbers", "apply the first calculation", "apply the next calculation", "adjust if the rule requires it", "check the final value", "return the computed answer"];
   const nodes = layoutArray(["base", "+ fee", "- discount", "limit", "format", "total"], { gap: 110 }).map((node) => ({
     ...node,
     meta: { role: "formula-cell" },
@@ -2869,8 +5305,69 @@ export function generateMathSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateStepsForConcept(concept: string, context: GeneratorContext = {}): Step[] {
+  const family = detectVisualizerFamily(concept, context);
+  if (family === "array-maximum-score") return generateMaximumScoreSteps(context);
+  if (family === "array-sum-even") return generateSumEvenNumbersSteps(context);
+  if (family === "array-dedupe-order") return generateArrayDedupeOrderSteps(context);
+  if (family === "array-smallest-positive") return generateSmallestPositiveSteps(context);
+  if (family === "array-find-index") return generateFindIndexSteps(context);
+  if (family === "array-merge-names") return generateMergeNamesSteps(context);
+  if (family === "array-threshold-count") return generateThresholdCountSteps(context);
+  if (family === "array-truthy-count") return generateTruthyAttendanceSteps(context);
+  if (family === "array-every-other") return generateEveryOtherItemSteps(context);
+  if (family === "array-comfort-count") return generateComfortCountSteps(context);
+  if (family === "array-plant-care-days") return generatePlantCareDaysSteps(context);
+  if (family === "array-rotate") return generateArrayRotationSteps(context);
+  if (family === "set-first-missing") return generateFirstMissingPositiveSteps(context);
+  if (family === "string-run-compress") return generateStringRunCompressSteps(context);
+  if (
+    family === "string-count-vowels" ||
+    family === "string-reverse-words" ||
+    family === "string-count-words" ||
+    family === "string-course-code" ||
+    family === "string-initials" ||
+    family === "string-normalize-emails" ||
+    family === "string-prefix-search"
+  ) return generateStringScanSteps(context);
+  if (family === "graph-islands") return generateGraphIslandsSteps(context);
+  if (family === "stack-min") return generateMinStackSteps(context);
+  if (family === "recursion-nested-list") return generateNestedRecursionSteps(context);
+  if (family === "queue-help-desk") return generateHelpDeskQueueSteps(context);
+  if (family === "conditional-flow") return generateConditionalSteps(context);
+  if (family === "math-last-digit") return generateLastDigitSteps(context);
+  if (family === "math-count-digits") return generateCountDigitsSteps(context);
+  if (family === "math-grade-points") return generateGradePointsNeededSteps(context);
+  if (family === "math-round-groups") return generateRoundUpLabGroupsSteps(context);
+  if (family === "tuple-pair") return generateTupleSteps(context);
+  if (family === "tuple-swap") return generateTupleSwapSteps(context);
+  if (family === "tuple-score-at-index") return generateStudentScorePairSteps(context);
+  if (family === "tuple-first-last") return generateFirstLastPairSteps(context);
   const authoredSteps = generateAuthoredVisualizerSteps(concept, context);
   if (authoredSteps) return authoredSteps;
+
+  switch (family) {
+    case "array-dedupe":
+      return generateArrayDedupeSteps(context);
+    case "array-filter":
+      return generateArrayFilterSteps(context);
+    case "array-running-total":
+      return generateArrayRunningTotalSteps(context);
+    case "array-search":
+      return generateArraySearchSteps(context);
+    case "array-max-min":
+      return generateArrayMaxMinSteps(context);
+    case "string-palindrome":
+    case "string-scan":
+      return generateStringScanSteps(context);
+    case "hash-frequency":
+      return generateHashFrequencySteps(context);
+    case "hash-grouping":
+      return generateHashGroupingSteps(context);
+    case "hash-complement":
+      return generateHashComplementSteps(context);
+    default:
+      break;
+  }
 
   switch (concept) {
     case "tuple":

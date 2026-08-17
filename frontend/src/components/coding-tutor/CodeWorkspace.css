@@ -342,7 +342,7 @@ body.ct-guide-resizing * {
   }
 }
 
-@media (max-width: 726px) {
+@media (max-width: 860px) {
   .coding-app.coding-workspace-active .coding-workbench-main {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 10px;
@@ -360,7 +360,7 @@ body.ct-guide-resizing * {
   }
 }
 
-@media (max-width: 726px) {
+@media (max-width: 860px) {
   .coding-app.coding-workspace-active {
     height: auto !important;
     max-height: none !important;
@@ -839,14 +839,14 @@ body.coding-dark .floating-coding-chat ::selection {
   color: #fffaf1;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .code-editor-statusbar { font-size: 0.66rem; gap: 8px; padding: 0 8px; }
   .code-editor-statusbar .status-left,
   .code-editor-statusbar .status-right { gap: 8px; }
   .code-editor-gutter { padding-left: 8px; padding-right: 6px; }
 }
 
-@media (min-width: 641px) {
+@media (min-width: 861px) {
   .workspace-guide-drawer-shell {
     display: contents;
   }
@@ -861,7 +861,125 @@ body.coding-dark .floating-coding-chat ::selection {
   }
 }
 
-@media (max-width: 640px) {
+@media (min-width: 861px) and (max-width: 980px) {
+  .coding-app.coding-workspace-active .coding-workbench-main {
+    grid-template-columns: minmax(210px, 250px) 8px minmax(0, 1fr) !important;
+  }
+
+  .workspace-guide-divider {
+    min-width: 8px;
+  }
+
+  .workspace-guide-divider::before {
+    inset-inline: 2px;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel {
+    padding: 12px;
+    border-radius: 14px !important;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel h2 {
+    font-size: 1rem;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel p,
+  .coding-app.coding-workspace-active .coding-problem-panel li,
+  .coding-app.coding-workspace-active .starter-guidance,
+  .coding-app.coding-workspace-active .problem-examples {
+    font-size: 0.86rem;
+    line-height: 1.42;
+  }
+
+  .coding-app.coding-workspace-active .coding-editor-center {
+    padding: 10px;
+    gap: 8px;
+    border-radius: 14px !important;
+  }
+
+  .coding-pane-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .coding-pane-header h2 {
+    font-size: 1rem;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+
+  .workspace-tabs {
+    gap: 14px;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .workspace-tabs button {
+    flex: 0 0 auto;
+    font-size: 0.88rem;
+  }
+
+  .code-editor-window {
+    --ed-size: 0.8rem;
+    --ed-lh: 1.55;
+    border-radius: 13px;
+  }
+
+  .code-editor-titlebar {
+    gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 6px 8px;
+    scrollbar-width: thin;
+  }
+
+  .code-editor-filename {
+    flex: 1 1 62px;
+    min-width: 42px;
+  }
+
+  .code-editor-titlebar-right,
+  .code-editor-actions,
+  .editor-action-icons {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+
+  .editor-action-icons {
+    padding-right: 5px;
+    margin-right: 2px;
+  }
+
+  .editor-action-btn {
+    width: 27px;
+    height: 27px;
+  }
+
+  .code-trace-button {
+    max-width: 104px;
+    padding-inline: 9px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+  }
+
+  .code-editor-lang-select {
+    max-width: 76px;
+    min-width: 66px;
+    font-size: 0.64rem;
+  }
+
+  .workspace-tab-body--visualize {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 860px) {
   .coding-app.coding-workspace-active,
   .coding-app.coding-workspace-active .coding-app-main,
   .coding-app.coding-workspace-active .coding-app-content,
@@ -1050,7 +1168,7 @@ body.coding-dark .floating-coding-chat ::selection {
 
   .editor-terminal-stack {
     min-height: 0;
-    height: auto;
+    height: clamp(540px, 78dvh, 760px);
     gap: 0;
   }
 
