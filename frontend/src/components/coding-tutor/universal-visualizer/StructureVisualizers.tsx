@@ -616,15 +616,54 @@ function RecursionView({ step }: { step: Step }) {
   const calls = step.nodes.filter((node) => node.id.startsWith("call-")).sort((a, b) => a.y - b.y);
   const base = step.nodes.find((node) => node.id === "base-case");
   const result = step.nodes.find((node) => node.id === "return-chain");
+  const state = step.state || {};
+  const resultText = state.result ?? state.return_value ?? result?.value ?? "not returned yet";
+  const returnBuilder = String(state.return_steps || "").split("|").filter(Boolean);
+  const activeReturnIndex = Number(state.return_step_index ?? -1);
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-recursion-canvas">
       <div className="ucv-recursion-shell" aria-label="Recursion visualizer">
+        <aside className="ucv-array-state-panel ucv-recursion-state-panel" aria-label="Recursion trace memory">
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">example</span>
+            <strong className="ucv-array-state-panel-value">{String(state.example || "countdown(2)")}</strong>
+          </div>
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">target</span>
+            <strong className="ucv-array-state-panel-value">{String(state.target || "reach base, then return")}</strong>
+          </div>
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">variables</span>
+            <div className="ucv-array-state-panel-list">
+              <div className="ucv-array-state-panel-row">
+                <span>phase</span>
+                <strong>{String(state.phase || "call")}</strong>
+              </div>
+              <div className="ucv-array-state-panel-row">
+                <span>current</span>
+                <strong>{String(state.current_call || calls.find((node) => node.state === "active")?.value || "none")}</strong>
+              </div>
+              <div className="ucv-array-state-panel-row">
+                <span>waiting</span>
+                <strong>{String(state.waiting || "none")}</strong>
+              </div>
+              <div className="ucv-array-state-panel-row ucv-array-state-panel-row--wide">
+                <span>action</span>
+                <strong>{String(state.action || "follow the active call")}</strong>
+              </div>
+            </div>
+          </div>
+          <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+            <span className="ucv-array-state-panel-label">result so far</span>
+            <strong className="ucv-array-state-panel-value">{String(resultText)}</strong>
+          </div>
+        </aside>
         <div className="ucv-recursion-stack">
           <span>call stack</span>
           <AnimatePresence mode="popLayout">
             {calls.map((node, index) => (
               <div key={node.id} className="ucv-recursion-frame-wrap">
-                <StatusBlock node={{ ...node, label: index === calls.length - 1 ? "current call" : visibleLabel(node, "waiting") }} step={step} className="ucv-recursion-frame" />
+                <StatusBlock node={{ ...node, label: visibleLabel(node, index === calls.length - 1 ? "current call" : "waiting") }} step={step} className="ucv-recursion-frame" />
                 {index < calls.length - 1 ? <span className="ucv-recursion-down" aria-hidden="true" /> : null}
               </div>
             ))}
@@ -634,30 +673,100 @@ function RecursionView({ step }: { step: Step }) {
           {base ? <StatusBlock node={base} step={step} className="ucv-recursion-check" /> : null}
           <span className="ucv-recursion-down ucv-recursion-down--side" aria-hidden="true" />
           {result ? <StatusBlock node={result} step={step} className="ucv-recursion-result" /> : null}
+          {returnBuilder.length ? (
+            <div className="ucv-recursion-return-builder" aria-label="Return value builder">
+              <span>return builder</span>
+              {returnBuilder.map((item, index) => (
+                <strong
+                  key={item}
+                  className={index === activeReturnIndex ? "is-active" : index < activeReturnIndex ? "is-done" : ""}
+                >
+                  {item}
+                </strong>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     </Canvas>
   );
 }
 
+const SET_STATE_PANEL_EXCLUDED = new Set([
+  "example",
+  "expected",
+  "final_result",
+  "result",
+  "returned",
+  "visual_family",
+]);
+
+function SetStatePanel({ step, example }: { step: Step; example: string }) {
+  const state = step.state || {};
+  const variables = Object.entries(state).filter(([key, value]) => !SET_STATE_PANEL_EXCLUDED.has(key) && typeof value !== "undefined" && value !== "");
+  const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.output);
+  return (
+    <aside className="ucv-array-state-panel ucv-set-state-panel" aria-label="Set trace memory">
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">example</span>
+        <strong className="ucv-array-state-panel-value">{example}</strong>
+      </div>
+      {variables.length ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.map(([key, value]) => (
+              <div className="ucv-array-state-panel-row" key={key}>
+                <span>{arrayStateLabel(key)}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {resultSoFar ? (
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
 function SetView({ step }: { step: Step }) {
   const nodes = sortedByX(step.nodes);
+  const inputNodes = nodes.filter((node) => node.type === "array-cell" && node.meta?.role !== "memory");
+  const memoryNodes = nodes.filter((node) => node.type === "set-item");
+  const visibleMemory = memoryNodes.filter((node) => String(node.value).toLowerCase() !== "empty");
+  const example = formatArrayStateValue(step.state?.example) || inputNodes.map((node) => String(node.value)).join(", ");
   return (
     <div className="ucv-set-shell" aria-label="Set visualizer">
-      <div className="ucv-set-input">
-        <span>incoming items</span>
-        <div>
-          {nodes.map((node) => (
-            <StatusBlock key={node.id} node={node} step={step} className="ucv-set-token" />
-          ))}
+      <SetStatePanel step={step} example={example} />
+      <div className="ucv-set-main-region">
+        <div className="ucv-set-input">
+          <span>incoming items</span>
+          <div>
+            {inputNodes.map((node) => (
+              <StatusBlock key={node.id} node={node} step={step} className="ucv-set-token" />
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="ucv-set-memory">
-        <span>unique set memory</span>
-        <div>
-          {[...new Map(nodes.filter((node) => node.state !== "inactive").map((node) => [String(node.value), node])).values()].map((node) => (
-            <StatusBlock key={`memory-${node.id}`} node={{ ...node, label: "kept" }} step={step} className="ucv-set-kept" />
-          ))}
+        <div className="ucv-set-memory">
+          <span>set memory</span>
+          <div>
+            {visibleMemory.length ? (
+              visibleMemory.map((node) => (
+                <StatusBlock key={node.id} node={{ ...node, label: visibleLabel(node, "kept") }} step={step} className="ucv-set-kept" />
+              ))
+            ) : (
+              <StatusBlock
+                node={{ id: "set-memory-empty", value: "empty", label: "memory", x: 0, y: 0, type: "set-item", state: "inactive" }}
+                step={step}
+                className="ucv-set-kept"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -998,14 +1107,19 @@ export function GraphVisualizer({ step }: { step: Step }) {
 }
 
 export function HashTableVisualizer({ step }: { step: Step }) {
-  const targets = step.nodes.filter((node) => node.id === "target" || node.id === "hash");
   const buckets = sortedByX(step.nodes.filter((node) => node.type === "hash-bucket"));
   const entries = step.nodes.filter((node) => node.type === "hash-entry" || node.id.startsWith("entry-"));
   const activeBucket = buckets.find((bucket) => bucket.state === "active" || bucket.state === "visited" || isHighlighted(step, bucket.id)) || buckets[0];
   const activeEntry = entries.find((entry) => entry.state === "active" || entry.state === "comparing" || isHighlighted(step, entry.id)) || entries[0];
-  const keyText = String(step.state?.key || step.state?.lookup || step.state?.hash || targets[0]?.value || activeEntry?.value || "key").replace(/\s*->.*$/, "");
+  const exampleText = step.state?.example ?? step.state?.sample;
+  const keyText = String(step.state?.key || step.state?.lookup || step.state?.need || step.state?.current || activeEntry?.value || "key").replace(/\s*(?:->|:).*$/, "");
+  const targetValue = step.state?.target ?? step.state?.lookup;
+  const hasTarget = targetValue !== undefined && targetValue !== null && String(targetValue).trim() !== "";
+  const targetText = hasTarget ? String(targetValue) : "";
   const bucketText = String(step.state?.bucket || activeBucket?.value || "?");
-  const resultText = String(step.state?.result || step.state?.lookup || activeEntry?.value || "not found yet");
+  const resultText = String(step.state?.result || step.state?.found || step.state?.pair || step.state?.price || step.state?.total || step.state?.groups || step.state?.table || step.state?.seen || "not found yet");
+  const currentText = step.state?.num ?? step.state?.current;
+  const needText = step.state?.need;
   const bucketEntries = new Map<string, VisualNode[]>();
   entries.forEach((entry, index) => {
     const bucketId = step.edges.find((edge) => edge.to === entry.id && edge.from.startsWith("bucket-"))?.from || "bucket-2";
@@ -1017,56 +1131,86 @@ export function HashTableVisualizer({ step }: { step: Step }) {
 
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-hash-canvas">
-      <div className="ucv-hash-operation" aria-label="Hash map operation">
-        <div className="ucv-hash-op-card is-active">
-          <span>key</span>
-          <strong>{keyText}</strong>
-        </div>
-        <span className="ucv-inline-arrow is-active" aria-hidden="true" />
-        <div className={`ucv-hash-op-card ${activeBucket ? "is-active" : ""}`}>
-          <span>hash chooses</span>
-          <strong>bucket {bucketText}</strong>
-        </div>
-        <span className="ucv-inline-arrow is-active" aria-hidden="true" />
-        <div className={`ucv-hash-op-card ${activeEntry ? "is-active" : ""}`}>
-          <span>compare chain</span>
-          <strong>{activeEntry ? String(activeEntry.value) : "empty"}</strong>
-        </div>
-        <span className="ucv-inline-arrow is-active" aria-hidden="true" />
-        <div className="ucv-hash-op-card ucv-hash-op-card--result">
-          <span>result</span>
-          <strong>{resultText}</strong>
-        </div>
-      </div>
-      <div className="ucv-bucket-row">
-        {buckets.map((bucket) => {
-          const chain = bucketEntries.get(bucket.id) || [];
-          return (
-            <div key={bucket.id} className="ucv-bucket-column">
-              <StatusBlock node={bucket} step={step} className="ucv-bucket-box" />
-              {chain.length ? (
-                <div className="ucv-bucket-chain">
-                  {chain.map((entry, index) => (
-                    <div key={entry.id} className="ucv-chain-link">
-                      <StatusBlock
-                        node={{ ...entry, label: index === 0 ? "first entry" : "next entry" }}
-                        step={step}
-                        className="ucv-hash-entry"
-                      />
-                      {index < chain.length - 1 ? <span className="ucv-chain-arrow" aria-hidden="true" /> : null}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <span className="ucv-empty-bucket">empty</span>
-              )}
+      <div className="ucv-hash-layout" aria-label="Hash map visualizer">
+        <aside className="ucv-array-state-panel ucv-hash-state-panel" aria-label="Hash map trace memory">
+          {exampleText ? (
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">example</span>
+              <strong className="ucv-array-state-panel-value">{String(exampleText)}</strong>
             </div>
-          );
-        })}
-      </div>
-      <div className="ucv-hash-note">
-        <span>Why this works</span>
-        <strong>A hash map jumps to one bucket first. If two keys land there, it checks that bucket's chain instead of scanning the whole table.</strong>
+          ) : null}
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">key</span>
+            <strong className="ucv-array-state-panel-value">{keyText}</strong>
+          </div>
+          {hasTarget ? (
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">target</span>
+              <strong className="ucv-array-state-panel-value">{targetText}</strong>
+            </div>
+          ) : null}
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">variables</span>
+            <div className="ucv-array-state-panel-list">
+              {currentText !== undefined && currentText !== null ? (
+                <div className="ucv-array-state-panel-row">
+                  <span>current</span>
+                  <strong>{String(currentText)}</strong>
+                </div>
+              ) : null}
+              {needText !== undefined && needText !== null ? (
+                <div className="ucv-array-state-panel-row">
+                  <span>need</span>
+                  <strong>{String(needText)}</strong>
+                </div>
+              ) : null}
+              <div className="ucv-array-state-panel-row">
+                <span>bucket</span>
+                <strong>{bucketText}</strong>
+              </div>
+              <div className="ucv-array-state-panel-row">
+                <span>chain</span>
+                <strong>{activeEntry ? String(activeEntry.value) : "empty"}</strong>
+              </div>
+            </div>
+          </div>
+          <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+            <span className="ucv-array-state-panel-label">result so far</span>
+            <strong className="ucv-array-state-panel-value">{resultText}</strong>
+          </div>
+        </aside>
+        <div className="ucv-hash-main-region">
+          <div className="ucv-hash-focus">
+            <span>hash chooses</span>
+            <strong>bucket {bucketText}</strong>
+          </div>
+          <div className="ucv-bucket-row">
+            {buckets.map((bucket) => {
+              const chain = bucketEntries.get(bucket.id) || [];
+              return (
+                <div key={bucket.id} className="ucv-bucket-column">
+                  <StatusBlock node={bucket} step={step} className="ucv-bucket-box" />
+                  {chain.length ? (
+                    <div className="ucv-bucket-chain">
+                      {chain.map((entry, index) => (
+                        <div key={entry.id} className="ucv-chain-link">
+                          <StatusBlock
+                            node={{ ...entry, label: index === 0 ? "first entry" : "next entry" }}
+                            step={step}
+                            className="ucv-hash-entry"
+                          />
+                          {index < chain.length - 1 ? <span className="ucv-chain-arrow" aria-hidden="true" /> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="ucv-empty-bucket">empty</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </Canvas>
   );
@@ -1087,49 +1231,111 @@ export function DPTableVisualizer({ step }: { step: Step }) {
   const cols = positioned.length ? Math.max(...positioned.map((item) => item.col)) + 1 : 1;
   const active = positioned.find(({ node }) => node.state === "active" || isHighlighted(step, node.id)) || positioned[0];
   const gridLookup = new Map(positioned.map((item) => [`${item.row}-${item.col}`, item.node]));
+  const isMatrix = step.concept === "matrix";
+  const matrixExample = step.state?.example ?? step.state?.sample;
+  const matrixTarget = step.state?.target ?? step.state?.goal ?? "visit every cell once";
+  const activeValue = active?.node?.value ?? "none";
+  const matrixResult = step.state?.result ?? step.state?.answer ?? step.state?.total ?? step.state?.count ?? step.state?.sum ?? "not done";
+  const matrixAction = step.state?.action ?? step.description;
+  const matrixProgress = step.state?.progress ?? (active ? `${active.row + 1} of ${rows} rows` : "start");
+  const gridContent = (
+    <div
+      className="ucv-dp-grid"
+      style={{ "--ucv-dp-cols": cols } as CSSProperties}
+      aria-label={step.concept === "dynamic-programming" ? "Dynamic programming table" : "Matrix grid"}
+    >
+      <span className="ucv-dp-axis ucv-dp-axis--corner">row/col</span>
+      {Array.from({ length: cols }, (_, col) => (
+        <span key={`col-${col}`} className={`ucv-dp-axis ${active?.col === col ? "is-active" : ""}`}>col {col}</span>
+      ))}
+      {Array.from({ length: rows }, (_, row) => (
+        Array.from({ length: cols + 1 }, (_, colSlot) => {
+          if (colSlot === 0) {
+            return <span key={`row-${row}`} className={`ucv-dp-axis ${active?.row === row ? "is-active" : ""}`}>row {row}</span>;
+          }
+          const col = colSlot - 1;
+          const node = gridLookup.get(`${row}-${col}`);
+          return node ? (
+            <StatusBlock
+              key={node.id}
+              node={{ ...node, label: step.concept === "dynamic-programming" ? `state ${row},${col}` : `${row},${col}` }}
+              step={step}
+              className="ucv-dp-cell"
+            />
+          ) : (
+            <span key={`empty-${row}-${col}`} className="ucv-dp-empty" aria-hidden="true" />
+          );
+        })
+      ))}
+    </div>
+  );
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-dp-canvas">
       <div className={`ucv-matrix-shell ${step.concept === "dynamic-programming" ? "ucv-matrix-shell--dp" : ""}`}>
-        <div
-          className="ucv-dp-grid"
-          style={{ "--ucv-dp-cols": cols } as CSSProperties}
-          aria-label={step.concept === "dynamic-programming" ? "Dynamic programming table" : "Matrix grid"}
-        >
-          <span className="ucv-dp-axis ucv-dp-axis--corner">row/col</span>
-          {Array.from({ length: cols }, (_, col) => (
-            <span key={`col-${col}`} className={`ucv-dp-axis ${active?.col === col ? "is-active" : ""}`}>col {col}</span>
-          ))}
-          {Array.from({ length: rows }, (_, row) => (
-            Array.from({ length: cols + 1 }, (_, colSlot) => {
-              if (colSlot === 0) {
-                return <span key={`row-${row}`} className={`ucv-dp-axis ${active?.row === row ? "is-active" : ""}`}>row {row}</span>;
-              }
-              const col = colSlot - 1;
-              const node = gridLookup.get(`${row}-${col}`);
-              return node ? (
-                <StatusBlock
-                  key={node.id}
-                  node={{ ...node, label: step.concept === "dynamic-programming" ? `state ${row},${col}` : `${row},${col}` }}
-                  step={step}
-                  className="ucv-dp-cell"
-                />
-              ) : (
-                <span key={`empty-${row}-${col}`} className="ucv-dp-empty" aria-hidden="true" />
-              );
-            })
-          ))}
-        </div>
-        <div className="ucv-dp-insight">
-          <span>{step.concept === "dynamic-programming" ? "saved state" : "current cell"}</span>
-          <strong>
-            {active ? `row ${active.row}, col ${active.col}` : "choose a cell"}
-          </strong>
-          <p>
-            {step.concept === "dynamic-programming"
-              ? "Fill one cell, then reuse saved cells instead of recalculating."
-              : "Use the row and column together so the scan does not drift."}
-          </p>
-        </div>
+        {isMatrix ? (
+          <div className="ucv-matrix-layout">
+            <aside className="ucv-array-state-panel ucv-matrix-state-panel" aria-label="Matrix trace memory">
+              {matrixExample ? (
+                <div className="ucv-array-state-panel-section">
+                  <span className="ucv-array-state-panel-label">example</span>
+                  <strong className="ucv-array-state-panel-value">{String(matrixExample)}</strong>
+                </div>
+              ) : null}
+              <div className="ucv-array-state-panel-section">
+                <span className="ucv-array-state-panel-label">target</span>
+                <strong className="ucv-array-state-panel-value">{String(matrixTarget)}</strong>
+              </div>
+              <div className="ucv-array-state-panel-section">
+                <span className="ucv-array-state-panel-label">current cell</span>
+                <strong className="ucv-array-state-panel-value">{active ? `row ${active.row}, col ${active.col}` : "choose a cell"}</strong>
+              </div>
+              <div className="ucv-array-state-panel-section">
+                <span className="ucv-array-state-panel-label">variables</span>
+                <div className="ucv-array-state-panel-list">
+                  <div className="ucv-array-state-panel-row">
+                    <span>row</span>
+                    <strong>{active?.row ?? "?"}</strong>
+                  </div>
+                  <div className="ucv-array-state-panel-row">
+                    <span>col</span>
+                    <strong>{active?.col ?? "?"}</strong>
+                  </div>
+                  <div className="ucv-array-state-panel-row">
+                    <span>value</span>
+                    <strong>{String(activeValue)}</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="ucv-array-state-panel-section">
+                <span className="ucv-array-state-panel-label">progress</span>
+                <strong className="ucv-array-state-panel-value">{String(matrixProgress)}</strong>
+              </div>
+              <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+                <span className="ucv-array-state-panel-label">result so far</span>
+                <strong className="ucv-array-state-panel-value">{String(matrixResult)}</strong>
+              </div>
+            </aside>
+            <div className="ucv-matrix-main-region">
+              {gridContent}
+              <div className="ucv-dp-insight">
+                <span>why this cell</span>
+                <strong>{active ? `grid[${active.row}][${active.col}] = ${String(activeValue)}` : "choose a cell"}</strong>
+                <p>{String(matrixAction)}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {gridContent}
+            <div className="ucv-dp-insight">
+              <span>saved state</span>
+              <strong>
+                {active ? `row ${active.row}, col ${active.col}` : "choose a cell"}
+              </strong>
+              <p>Fill one cell, then reuse saved cells instead of recalculating.</p>
+            </div>
+          </>
+        )}
       </div>
     </Canvas>
   );

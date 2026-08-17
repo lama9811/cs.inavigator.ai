@@ -87,7 +87,14 @@ const familyStepTargets = {
   "hash-lookup": 7,
   "stack-brackets": 8,
   "stack-expression": 8,
+  "stack-commands": 5,
+  "stack-adjacent-pairs": 6,
+  "stack-monotonic": 6,
   "queue-help-desk": 7,
+  "queue-line-commands": 5,
+  "queue-serve-count": 5,
+  "queue-ticket-rounds": 6,
+  "queue-window-count": 5,
   "queue-fifo": 6,
   "binary-search": 8,
   "two-pointers": 7,
@@ -96,7 +103,7 @@ const familyStepTargets = {
   "dp-table": 8,
   "graph-traversal": 7,
   "prefix-range": 8,
-  "recursion-stack": 8,
+  "recursion-stack": 9,
   "recursion-nested-list": 8,
   "heap-priority": 7,
   "trie-prefix": 7,
@@ -106,6 +113,9 @@ const familyStepTargets = {
   "conditional-flow": 6,
   "set-membership": 6,
   "set-first-missing": 8,
+  "set-first-repeat": 5,
+  "set-intersection": 6,
+  "set-unique-count": 6,
   "math-last-digit": 4,
   "math-count-digits": 6,
   "math-grade-points": 5,
@@ -195,6 +205,9 @@ function detectVisualizerFamily(problem, concept) {
   if (/temperature comfort count/.test(text)) return "array-comfort-count";
   if (/weekly plant care days/.test(text)) return "array-plant-care-days";
   if (/first missing positive|missing positive/.test(text)) return "set-first-missing";
+  if (/first repeated character|first repeated/.test(text)) return "set-first-repeat";
+  if (/shared study topics|intersection|shared/.test(text) && concept === "set") return "set-intersection";
+  if (/unique count|unique parking zones|unique/.test(text) && concept === "set") return "set-unique-count";
   if (/count vowels?/.test(text)) return "string-count-vowels";
   if (/reverse words?/.test(text)) return "string-reverse-words";
   if (/count words?/.test(text)) return "string-count-words";
@@ -213,7 +226,14 @@ function detectVisualizerFamily(problem, concept) {
   if (/first last pair/.test(text)) return "tuple-first-last";
   if (concept === "tuple") return isTupleSwapProblem(problem) ? "tuple-swap" : "tuple-pair";
   if (concept === "set") return "set-membership";
-  if (concept === "queue") return /help desk|ticket|support|serve|join/.test(text) ? "queue-help-desk" : "queue-fifo";
+  if (concept === "queue") {
+    if (/help session finish order|tickets/.test(text)) return "queue-ticket-rounds";
+    if (/recent queue counts|rate limiter|window/.test(text)) return "queue-window-count";
+    if (/serve first students|queue front after serves|servecount/.test(text)) return "queue-serve-count";
+    if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
+    if (/help desk|ticket|support/.test(text)) return "queue-help-desk";
+    return "queue-fifo";
+  }
   if (concept === "linked-list") return "linked-list-traverse";
   if (concept === "binary-search") return "binary-search";
   if (concept === "two-pointers") return "two-pointers";
@@ -231,12 +251,15 @@ function detectVisualizerFamily(problem, concept) {
   if (concept === "stack") {
     if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
     if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
+    if (/temperature|next warmer|warmer/.test(text)) return "stack-monotonic";
+    if (/adjacent equal|remove adjacent|pairs/.test(text)) return "stack-adjacent-pairs";
+    if (/plate|undo|latest action|top after|commands|push|pop/.test(text)) return "stack-commands";
     return "stack-expression";
   }
   if (concept === "hash-map") {
     if (/two sum|complement|pair.*target|target.*pair/.test(text)) return "hash-complement";
     if (/group|anagram|bucket by|categor/.test(text)) return "hash-grouping";
-    if (/count|frequency|frequent|favorite|most common|occurrence/.test(text)) return "hash-frequency";
+    if (/count|frequency|frequent|favorite|most common|occurrence|top k/.test(text)) return "hash-frequency";
     return "hash-lookup";
   }
   if (/palindrome/.test(text)) return "string-palindrome";

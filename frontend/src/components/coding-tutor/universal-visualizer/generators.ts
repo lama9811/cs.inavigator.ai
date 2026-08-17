@@ -35,7 +35,7 @@ const CONCEPT_STEP_TARGETS: Partial<Record<ConceptType, number>> = {
   "sliding-window": 8,
   "prefix-sum": 8,
   stack: 8,
-  recursion: 8,
+  recursion: 9,
   "two-pointers": 7,
   "hash-map": 7,
   "linked-list": 7,
@@ -110,15 +110,25 @@ type VisualizerFamily =
   | "matrix-traverse"
   | "prefix-range"
   | "queue-help-desk"
+  | "queue-line-commands"
+  | "queue-serve-count"
+  | "queue-ticket-rounds"
+  | "queue-window-count"
   | "queue-fifo"
   | "recursion-nested-list"
   | "recursion-stack"
   | "set-first-missing"
+  | "set-first-repeat"
+  | "set-intersection"
+  | "set-unique-count"
   | "set-membership"
   | "sliding-window"
+  | "stack-adjacent-pairs"
   | "stack-brackets"
+  | "stack-commands"
   | "stack-expression"
   | "stack-min"
+  | "stack-monotonic"
   | "string-count-vowels"
   | "string-count-words"
   | "string-course-code"
@@ -157,6 +167,9 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   if (/temperature comfort count/.test(text)) return "array-comfort-count";
   if (/weekly plant care days/.test(text)) return "array-plant-care-days";
   if (/first missing positive|missing positive/.test(text)) return "set-first-missing";
+  if (/first repeated character|first repeated/.test(text)) return "set-first-repeat";
+  if (/shared study topics|intersection|shared/.test(text) && concept === "set") return "set-intersection";
+  if (/unique count|unique parking zones|unique/.test(text) && concept === "set") return "set-unique-count";
   if (/count vowels?/.test(text)) return "string-count-vowels";
   if (/reverse words?/.test(text)) return "string-reverse-words";
   if (/count words?/.test(text)) return "string-count-words";
@@ -175,7 +188,14 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   if (/first last pair/.test(text)) return "tuple-first-last";
   if (concept === "tuple") return isTupleSwapVisualizer(context) ? "tuple-swap" : "tuple-pair";
   if (concept === "set") return "set-membership";
-  if (concept === "queue") return /help desk|ticket|support|serve|join/.test(text) ? "queue-help-desk" : "queue-fifo";
+  if (concept === "queue") {
+    if (/help session finish order|tickets/.test(text)) return "queue-ticket-rounds";
+    if (/recent queue counts|rate limiter|window/.test(text)) return "queue-window-count";
+    if (/serve first students|queue front after serves|servecount/.test(text)) return "queue-serve-count";
+    if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
+    if (/help desk|ticket|support/.test(text)) return "queue-help-desk";
+    return "queue-fifo";
+  }
   if (concept === "linked-list") return "linked-list-traverse";
   if (concept === "binary-search") return "binary-search";
   if (concept === "two-pointers") return "two-pointers";
@@ -193,12 +213,15 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   if (concept === "stack") {
     if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
     if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
+    if (/temperature|next warmer|warmer/.test(text)) return "stack-monotonic";
+    if (/adjacent equal|remove adjacent|pairs/.test(text)) return "stack-adjacent-pairs";
+    if (/plate|undo|latest action|top after|commands|push|pop/.test(text)) return "stack-commands";
     return "stack-expression";
   }
   if (concept === "hash-map") {
     if (/two sum|complement|pair.*target|target.*pair/.test(text)) return "hash-complement";
     if (/group|anagram|bucket by|categor/i.test(text)) return "hash-grouping";
-    if (/count|frequency|frequent|favorite|most common|occurrence/.test(text)) return "hash-frequency";
+    if (/count|frequency|frequent|favorite|most common|occurrence|top k/.test(text)) return "hash-frequency";
     return "hash-lookup";
   }
   if (/palindrome/.test(text)) return "string-palindrome";
@@ -1831,10 +1854,18 @@ function parseMatrixInput(input?: string): unknown[][] {
 function authoredGridVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   const parsedGrid = parseMatrixInput(context.exampleInput);
   const grid = Array.isArray(state.grid) ? state.grid as unknown[][] : parsedGrid.length ? parsedGrid : [[1, 2, 3], [4, 5, 6]];
-  const activeCells = new Set((Array.isArray(state.activeCells) ? state.activeCells : [[0, Math.min(index, grid[0]?.length || 1)]]).map((cell) => Array.isArray(cell) ? cell.join("-") : String(cell)));
   const nodes: Node[] = [];
   const rowCount = Math.min(grid.length, 5);
   const colCount = Math.min(Math.max(...grid.map((row) => row.length)), 6);
+  const rowState = Number(state.row ?? state.currentRow);
+  const colState = Number(state.column ?? state.col ?? state.currentCol);
+  const fallbackCellIndex = Math.min(index, Math.max(rowCount * colCount - 1, 0));
+  const fallbackCell = [Math.floor(fallbackCellIndex / Math.max(colCount, 1)), fallbackCellIndex % Math.max(colCount, 1)];
+  const activeCells = new Set((Array.isArray(state.activeCells)
+    ? state.activeCells
+    : Number.isFinite(rowState) && Number.isFinite(colState)
+      ? [[rowState, colState]]
+      : [fallbackCell]).map((cell) => Array.isArray(cell) ? cell.join("-") : String(cell)));
   const startX = 450 - ((colCount - 1) * 86) / 2;
   const startY = 260 - ((rowCount - 1) * 82) / 2;
   grid.slice(0, rowCount).forEach((row, rowIndex) => {
@@ -3546,14 +3577,14 @@ export function generateFirstMissingPositiveSteps(context: GeneratorContext = {}
     ...(foundResult ? [{ id: "candidate-result", from: "candidate-check", to: "result-node", type: "pointer", state: "active" as const }] : []),
   ];
   const phases = [
-    { title: context.title || "Read the input", desc: "Use a compact sample: [1, 2, 0]. The answer should be 3.", nodes: buildNodes(["item-0", "item-1", "item-2"], [], null, "not found yet"), edges: [], line: 1, state: { positives: "empty", candidate: "" } },
-    { title: "Store positive 1", desc: "1 is positive, so it goes into the set of numbers that exist.", nodes: buildNodes(["item-0"], [1], null, "not found yet", ["filter-rule", "positive-1"]), edges: edgesFor(null), line: 3, state: { positives: "{1}", candidate: "" } },
-    { title: "Store positive 2", desc: "2 is positive too, so it is stored beside 1.", nodes: buildNodes(["item-1"], [1, 2], null, "not found yet", ["filter-rule", "positive-2"]), edges: edgesFor(null), line: 3, state: { positives: "{1, 2}", candidate: "" } },
-    { title: "Ignore 0", desc: "0 cannot be the smallest positive answer, so it stays out of the set.", nodes: buildNodes(["item-2"], [1, 2], null, "not found yet", ["filter-rule"]), edges: edgesFor(null), line: 3, state: { positives: "{1, 2}", ignored: "0" } },
-    { title: "Check candidate 1", desc: "Candidate 1 is already in the set, so it is not missing.", nodes: buildNodes([], [1, 2], 1, "not found yet", ["candidate-check", "positive-1"]), edges: edgesFor(1), line: 5, state: { candidate: 1, decision: "present" } },
-    { title: "Check candidate 2", desc: "Candidate 2 is also present, so move to the next positive integer.", nodes: buildNodes([], [1, 2], 2, "not found yet", ["candidate-check", "positive-2"]), edges: edgesFor(2), line: 6, state: { candidate: 2, decision: "present" } },
-    { title: "Check candidate 3", desc: "3 is not in the set. This is the first missing positive.", nodes: buildNodes([], [1, 2], 3, "3", ["candidate-check"]), edges: edgesFor(3, true), line: 5, state: { candidate: 3, decision: "missing" } },
-    { title: "Return 3", desc: "Return the first positive number that did not appear in the input.", nodes: buildNodes([], [1, 2], 3, "3", ["candidate-check", "result-node"]), edges: edgesFor(3, true), line: 7, state: { result: "3" } },
+    { title: context.title || "Read the input", desc: "Use a compact sample: [1, 2, 0]. The answer should be 3.", nodes: buildNodes(["item-0", "item-1", "item-2"], [], null, "not found yet"), edges: [], line: 1, state: { example: "[1, 2, 0]", positives: "empty", candidate: "none", result: "not final" } },
+    { title: "Store positive 1", desc: "1 is positive, so it goes into the set of numbers that exist.", nodes: buildNodes(["item-0"], [1], null, "not found yet", ["filter-rule", "positive-1"]), edges: edgesFor(null), line: 3, state: { example: "[1, 2, 0]", positives: "{1}", candidate: "none", result: "not final" } },
+    { title: "Store positive 2", desc: "2 is positive too, so it is stored beside 1.", nodes: buildNodes(["item-1"], [1, 2], null, "not found yet", ["filter-rule", "positive-2"]), edges: edgesFor(null), line: 3, state: { example: "[1, 2, 0]", positives: "{1, 2}", candidate: "none", result: "not final" } },
+    { title: "Ignore 0", desc: "0 cannot be the smallest positive answer, so it stays out of the set.", nodes: buildNodes(["item-2"], [1, 2], null, "not found yet", ["filter-rule"]), edges: edgesFor(null), line: 3, state: { example: "[1, 2, 0]", positives: "{1, 2}", ignored: "0", result: "not final" } },
+    { title: "Check candidate 1", desc: "Candidate 1 is already in the set, so it is not missing.", nodes: buildNodes([], [1, 2], 1, "not found yet", ["candidate-check", "positive-1"]), edges: edgesFor(1), line: 5, state: { example: "[1, 2, 0]", positives: "{1, 2}", candidate: 1, decision: "present", result: "not final" } },
+    { title: "Check candidate 2", desc: "Candidate 2 is also present, so move to the next positive integer.", nodes: buildNodes([], [1, 2], 2, "not found yet", ["candidate-check", "positive-2"]), edges: edgesFor(2), line: 6, state: { example: "[1, 2, 0]", positives: "{1, 2}", candidate: 2, decision: "present", result: "not final" } },
+    { title: "Check candidate 3", desc: "3 is not in the set. This is the first missing positive.", nodes: buildNodes([], [1, 2], 3, "3", ["candidate-check"]), edges: edgesFor(3, true), line: 5, state: { example: "[1, 2, 0]", positives: "{1, 2}", candidate: 3, decision: "missing", result: "3" } },
+    { title: "Return 3", desc: "Return the first positive number that did not appear in the input.", nodes: buildNodes([], [1, 2], 3, "3", ["candidate-check", "result-node"]), edges: edgesFor(3, true), line: 7, state: { example: "[1, 2, 0]", result: "3" } },
   ];
   return phases.map((phase, index) => step({
     concept: "set",
@@ -3567,6 +3598,125 @@ export function generateFirstMissingPositiveSteps(context: GeneratorContext = {}
     workflow: workflowFromLabels(phases.map((item) => item.title), index),
     state: phase.state,
   }, index + 1));
+}
+
+function setMemoryNode(id: string, value: string | number, x: number, y: number, label: string, state: Node["state"] = "default"): Node {
+  return { id, value, x, y, label, type: "set-item", state, meta: { role: "memory" } };
+}
+
+export function generateFirstRepeatedSetSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "seen = empty set",
+    "for each character from left to right",
+    "if character is already in seen, return it",
+    "otherwise add character to seen",
+    "return none if the scan ends",
+  ];
+  const letters = ["c", "o", "c", "o", "a"];
+  const baseLetters = layoutArray(letters, { y: 130, gap: 82 });
+  const makeNodes = (activeLetter: number, seen: string[], result = "not found yet", activeSeen = ""): Node[] => [
+    ...baseLetters.map((node, index) => ({
+      ...node,
+      state: index < activeLetter ? "visited" as const : index === activeLetter ? "active" as const : "default" as const,
+    })),
+    { id: "seen-label", x: 150, y: 320, value: "seen", label: "set memory", type: "logic-node", state: "default" },
+    ...(seen.length
+      ? seen.map((letter, index) => setMemoryNode(`seen-${letter}`, letter, 300 + index * 92, 320, "remembered", letter === activeSeen ? "active" : "visited"))
+      : [setMemoryNode("seen-empty", "empty", 340, 320, "set memory", "inactive")]),
+    { id: "result", x: 590, y: 465, value: result, label: "first repeat", type: "logic-node", state: result === "not found yet" ? "default" : "matched", meta: { role: "result" } },
+  ];
+  const phases = [
+    { title: context.title || "First Repeated Character", desc: "Use a short sample, cocoa, so the set-memory move stays easy to follow.", idx: 0, seen: [] as string[], line: 1, state: { example: "cocoa", seen: "empty", result: "not found yet" } },
+    { title: "Remember c", desc: "c has not appeared before, so add it to the set.", idx: 0, seen: ["c"], activeSeen: "c", line: 4, state: { example: "cocoa", checking: "c", seen: "{c}", result: "not found yet" } },
+    { title: "Remember o", desc: "o is new too. The set now remembers c and o.", idx: 1, seen: ["c", "o"], activeSeen: "o", line: 4, state: { example: "cocoa", checking: "o", seen: "{c, o}", result: "not found yet" } },
+    { title: "Find repeated c", desc: "The next c is already in the set, so it is the first repeated character.", idx: 2, seen: ["c", "o"], activeSeen: "c", line: 3, result: "c", state: { example: "cocoa", checking: "c", seen: "{c, o}", decision: "already seen", result: "c" } },
+    { title: "Return c", desc: "Return immediately when the first repeated character is found.", idx: 2, seen: ["c", "o"], activeSeen: "c", line: 3, result: "c", state: { example: "cocoa", result: "c" } },
+  ];
+  return phases.map((phase, index) => {
+    const nodes = makeNodes(phase.idx, phase.seen, phase.result || "not found yet", phase.activeSeen || "");
+    const edgeIds = phase.activeSeen ? [`letter-seen-${phase.activeSeen}`] : [];
+    const edges: Edge[] = edgeIds.map((id) => ({ id, from: `item-${phase.idx}`, to: `seen-${phase.activeSeen}`, type: "pointer", state: "active" }));
+    return step({
+      concept: "set",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges,
+      highlights: { nodeIds: nodes.filter((node) => node.state === "active" || node.state === "matched").map((node) => node.id), edgeIds, lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateUniqueCountSetSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["unique = empty set", "for each value", "add value to unique", "duplicates do not increase set size", "return size of unique"];
+  const values = /parking|zones/i.test(context.title || "") ? ["A", "A", "B", "C"] : [4, 4, 2, 7, 2];
+  const baseValues = layoutArray(values, { y: 135, gap: 96 });
+  const phases = [
+    { title: context.title || "Unique Count", idx: 0, seen: [] as Array<string | number>, desc: "Start with an empty set before reading the first value.", line: 1, state: { example: `[${values.join(", ")}]`, unique: "empty", count: 0, result: "not final" } },
+    { title: `Add ${values[0]}`, idx: 0, seen: [values[0]], desc: `${values[0]} is new, so the set size becomes 1.`, line: 3, state: { example: `[${values.join(", ")}]`, checking: String(values[0]), unique: `{${values[0]}}`, count: 1, result: "not final" } },
+    { title: `Skip duplicate ${values[1]}`, idx: 1, seen: [values[0]], desc: `${values[1]} is already in the set, so the count does not change.`, line: 4, state: { example: `[${values.join(", ")}]`, checking: String(values[1]), duplicate: String(values[1]), count: 1, result: "not final" } },
+    { title: `Add ${values[2]}`, idx: 2, seen: [values[0], values[2]], desc: `${values[2]} is new, so it increases the unique count.`, line: 3, state: { example: `[${values.join(", ")}]`, checking: String(values[2]), unique: `{${values[0]}, ${values[2]}}`, count: 2, result: "not final" } },
+    { title: `Add ${values[3]}`, idx: 3, seen: [values[0], values[2], values[3]], desc: `${values[3]} is another new value, so the set size becomes 3.`, line: 3, state: { example: `[${values.join(", ")}]`, checking: String(values[3]), count: 3, result: "not final" } },
+    { title: "Return unique count", idx: 4, seen: [values[0], values[2], values[3]], desc: "Return the set size, not the length of the original list.", line: 5, state: { example: `[${values.join(", ")}]`, result: 3 } },
+  ];
+  return phases.map((phase, index) => {
+    const nodes: Node[] = [
+      ...baseValues.map((node, itemIndex) => ({ ...node, state: itemIndex === phase.idx ? "active" as const : itemIndex < phase.idx ? "visited" as const : "default" as const })),
+      ...phase.seen.map((value, seenIndex) => setMemoryNode(`seen-${seenIndex}`, value, 320 + seenIndex * 120, 340, "unique set", "visited")),
+      { id: "count", x: 620, y: 460, value: Number(phase.state.count ?? phase.state.result ?? 0), label: "set size", type: "logic-node", state: "matched", meta: { role: "result" } },
+    ];
+    return step({
+      concept: "set",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: [`item-${phase.idx}`, "count"], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateSetIntersectionSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["memory = set(second list)", "for each topic in first list", "if topic is in memory and not already output", "append topic to shared", "return shared"];
+  const first = ["loops", "sets", "loops"];
+  const secondSet = ["sets", "arrays"];
+  const firstNodes = layoutArray(first, { y: 130, gap: 118 });
+  const phases = [
+    { title: context.title || "Shared Study Topics", idx: 0, shared: [] as string[], desc: "Store the second list as set memory: sets and arrays.", line: 1, activeMemory: "", state: { example: "first=[loops,sets,loops], second=[sets,arrays]", memory: "{sets, arrays}", shared: "empty", result: "not final" } },
+    { title: "Check loops", idx: 0, shared: [] as string[], desc: "loops is not in the second set, so it is not shared.", line: 3, activeMemory: "", state: { example: "first=[loops,sets,loops], second=[sets,arrays]", checking: "loops", decision: "not shared", result: "not final" } },
+    { title: "Check sets", idx: 1, shared: [] as string[], desc: "sets is in the second set, so it belongs in the shared output.", line: 3, activeMemory: "sets", state: { example: "first=[loops,sets,loops], second=[sets,arrays]", checking: "sets", decision: "shared", result: "not final" } },
+    { title: "Append sets once", idx: 1, shared: ["sets"], desc: "Add sets to the result. A result set prevents adding the same shared topic twice.", line: 4, activeMemory: "sets", state: { example: "first=[loops,sets,loops], second=[sets,arrays]", shared: "[sets]", result: "[sets]" } },
+    { title: "Skip repeated loops", idx: 2, shared: ["sets"], desc: "The last loops is still not in memory, so the output stays unchanged.", line: 3, activeMemory: "", state: { example: "first=[loops,sets,loops], second=[sets,arrays]", checking: "loops", shared: "[sets]", result: "[sets]" } },
+    { title: "Return shared topics", idx: 1, shared: ["sets"], desc: "Only topics found in both collections are returned.", line: 5, activeMemory: "sets", state: { example: "first=[loops,sets,loops], second=[sets,arrays]", result: "[sets]" } },
+  ];
+  return phases.map((phase, index) => {
+    const nodes: Node[] = [
+      ...firstNodes.map((node, itemIndex) => ({ ...node, label: "first list", state: itemIndex === phase.idx ? "active" as const : itemIndex < phase.idx ? "visited" as const : "default" as const })),
+      ...secondSet.map((topic, memoryIndex) => setMemoryNode(`memory-${topic}`, topic, 380 + memoryIndex * 145, 320, "second-set memory", topic === phase.activeMemory ? "active" : "visited")),
+      { id: "shared", x: 535, y: 465, value: phase.shared.length ? `[${phase.shared.join(", ")}]` : "empty", label: "shared output", type: "logic-node", state: phase.shared.length ? "matched" : "default", meta: { role: "result" } },
+    ];
+    const edges = phase.activeMemory ? [{ id: "membership-check", from: `item-${phase.idx}`, to: `memory-${phase.activeMemory}`, type: "pointer" as const, state: "active" as const }] : [];
+    return step({
+      concept: "set",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges,
+      highlights: { nodeIds: [`item-${phase.idx}`, ...(phase.activeMemory ? [`memory-${phase.activeMemory}`] : []), "shared"], edgeIds: edges.map((edge) => edge.id || ""), lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
 }
 
 export function generateTreeInsertSteps(context: GeneratorContext = {}): Step[] {
@@ -3717,7 +3867,7 @@ export function generateHashFrequencySteps(context: GeneratorContext = {}): Step
       code,
       activeLine: phase.line,
       workflow: workflowFromLabels(phases.map((item) => item.title), index),
-      state: { current: key, table: phase.result },
+      state: { example: "items=[A, B, A]", target: "count each item", current: key, table: phase.result },
     }, index + 1);
   });
 }
@@ -3735,13 +3885,14 @@ export function generateHashComplementSteps(context: GeneratorContext = {}): Ste
   const empty = layoutHashBuckets(5, {});
   const withTwo = layoutHashBuckets(5, { 2: ["2:0"] });
   const phases = [
-    { idx: 0, visual: empty, active: ["bucket-2"], title: context.title || "Find a complement", desc: "Start with target 9 and an empty table of numbers already seen.", line: 1, state: { target: 9, seen: "empty" } },
-    { idx: 0, visual: empty, active: ["bucket-2"], title: "Need 7", desc: "For num 2, the missing partner is 7. It is not stored yet.", line: 3, state: { num: 2, need: 7 } },
-    { idx: 0, visual: withTwo, active: ["bucket-2", "entry-2-0"], title: "Store 2", desc: "Save 2 with index 0 so a later value can find it.", line: 5, state: { seen: "2 -> 0" } },
-    { idx: 1, visual: withTwo, active: ["bucket-2", "entry-2-0"], title: "Need 2", desc: "For num 7, the missing partner is 2.", line: 3, state: { num: 7, need: 2 } },
-    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Find stored 2", desc: "2 is already in the table, so the pair is found without scanning again.", line: 4, state: { found: "2 at index 0" } },
-    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Pair with current index", desc: "The stored index 0 pairs with the current index 1.", line: 4, state: { pair: "0 and 1" } },
-    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Return both indexes", desc: "Return the stored index and the current index.", line: 4, state: { result: "[0, 1]" } },
+    { idx: 0, visual: empty, active: ["bucket-2"], title: context.title || "Find a complement", desc: "We need two numbers that add to target 9. The table starts empty.", line: 1, state: { target: 9, key: "none yet", bucket: "?", seen: "empty", hashRule: "wait for a key" } },
+    { idx: 0, visual: empty, active: ["bucket-2"], title: "Read 2, need 7", desc: "For current number 2, the missing partner is 7 because 9 - 2 = 7.", line: 3, state: { target: 9, key: "need 7", num: 2, need: 7, bucket: 2, result: "7 not found", hashRule: "7 % 5 = 2" } },
+    { idx: 0, visual: withTwo, active: ["bucket-2", "entry-2-0"], title: "Store 2 at index 0", desc: "7 was not found, so save the current number 2 with its index for a later match.", line: 5, state: { target: 9, key: "num 2", num: 2, bucket: 2, seen: "2 -> 0", hashRule: "2 % 5 = 2" } },
+    { idx: 1, visual: withTwo, active: ["bucket-2"], title: "Read 7, need 2", desc: "Move to the next number. For current number 7, the missing partner is 2 because 9 - 7 = 2.", line: 3, state: { target: 9, key: "need 2", num: 7, need: 2, bucket: 2, result: "checking for 2", hashRule: "2 % 5 = 2" } },
+    { idx: 1, visual: withTwo, active: ["bucket-2", "entry-2-0"], title: "Jump to bucket 2", desc: "Hashing the needed value 2 points to bucket 2, so only this bucket's chain is checked.", line: 4, state: { target: 9, key: "need 2", num: 7, need: 2, bucket: 2, found: "checking 2:0", hashRule: "2 % 5 = 2" } },
+    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Find stored 2", desc: "The entry 2:0 means value 2 was seen earlier at index 0.", line: 4, state: { target: 9, key: "need 2", num: 7, need: 2, bucket: 2, found: "2 at index 0", hashRule: "2 % 5 = 2" } },
+    { idx: 1, visual: withTwo, active: ["entry-2-0"], title: "Pair old index with current", desc: "The stored index 0 pairs with the current index 1, so the answer indexes are ready.", line: 4, state: { target: 9, key: "2 + 7", num: 7, need: 2, bucket: 2, pair: "[0, 1]", hashRule: "2 % 5 = 2" } },
+    { idx: 1, visual: withTwo, active: ["bucket-2", "entry-2-0"], title: "Return [0, 1]", desc: "Return [0, 1] because nums[0] + nums[1] is 2 + 7, which equals target 9.", line: 4, state: { target: 9, key: "2 + 7", num: 7, need: 2, bucket: 2, result: "[0, 1]", hashRule: "2 % 5 = 2" } },
   ];
   return phases.map((phase, index) => step({
     concept: "hash-map",
@@ -3753,8 +3904,86 @@ export function generateHashComplementSteps(context: GeneratorContext = {}): Ste
     code,
     activeLine: phase.line,
     workflow: workflowFromLabels(phases.map((item) => item.title), index),
-    state: phase.state,
+    state: { example: "nums=[2, 7], target=9", ...phase.state },
   }, index + 1));
+}
+
+export function generateHashLookupSteps(context: GeneratorContext = {}): Step[] {
+  const text = visualizerFamilyText(context);
+  const isCreditTotal = /course credit total|selected/.test(text);
+  const isRecentUnique = /most recent unique/.test(text);
+  const code = isRecentUnique
+    ? ["counts = {}", "for each event: counts[event] += 1", "scan events from the end", "return first event with count 1"]
+    : isCreditTotal
+      ? ["credits_by_course = {}", "store each course with its credits", "for each selected course", "add credits_by_course[course]", "return total"]
+      : ["prices_by_item = {}", "store each item with its price", "look up the target key", "return the stored value"];
+  const buckets = isRecentUnique
+    ? [
+        {} as Record<number, string[]>,
+        { 2: ["login:2"], 3: ["sync:1"], 4: ["chat:1"] },
+      ]
+    : isCreditTotal
+      ? [
+          {} as Record<number, string[]>,
+          { 1: ["COSC101:3"] },
+          { 1: ["COSC101:3"], 3: ["MATH113:4"] },
+        ]
+      : [
+          {} as Record<number, string[]>,
+          { 2: ["milk:4"] },
+          { 2: ["milk:4"], 3: ["bread:3"] },
+        ];
+  const phases = isRecentUnique
+    ? [
+        { title: context.title || "Most Recent Unique", desc: "The target is the newest event whose count is exactly one.", bucket: buckets[0], active: ["bucket-2"], line: 1, state: { target: "most recent unique", counts: "empty" } },
+        { title: "Count login", desc: "login appears more than once, so its saved count grows instead of becoming an answer.", bucket: { 2: ["login:2"] }, active: ["entry-2-0"], line: 2, state: { target: "most recent unique", key: "login", counts: "login:2" } },
+        { title: "Count sync", desc: "sync gets its own key and a count of one.", bucket: { 2: ["login:2"], 3: ["sync:1"] }, active: ["entry-3-0"], line: 2, state: { target: "most recent unique", key: "sync", counts: "login:2, sync:1" } },
+        { title: "Count chat", desc: "chat is also stored with count one before the backward scan starts.", bucket: buckets[1], active: ["entry-4-0"], line: 2, state: { target: "most recent unique", key: "chat", counts: "login:2, sync:1, chat:1" } },
+        { title: "Start from the newest event", desc: "Look at chat first because the prompt asks for the most recent unique event.", bucket: buckets[1], active: ["bucket-4"], line: 3, state: { target: "most recent unique", lookup: "chat" } },
+        { title: "Read chat count", desc: "The hash map jumps to chat's bucket and reads the saved count.", bucket: buckets[1], active: ["entry-4-0"], line: 3, state: { target: "most recent unique", lookup: "chat", count: 1 } },
+        { title: "Return chat", desc: "chat has count 1, so it is the first answer found when scanning backward.", bucket: buckets[1], active: ["entry-4-0"], line: 4, state: { target: "most recent unique", result: "chat" } },
+      ]
+    : isCreditTotal
+      ? [
+          { title: context.title || "Course Credit Total", desc: "The target is the selected course whose credit value must be added.", bucket: buckets[0], active: ["bucket-1"], line: 1, state: { target: "COSC101", total: 0 } },
+          { title: "Store COSC101 credits", desc: "COSC101 maps to 3 credits, so later selected courses can look it up directly.", bucket: buckets[1], active: ["entry-1-0"], line: 2, state: { target: "COSC101", stored: "COSC101 -> 3" } },
+          { title: "Store MATH113 credits", desc: "MATH113 gets its own key and value in the same map.", bucket: buckets[2], active: ["entry-3-0"], line: 2, state: { target: "COSC101", stored: "MATH113 -> 4" } },
+          { title: "Choose selected COSC101", desc: "Now the selected course becomes the lookup key.", bucket: buckets[2], active: ["bucket-1"], line: 3, state: { target: "COSC101", selected: "COSC101" } },
+          { title: "Read COSC101 credits", desc: "The map jumps to COSC101's bucket and reads the stored credit value.", bucket: buckets[2], active: ["entry-1-0"], line: 3, state: { target: "COSC101", lookup: "COSC101", credits: 3 } },
+          { title: "Add to total", desc: "Add 3 credits to the running total.", bucket: buckets[2], active: ["entry-1-0"], line: 4, state: { target: "COSC101", total: 3 } },
+          { title: "Return 3", desc: "The selected courses total 3 credits.", bucket: buckets[2], active: ["entry-1-0"], line: 5, state: { target: "COSC101", result: 3 } },
+        ]
+      : [
+          { title: context.title || "Grocery Price Lookup", desc: "Use item names as keys and prices as values.", bucket: buckets[0], active: ["bucket-2"], line: 1, state: { target: "bread" } },
+          { title: "Store milk", desc: "milk maps to price 4.", bucket: buckets[1], active: ["entry-2-0"], line: 2, state: { target: "bread", stored: "milk -> 4" } },
+          { title: "Store bread", desc: "bread maps to price 3.", bucket: buckets[2], active: ["entry-3-0"], line: 2, state: { target: "bread", stored: "bread -> 3" } },
+          { title: "Choose target bread", desc: "The lookup key is bread, so the table does not need to scan every item.", bucket: buckets[2], active: ["bucket-3"], line: 3, state: { target: "bread", lookup: "bread" } },
+          { title: "Jump to bread's bucket", desc: "Hashing bread chooses bucket 3, where bread's entry is stored.", bucket: buckets[2], active: ["bucket-3"], line: 3, state: { target: "bread", lookup: "bread", bucket: 3 } },
+          { title: "Read bread price", desc: "The key in the bucket matches bread, so read the value beside it.", bucket: buckets[2], active: ["entry-3-0"], line: 3, state: { target: "bread", lookup: "bread", price: 3 } },
+          { title: "Return 3", desc: "Return the value stored under the target key.", bucket: buckets[2], active: ["entry-3-0"], line: 4, state: { target: "bread", result: 3 } },
+        ];
+  return phases.map((phase, index) => {
+    const visual = layoutHashBuckets(5, phase.bucket);
+    return step({
+      concept: "hash-map",
+      title: phase.title,
+      description: phase.desc,
+      nodes: withNodeState(visual.nodes, phase.active, "active"),
+      edges: visual.edges,
+      highlights: { nodeIds: phase.active, lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: {
+        example: isRecentUnique
+          ? "events=[login, sync, login, chat]"
+          : isCreditTotal
+            ? "courses=[COSC101, MATH113], selected=COSC101"
+            : "items=[milk, bread], target=bread",
+        ...phase.state,
+      },
+    }, index + 1);
+  });
 }
 
 export function generateGraphIslandsSteps(context: GeneratorContext = {}): Step[] {
@@ -3868,7 +4097,7 @@ export function generateHashGroupingSteps(context: GeneratorContext = {}): Step[
       code,
       activeLine: phase.line,
       workflow: workflowFromLabels(phases.map((item) => item.title), index),
-      state: { key: phase.key, groups: phase.result },
+      state: { example: "items=[A, B, A]", target: "group matching keys", key: phase.key, groups: phase.result },
     }, index + 1);
   });
 }
@@ -4444,6 +4673,119 @@ export function generateMinStackSteps(context: GeneratorContext = {}): Step[] {
   }, index + 1));
 }
 
+export function generateCommandStackSteps(context: GeneratorContext = {}): Step[] {
+  const text = visualizerFamilyText(context);
+  const isUndo = /undo/.test(text);
+  const code = isUndo
+    ? ["stack = []", "push each normal action", "when action is undo, pop the latest action", "return remaining actions"]
+    : ["stack = []", "for each command", "if command starts with push, add to top", "if command is pop, remove top", "return top or height"];
+  const phases = isUndo
+    ? [
+        { title: context.title || "Undo Latest Action", desc: "Start with an empty action stack.", stack: [] as string[], line: 1, state: { top: "empty", height: 0 } },
+        { title: "Push open", desc: "open is a normal action, so it goes on the stack.", stack: ["open"], active: 0, line: 2, state: { top: "open", height: 1 } },
+        { title: "Push type", desc: "type is now the latest action at the top.", stack: ["open", "type"], active: 1, line: 2, state: { top: "type", height: 2 } },
+        { title: "Undo removes type", desc: "undo pops the newest action only, leaving open in place.", stack: ["open"], active: 0, line: 3, state: { popped: "type", top: "open" } },
+        { title: "Return remaining actions", desc: "The stack now contains the actions that were not undone.", stack: ["open"], active: 0, line: 4, state: { result: "[open]" } },
+      ]
+    : [
+        { title: context.title || "Stack Top After Plates", desc: "Start with an empty stack of items.", stack: [] as string[], line: 1, state: { top: "empty", height: 0 } },
+        { title: "Push tray", desc: "tray goes on the bottom because the stack was empty.", stack: ["tray"], active: 0, line: 3, state: { top: "tray", height: 1 } },
+        { title: "Push cup", desc: "cup is placed above tray and becomes the top.", stack: ["tray", "cup"], active: 1, line: 3, state: { top: "cup", height: 2 } },
+        { title: "Pop cup", desc: "pop removes only the top item, so tray is uncovered.", stack: ["tray"], active: 0, line: 4, state: { popped: "cup", top: "tray" } },
+        { title: "Return tray", desc: "The remaining top item is tray.", stack: ["tray"], active: 0, line: 5, state: { result: "tray" } },
+      ];
+  return phases.map((phase, index) => {
+    const nodes: Node[] = phase.stack.length
+      ? phase.stack.map((value, stackIndex) => ({
+          id: `stack-${stackIndex}`,
+          x: 455,
+          y: 405 - stackIndex * 78,
+          value,
+          label: stackIndex === phase.stack.length - 1 ? "top" : "below top",
+          type: "array-cell",
+          state: stackIndex === phase.active ? "active" as const : "default" as const,
+          meta: { role: "stack-item" },
+        }))
+      : [{ id: "empty-stack", x: 455, y: 405, value: "empty", label: "stack", type: "logic-node", state: "inactive", meta: { role: "memory" } }];
+    nodes.push({ id: "top-card", x: 650, y: 250, value: String(phase.state.top || phase.state.result || "empty"), label: "visible top", type: "logic-node", state: "matched", meta: { role: "result" } });
+    return step({
+      concept: "stack",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: phase.stack.length ? [{ id: "top-pointer", from: `stack-${phase.stack.length - 1}`, to: "top-card", type: "pointer", state: "active" }] : [],
+      highlights: { nodeIds: [phase.stack.length ? `stack-${phase.active ?? phase.stack.length - 1}` : "empty-stack", "top-card"], edgeIds: phase.stack.length ? ["top-pointer"] : [], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateAdjacentPairStackSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["stack = []", "for each character", "if top equals character, pop top", "otherwise push character", "return stack joined as text"];
+  const phases = [
+    { title: context.title || "Remove Adjacent Equal Pairs", char: "a", stack: ["a"], desc: "a starts the stack because there is no top to compare yet.", line: 4, state: { text: "abbaca", stack: "a" } },
+    { title: "Push b", char: "b", stack: ["a", "b"], desc: "b does not match top a, so push b.", line: 4, state: { top: "b", stack: "ab" } },
+    { title: "Pair b with top b", char: "b", stack: ["a"], desc: "The next b matches the top b, so pop the pair away.", line: 3, state: { removed_pair: "bb", stack: "a" } },
+    { title: "Pair a with top a", char: "a", stack: [], desc: "The next a matches the remaining top a, so that pair is removed too.", line: 3, state: { removed_pair: "aa", stack: "empty" } },
+    { title: "Push c then a", char: "a", stack: ["c", "a"], desc: "c and a do not form adjacent equal pairs, so both remain.", line: 4, state: { stack: "ca" } },
+    { title: "Return ca", char: "", stack: ["c", "a"], desc: "Joining the remaining stack gives the final text ca.", line: 5, state: { result: "ca" } },
+  ];
+  return phases.map((phase, index) => {
+    const nodes = phase.stack.length
+      ? phase.stack.map((value, stackIndex) => ({ id: `stack-${stackIndex}`, x: 430, y: 405 - stackIndex * 78, value, label: stackIndex === phase.stack.length - 1 ? "top" : "", type: "array-cell" as const, state: stackIndex === phase.stack.length - 1 ? "active" as const : "default" as const }))
+      : [{ id: "empty-stack", x: 430, y: 405, value: "empty", label: "stack", type: "logic-node" as const, state: "inactive" as const }];
+    nodes.push({ id: "result", x: 650, y: 310, value: String(phase.state.result || phase.state.stack), label: "current output", type: "logic-node", state: "matched" });
+    return step({
+      concept: "stack",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: [phase.stack.length ? `stack-${phase.stack.length - 1}` : "empty-stack", "result"], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateMonotonicStackSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["answers = [0, 0, 0, 0]", "stack keeps indexes waiting for warmer day", "while current temp is warmer than stack top", "pop index and save wait", "push current index", "return answers"];
+  const temps = [70, 72, 71, 75];
+  const answerRows = ["[0,0,0,0]", "[1,0,0,0]", "[1,0,0,0]", "[1,2,1,0]", "[1,2,1,0]"];
+  const phases = [
+    { title: context.title || "Daily Temperature Waits", idx: 0, stack: [0], answer: answerRows[0], desc: "Day 0 waits on the stack because no warmer future day is known yet.", line: 5, state: { stack: "day 0", waits: answerRows[0] } },
+    { title: "72 warms day 0", idx: 1, stack: [], answer: answerRows[1], desc: "72 is warmer than 70, so day 0 waited 1 day.", line: 4, state: { updated_day: 0, wait: 1 } },
+    { title: "Day 1 waits", idx: 1, stack: [1], answer: answerRows[1], desc: "After resolving day 0, day 1 waits for something warmer than 72.", line: 5, state: { stack: "day 1", waits: answerRows[1] } },
+    { title: "Day 2 waits behind day 1", idx: 2, stack: [1, 2], answer: answerRows[2], desc: "71 is not warmer than 72, so day 2 waits on top of day 1.", line: 5, state: { stack: "day 1, day 2" } },
+    { title: "75 resolves day 2 and day 1", idx: 3, stack: [], answer: answerRows[3], desc: "75 is warmer than both waiting days, so fill waits for day 2 and day 1.", line: 4, state: { waits: answerRows[3] } },
+    { title: "Return waits", idx: 3, stack: [3], answer: answerRows[4], desc: "Day 3 has no warmer future day, so its wait stays 0.", line: 6, state: { result: "[1,2,1,0]" } },
+  ];
+  return phases.map((phase, index) => {
+    const tempNodes = layoutArray(temps, { y: 135, gap: 96 }).map((node, itemIndex) => ({ ...node, state: itemIndex === phase.idx ? "active" as const : itemIndex < phase.idx ? "visited" as const : "default" as const }));
+    const stackNodes = phase.stack.length
+      ? phase.stack.map((day, stackIndex) => ({ id: `wait-${day}`, x: 350 + stackIndex * 120, y: 330, value: `day ${day}`, label: `temp ${temps[day]}`, type: "logic-node" as const, state: "queued" as const }))
+      : [{ id: "wait-empty", x: 410, y: 330, value: "empty", label: "waiting stack", type: "logic-node" as const, state: "inactive" as const }];
+    const nodes: Node[] = [...tempNodes, ...stackNodes, { id: "answers", x: 565, y: 470, value: phase.answer, label: "wait answers", type: "logic-node", state: "matched" }];
+    return step({
+      concept: "stack",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: [`item-${phase.idx}`, "answers"], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
 export function generateQueueSteps(context: GeneratorContext = {}): Step[] {
   const code = ["start with the waiting line", "add the new item at the back", "read the item at the front", "serve the front item", "the next item becomes front", "return the served order"];
   const sample = compactVisualInput(context, "queue", context.visualizer?.input || {});
@@ -4641,6 +4983,151 @@ export function generateHelpDeskQueueSteps(context: GeneratorContext = {}): Step
   });
 }
 
+export function generateServeCountQueueSteps(context: GeneratorContext = {}): Step[] {
+  const isFrontOnly = /front/i.test(context.title || "");
+  const code = isFrontOnly
+    ? ["front_index = serveCount", "if front_index is inside names", "return names[front_index]", "otherwise return none"]
+    : ["served = []", "repeat serveCount times", "move front name into served", "return served"];
+  const names = ["Ana", "Bo", "Cy"];
+  const phases = isFrontOnly
+    ? [
+        { title: context.title || "Queue Front After Serves", queue: names, served: [] as string[], active: 0, desc: "The line starts in arrival order: Ana, Bo, Cy.", line: 1, state: { front: "Ana", serveCount: 2 } },
+        { title: "Serve Ana", queue: ["Bo", "Cy"], served: ["Ana"], active: 0, desc: "One serve removes the front, so Bo moves forward.", line: 1, state: { served_count: 1, front: "Bo" } },
+        { title: "Serve Bo", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "The second serve removes Bo.", line: 1, state: { served_count: 2, front: "Cy" } },
+        { title: "Return Cy", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "After two serves, Cy is at the front.", line: 3, state: { result: "Cy" } },
+      ]
+    : [
+        { title: context.title || "Serve First Students", queue: names, served: [] as string[], active: 0, desc: "The queue starts with Ana at the front.", line: 1, state: { serveCount: 2, served: "none yet" } },
+        { title: "Serve Ana", queue: ["Bo", "Cy"], served: ["Ana"], active: 0, desc: "Ana leaves first because she is at the front.", line: 3, state: { served: "[Ana]" } },
+        { title: "Serve Bo", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "Bo becomes front after Ana leaves, then Bo is served.", line: 3, state: { served: "[Ana, Bo]" } },
+        { title: "Stop after two serves", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "serveCount is 2, so Cy remains waiting.", line: 2, state: { remaining: "[Cy]" } },
+        { title: "Return served students", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "Return exactly the names that were served.", line: 4, state: { result: "[Ana, Bo]" } },
+      ];
+  return phases.map((phase, index) => {
+    const queueNodes = phase.queue.map((name, itemIndex) => ({ id: `queue-${itemIndex}`, x: 300 + itemIndex * 150, y: 270, value: name, label: itemIndex === 0 ? "front" : "waiting", type: "array-cell" as const, state: itemIndex === phase.active ? "active" as const : "queued" as const }));
+    const servedNodes = phase.served.map((name, itemIndex) => ({ id: `served-${itemIndex}`, x: 330 + itemIndex * 145, y: 450, value: name, label: "served", type: "logic-node" as const, state: "matched" as const }));
+    const nodes: Node[] = [...queueNodes, ...servedNodes, { id: "result-card", x: 650, y: 450, value: String(phase.state.result || phase.state.served || phase.state.front || "waiting"), label: "tracked result", type: "logic-node", state: "matched" }];
+    return step({
+      concept: "queue",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: ["queue-0", "result-card"], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateLineCommandQueueSteps(context: GeneratorContext = {}): Step[] {
+  const isFrontAfter = /front/i.test(context.title || "");
+  const code = ["queue = []", "read each command", "join adds to the back", "serve removes from the front", "return the requested queue state"];
+  const phases = [
+    { title: context.title || "Dining Line After Commands", command: "join Ana", queue: ["Ana"], served: [] as string[], desc: "Ana joins an empty line and becomes the front.", line: 3, state: { front: "Ana", back: "Ana" } },
+    { title: "Bo joins the back", command: "join Bo", queue: ["Ana", "Bo"], served: [] as string[], desc: "Bo joins behind Ana. The front stays Ana.", line: 3, state: { front: "Ana", back: "Bo" } },
+    { title: "Serve Ana", command: "serve", queue: ["Bo"], served: ["Ana"], desc: "serve removes the oldest waiting student: Ana.", line: 4, state: { served: "Ana", front: "Bo" } },
+    ...(isFrontAfter
+      ? [{ title: "Return Bo", command: "return", queue: ["Bo"], served: ["Ana"], desc: "Bo is now the front of the line.", line: 5, state: { result: "Bo" } }]
+      : [
+          { title: "Cy joins behind Bo", command: "join Cy", queue: ["Bo", "Cy"], served: ["Ana"], desc: "Cy joins the back after Bo.", line: 3, state: { front: "Bo", back: "Cy" } },
+          { title: "Return remaining line", command: "return", queue: ["Bo", "Cy"], served: ["Ana"], desc: "The remaining queue is Bo followed by Cy.", line: 5, state: { result: "[Bo, Cy]" } },
+        ]),
+  ];
+  return phases.map((phase, index) => {
+    const nodes: Node[] = [
+      { id: "command", x: 190, y: 140, value: phase.command, label: "current command", type: "logic-node", state: "active" },
+      ...phase.queue.map((name, itemIndex) => ({ id: `queue-${itemIndex}`, x: 330 + itemIndex * 160, y: 300, value: name, label: itemIndex === 0 ? "front" : "back", type: "array-cell" as const, state: "queued" as const })),
+      { id: "served", x: 420, y: 465, value: phase.served.length ? phase.served.join(", ") : "none yet", label: "served", type: "logic-node", state: phase.served.length ? "matched" : "default" },
+    ];
+    return step({
+      concept: "queue",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: ["command", "queue-0"], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateQueueWindowSteps(context: GeneratorContext = {}): Step[] {
+  const isRateLimiter = /rate limiter/i.test(context.title || "");
+  const code = isRateLimiter
+    ? ["queue keeps accepted times inside the window", "remove times older than current - window", "allow if queue size is below k", "append accepted time", "return decisions"]
+    : ["queue keeps recent times", "remove times outside the window", "append current time", "save current queue size", "return counts"];
+  const phases = isRateLimiter
+    ? [
+        { title: context.title || "Rate Limiter", time: 1, queue: [1], desc: "At time 1, the recent accepted queue is empty, so allow it.", line: 4, state: { decision: "true", queue: "[1]" } },
+        { title: "Allow time 2", time: 2, queue: [1, 2], desc: "Both 1 and 2 are within the window, and capacity k=2 allows the second request.", line: 4, state: { decision: "true", queue: "[1, 2]" } },
+        { title: "Drop expired time 1", time: 11, queue: [2], desc: "At time 11, time 1 is outside the 10-second window, so it leaves the queue.", line: 2, state: { removed: 1, queue: "[2]" } },
+        { title: "Allow time 11", time: 11, queue: [2, 11], desc: "After removing expired times, there is room to accept 11.", line: 4, state: { decision: "true", result: "[true,true,true]" } },
+      ]
+    : [
+        { title: context.title || "Recent Queue Counts", time: 1, queue: [1], desc: "Only time 1 is recent, so the count is 1.", line: 3, state: { time: 1, count: 1 } },
+        { title: "Add time 2", time: 2, queue: [1, 2], desc: "Times 1 and 2 are both within the window.", line: 3, state: { time: 2, count: 2 } },
+        { title: "Drop old times before 8", time: 8, queue: [8], desc: "At time 8, earlier times are outside the 5-unit window.", line: 2, state: { removed: "1 and 2", count: 1 } },
+        { title: "Add time 12", time: 12, queue: [8, 12], desc: "8 and 12 both fit in the current recent window.", line: 3, state: { time: 12, count: 2 } },
+        { title: "Return counts", time: 12, queue: [8, 12], desc: "The saved counts are [1, 2, 1, 2].", line: 4, state: { result: "[1,2,1,2]" } },
+      ];
+  return phases.map((phase, index) => {
+    const nodes: Node[] = [
+      { id: "time", x: 190, y: 150, value: phase.time, label: "current time", type: "logic-node", state: "active" },
+      ...phase.queue.map((time, itemIndex) => ({ id: `queue-${itemIndex}`, x: 330 + itemIndex * 150, y: 315, value: time, label: itemIndex === 0 ? "oldest recent" : "newer", type: "array-cell" as const, state: "queued" as const })),
+      { id: "result", x: 620, y: 470, value: String(phase.state.result || phase.state.count || phase.state.decision), label: "saved output", type: "logic-node", state: "matched" },
+    ];
+    return step({
+      concept: "queue",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: ["time", "result"], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
+export function generateTicketRoundQueueSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["queue = people with ticket counts", "serve the front person once", "if tickets remain, rejoin the back", "if tickets reach zero, save finish order", "return finish order"];
+  const phases = [
+    { title: context.title || "Help Session Finish Order", queue: ["Ana:1", "Bo:2", "Cy:1"], done: [] as string[], desc: "Each student starts in line with their remaining ticket count.", line: 1, state: { queue: "Ana:1, Bo:2, Cy:1" } },
+    { title: "Ana finishes", queue: ["Bo:2", "Cy:1"], done: ["Ana"], desc: "Ana uses her only ticket, so she leaves the queue and joins finish order.", line: 4, state: { finished: "Ana" } },
+    { title: "Bo still needs one", queue: ["Cy:1", "Bo:1"], done: ["Ana"], desc: "Bo uses one ticket but still has one left, so he returns to the back.", line: 3, state: { requeued: "Bo:1" } },
+    { title: "Cy finishes", queue: ["Bo:1"], done: ["Ana", "Cy"], desc: "Cy uses her only ticket and finishes before Bo.", line: 4, state: { finished: "Cy" } },
+    { title: "Bo finishes", queue: [] as string[], done: ["Ana", "Cy", "Bo"], desc: "Bo uses his last ticket and finishes last.", line: 4, state: { finished: "Bo" } },
+    { title: "Return finish order", queue: [] as string[], done: ["Ana", "Cy", "Bo"], desc: "The finish order is Ana, Cy, then Bo.", line: 5, state: { result: "[Ana, Cy, Bo]" } },
+  ];
+  return phases.map((phase, index) => {
+    const queueNodes = phase.queue.length
+      ? phase.queue.map((value, itemIndex) => ({ id: `queue-${itemIndex}`, x: 280 + itemIndex * 165, y: 280, value, label: itemIndex === 0 ? "front" : "waiting", type: "array-cell" as const, state: "queued" as const }))
+      : [{ id: "queue-empty", x: 420, y: 280, value: "empty", label: "queue", type: "logic-node" as const, state: "inactive" as const }];
+    const doneNodes = phase.done.map((name, itemIndex) => ({ id: `done-${itemIndex}`, x: 310 + itemIndex * 145, y: 455, value: name, label: "finished", type: "logic-node" as const, state: "matched" as const }));
+    const nodes: Node[] = [...queueNodes, ...doneNodes];
+    return step({
+      concept: "queue",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: [phase.queue.length ? "queue-0" : "queue-empty", ...(phase.done.length ? [`done-${phase.done.length - 1}`] : [])], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
+  });
+}
+
 export function generateLinkedListSteps(context: GeneratorContext = {}): Step[] {
   const code = ["current = head", "value = current.value", "next_node = current.next", "current = next_node"];
   const nodes: Node[] = [
@@ -4759,19 +5246,81 @@ export function generateSlidingWindowSteps(context: GeneratorContext = {}): Step
 }
 
 export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["if base_case: return base_value", "smaller = solve(n - 1)", "answer = combine(n, smaller)", "return answer"];
+  const code = [
+    "start a countdown call with n",
+    "base case: when n is 0, return the base list",
+    "ask a smaller countdown call for help",
+    "answer = [n] + smaller",
+    "send the answer back up",
+    "pause the current call on the stack",
+    "return the base value",
+    "combine the current call with the smaller answer",
+    "return the combined answer",
+  ];
+  const returnSteps = "base gives [0]|1 + [0] gives [1, 0]|2 + [1, 0] gives [2, 1, 0]";
+  const callFrame = (id: string, y: number, label: string, value: string, state: Node["state"] = "default"): Node => ({
+    id,
+    x: 360,
+    y,
+    value,
+    type: "logic-node",
+    label,
+    state,
+    meta: { role: "call-frame" },
+  });
+  const build = (visibleCalls: number, activeIndex: number, baseState: Node["state"], resultValue: string, resultState: Node["state"]): { nodes: Node[]; edges: Edge[]; highlights: string[] } => {
+    const isDone = activeIndex < 0;
+    const callState = (index: number): Node["state"] => {
+      if (isDone || index > activeIndex) return "visited";
+      if (index === activeIndex) return "active";
+      return "visited";
+    };
+    const callLabel = (index: number): string => {
+      if (isDone) return "returned";
+      if (index === activeIndex) return "current call";
+      if (index < activeIndex) return "waiting";
+      return "returned";
+    };
+    const allCalls = [
+      callFrame("call-0", 115, callLabel(0), "countdown(2)", callState(0)),
+      callFrame("call-1", 205, callLabel(1), "countdown(1)", callState(1)),
+      callFrame("call-2", 295, callLabel(2), "countdown(0)", callState(2)),
+    ].slice(0, visibleCalls);
+    const nodes: Node[] = [
+      ...allCalls,
+      { id: "base-case", x: 650, y: 175, value: baseState === "active" || baseState === "visited" ? "n == 0" : "not yet", type: "logic-node", label: "base case", state: baseState, meta: { role: "base-case" } },
+      { id: "return-chain", x: 650, y: 335, value: resultValue, type: "logic-node", label: "return value", state: resultState, meta: { role: "result" } },
+    ];
+    const edges: Edge[] = allCalls.slice(0, -1).map((node, edgeIndex) => ({
+      id: `${node.id}-${allCalls[edgeIndex + 1].id}`,
+      from: node.id,
+      to: allCalls[edgeIndex + 1].id,
+      type: "pointer",
+      state: edgeIndex < visibleCalls - 1 ? "active" : "default",
+    }));
+    if (allCalls.length) edges.push({ id: "call-base", from: allCalls[allCalls.length - 1].id, to: "base-case", type: "branch", state: baseState === "active" || baseState === "visited" ? "active" : "default" });
+    edges.push({ id: "base-return", from: "base-case", to: "return-chain", type: "branch", state: resultState === "active" || resultState === "matched" ? "active" : "default" });
+    const activeCallId = activeIndex >= 0 ? allCalls[Math.max(0, Math.min(activeIndex, allCalls.length - 1))]?.id : "";
+    const highlights = [
+      ...(activeCallId ? [activeCallId] : []),
+      ...(baseState === "active" ? ["base-case"] : []),
+      ...(resultState === "active" || resultState === "matched" ? ["return-chain"] : []),
+    ];
+    return { nodes, edges, highlights };
+  };
   const phases = [
-    { title: context.title || "Recursion", desc: "Start with the first call. It owns the full problem.", line: 1 },
-    { title: "Check for the base case", desc: "The input is not small enough to answer yet, so the function must call itself.", line: 1 },
-    { title: "Make a smaller call", desc: "The first call pauses and asks a smaller version to run.", line: 2 },
-    { title: "Stack grows", desc: "Each recursive call gets its own frame and waits for the next smaller answer.", line: 2 },
-    { title: "Base case stops", desc: "The base case is the first call that can answer without another recursive call.", line: 1 },
-    { title: "Return upward", desc: "The base answer returns to the waiting call above it.", line: 4 },
-    { title: "Combine one layer", desc: "A waiting frame combines its piece with the smaller returned value.", line: 3 },
-    { title: "Return the first answer", desc: "After every frame unwinds, the original call can return the final answer.", line: 4 },
+    { visible: 1, active: 0, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: context.title || "Call countdown(2)", desc: "Use a tiny example. The first call owns n = 2 and must decide whether it can answer now.", line: 1, state: { phase: "call", current_call: "countdown(2)", waiting: "none", action: "start with n = 2", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 1, active: 0, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Check n = 2", desc: "n is not 0, so this call cannot finish yet. It will ask a smaller call for help.", line: 2, state: { phase: "base check", current_call: "countdown(2)", waiting: "none", action: "not base case; call n - 1", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 2, active: 1, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Call countdown(1)", desc: "countdown(2) pauses and waits while countdown(1) starts.", line: 3, state: { phase: "smaller call", current_call: "countdown(1)", waiting: "countdown(2)", action: "push countdown(1) onto stack", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 2, active: 1, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Check n = 1", desc: "n is still not 0, so countdown(1) also pauses and asks for a smaller answer.", line: 2, state: { phase: "base check", current_call: "countdown(1)", waiting: "countdown(2)", action: "not base case; call n - 1", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 3, active: 2, base: "active" as const, ret: "not returned yet", retState: "default" as const, title: "Call countdown(0)", desc: "The next call reaches n = 0. This is the base case, so recursion stops going deeper.", line: 2, state: { phase: "base case", current_call: "countdown(0)", waiting: "countdown(2), countdown(1)", action: "base case found", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 3, active: 2, base: "visited" as const, ret: "[0]", retState: "active" as const, title: "Return base value", desc: "countdown(0) can answer directly by returning [0]. Now the return chain begins.", line: 2, state: { phase: "return", current_call: "countdown(0)", waiting: "countdown(2), countdown(1)", action: "send [0] back up", return_value: "[0]", return_step_index: 0 } },
+    { visible: 3, active: 1, base: "visited" as const, ret: "[1, 0]", retState: "active" as const, title: "Unwind to countdown(1)", desc: "countdown(1) receives [0], puts its own 1 in front, and returns [1, 0].", line: 4, state: { phase: "unwind", current_call: "countdown(1)", waiting: "countdown(2)", action: "combine 1 with [0]", return_value: "[1, 0]", return_step_index: 1 } },
+    { visible: 3, active: 0, base: "visited" as const, ret: "[2, 1, 0]", retState: "active" as const, title: "Unwind to countdown(2)", desc: "countdown(2) receives [1, 0], puts its own 2 in front, and returns [2, 1, 0].", line: 4, state: { phase: "unwind", current_call: "countdown(2)", waiting: "none", action: "combine 2 with [1, 0]", return_value: "[2, 1, 0]", return_step_index: 2 } },
+    { visible: 3, active: -1, base: "visited" as const, ret: "[2, 1, 0]", retState: "matched" as const, title: "Finish recursion", desc: "The first call has returned, so the whole recursive process is complete.", line: 5, state: { phase: "done", current_call: "none", waiting: "none", action: "all frames returned", result: "[2, 1, 0]", return_step_index: 2 } },
   ];
   return phases.map((phase, index) => {
-    const visual = authoredRecursionVisual({}, context, index);
+    const visual = build(phase.visible, phase.active, phase.base, phase.ret, phase.retState);
     return step({
       concept: "recursion",
       title: phase.title,
@@ -4781,7 +5330,8 @@ export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
       highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [phase.line] },
       code,
       activeLine: phase.line,
-      state: { depth: Math.min(index + 1, 4) },
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: { example: "countdown(2)", target: "return [2, 1, 0]", return_steps: returnSteps, ...phase.state },
     }, index + 1);
   });
 }
@@ -4868,17 +5418,18 @@ export function generateNestedRecursionSteps(context: GeneratorContext = {}): St
 }
 
 export function generateMatrixSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["row = current_row", "col = current_col", "value = grid[row][col]", "answer = update(answer, value)", "row, col = next_cell(row, col)", "if row < rows and col < cols: continue", "return answer"];
+  const code = ["rows = number of grid rows", "cols = number of grid columns", "for each row from top to bottom", "for each col from left to right", "value = grid[row][col]", "answer = update(answer, value)", "move to the next cell", "return answer"];
   const values = [1, 2, 3, 4, 5, 6];
   const nodes = values.map((value, index) => ({ id: `cell-${index}`, x: 350 + (index % 3) * 96, y: 180 + Math.floor(index / 3) * 96, value, type: "array-cell" as const, label: `${Math.floor(index / 3)},${index % 3}` }));
   const phases = [
-    { cell: 0, title: context.title || "Start at row 0", desc: "Use row and column together so the scan starts at one exact cell.", line: 1, state: { row: 0, column: 0 } },
-    { cell: 0, title: "Set column 0", desc: "The column value completes the address grid[0][0].", line: 2, state: { row: 0, column: 0 } },
-    { cell: 0, title: "Read cell 0,0", desc: "Read the value in the active cell before updating the answer.", line: 3, state: { value: 1 } },
-    { cell: 0, title: "Update answer", desc: "Use the cell value to update the running answer.", line: 4, state: { answer: 1 } },
-    { cell: 1, title: "Move to next cell", desc: "Advance the column so the scan does not read the same cell twice.", line: 5, state: { row: 0, column: 1 } },
-    { cell: 5, title: "Check the edge", desc: "After the last cell, the bounds check tells the loop to stop.", line: 6, state: { row: 1, column: 2, bounds: "last valid cell" } },
-    { cell: 5, title: "Return the answer", desc: "The final answer comes after every intended cell has been considered.", line: 7, state: { result: "answer" } },
+    { cell: 0, title: context.title || "Read matrix shape", desc: "Start with a tiny 2 by 3 grid. A matrix scan needs both a row loop and a column loop.", line: 1, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 0, column: 0, action: "Rows choose which horizontal strip to scan; columns choose the cell inside that row.", progress: "0 of 6 cells", answer: "empty" } },
+    { cell: 0, title: "Start row 0", desc: "The outer loop chooses row 0. Nothing moves across columns until this row is selected.", line: 3, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 0, column: 0, action: "Pick the row first so the inner loop knows which row it belongs to.", progress: "row 0 started", answer: "empty" } },
+    { cell: 0, title: "Read cell 0,0", desc: "The inner loop chooses column 0, so the active address is grid[0][0].", line: 5, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 0, column: 0, value: 1, action: "Read grid[0][0] before changing the running answer.", progress: "1 of 6 cells", answer: 1 } },
+    { cell: 1, title: "Move to cell 0,1", desc: "Column advances inside the same row. The row stays 0 while the column changes.", line: 7, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 0, column: 1, value: 2, action: "Move across the row one column at a time.", progress: "2 of 6 cells", answer: "updated with 2" } },
+    { cell: 2, title: "Finish row 0", desc: "Column 2 is the last cell in row 0, so the next move will leave this row.", line: 6, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 0, column: 2, value: 3, action: "Use the last value in row 0, then prepare to reset the column.", progress: "3 of 6 cells", answer: "row 0 done" } },
+    { cell: 3, title: "Drop to row 1", desc: "The row increases to 1 and the column resets to 0. That is the nested-loop turn.", line: 3, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 1, column: 0, value: 4, action: "When a row ends, move down one row and restart at column 0.", progress: "4 of 6 cells", answer: "row 1 started" } },
+    { cell: 4, title: "Continue across row 1", desc: "The scan repeats the same left-to-right pattern on the new row.", line: 5, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 1, column: 1, value: 5, action: "The same cell rule applies: read grid[row][col], then update.", progress: "5 of 6 cells", answer: "updated with 5" } },
+    { cell: 5, title: "Return after last cell", desc: "After grid[1][2], every cell in the 2 by 3 matrix has been visited exactly once.", line: 8, state: { example: "grid=[[1,2,3],[4,5,6]]", target: "visit every cell once", row: 1, column: 2, value: 6, action: "The scan stops after the final row and final column are handled.", progress: "6 of 6 cells", result: "answer" } },
   ];
   return phases.map((phase, index) => step({
     concept: "matrix",
@@ -5319,6 +5870,9 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
   if (family === "array-plant-care-days") return generatePlantCareDaysSteps(context);
   if (family === "array-rotate") return generateArrayRotationSteps(context);
   if (family === "set-first-missing") return generateFirstMissingPositiveSteps(context);
+  if (family === "set-first-repeat") return generateFirstRepeatedSetSteps(context);
+  if (family === "set-intersection") return generateSetIntersectionSteps(context);
+  if (family === "set-unique-count") return generateUniqueCountSetSteps(context);
   if (family === "string-run-compress") return generateStringRunCompressSteps(context);
   if (
     family === "string-count-vowels" ||
@@ -5331,8 +5885,15 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
   ) return generateStringScanSteps(context);
   if (family === "graph-islands") return generateGraphIslandsSteps(context);
   if (family === "stack-min") return generateMinStackSteps(context);
+  if (family === "stack-commands") return generateCommandStackSteps(context);
+  if (family === "stack-adjacent-pairs") return generateAdjacentPairStackSteps(context);
+  if (family === "stack-monotonic") return generateMonotonicStackSteps(context);
   if (family === "recursion-nested-list") return generateNestedRecursionSteps(context);
   if (family === "queue-help-desk") return generateHelpDeskQueueSteps(context);
+  if (family === "queue-serve-count") return generateServeCountQueueSteps(context);
+  if (family === "queue-line-commands") return generateLineCommandQueueSteps(context);
+  if (family === "queue-window-count") return generateQueueWindowSteps(context);
+  if (family === "queue-ticket-rounds") return generateTicketRoundQueueSteps(context);
   if (family === "conditional-flow") return generateConditionalSteps(context);
   if (family === "math-last-digit") return generateLastDigitSteps(context);
   if (family === "math-count-digits") return generateCountDigitsSteps(context);
@@ -5365,6 +5926,8 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
       return generateHashGroupingSteps(context);
     case "hash-complement":
       return generateHashComplementSteps(context);
+    case "hash-lookup":
+      return generateHashLookupSteps(context);
     default:
       break;
   }

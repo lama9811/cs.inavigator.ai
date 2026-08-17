@@ -106,6 +106,10 @@ function stringCurrentValue(step: Step): string {
 
 function StateStrip({ step }: { step: Step }) {
   if (step.concept === "conditional") return null;
+  if (step.concept === "set") return null;
+  if (step.concept === "hash-map") return null;
+  if (step.concept === "matrix") return null;
+  if (step.concept === "recursion") return null;
   if (isStringVisualStep(step)) {
     const hasReturned = step.state?.returned === true;
     const finalResult = hasReturned
@@ -139,6 +143,28 @@ function StateStrip({ step }: { step: Step }) {
           <strong>{String(value)}</strong>
         </div>
       ))}
+    </div>
+  );
+}
+
+function HashRuleCard({ step }: { step: Step }) {
+  if (step.concept !== "hash-map") return null;
+  const bucketCount = step.nodes.filter((node) => node.type === "hash-bucket").length || 1;
+  const bucket = step.state?.bucket;
+  const key = String(step.state?.key || step.state?.lookup || step.state?.need || step.state?.current || "key").replace(/\s*(?:->|:).*$/, "");
+  const rule = String(
+    step.state?.hashRule
+      || step.state?.hash
+      || (bucket !== undefined && bucket !== null && String(bucket).trim() !== "?"
+        ? `demo hash(${key}) % ${bucketCount} = ${bucket}`
+        : "hash(key) % bucket count"),
+  );
+  return (
+    <div className="ucv-state-strip ucv-hash-rule-strip" aria-label="Hash rule reference">
+      <div>
+        <span>hash rule</span>
+        <strong>{rule}</strong>
+      </div>
     </div>
   );
 }
@@ -409,6 +435,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
           <WorkflowRail step={step} />
           <VisualizerCanvas step={step} />
           {mode === "panel" ? controls : null}
+          {mode === "panel" ? <HashRuleCard step={step} /> : null}
           <StateStrip step={step} />
         </div>
         <aside className="ucv-side">
@@ -422,6 +449,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
       </div>
 
       {mode === "modal" ? controls : null}
+      {mode === "modal" ? <HashRuleCard step={step} /> : null}
     </section>
   );
 }
