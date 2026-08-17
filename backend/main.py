@@ -4622,12 +4622,12 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
 
     # Verified video resources (curated + YouTube Data API) for explicit video asks.
     if is_video_request(original_q):
-        resolved_topic = resolve_video_topic(original_q, history_dicts)
-        topic_is_vague = _topic_is_pronoun_only(clean_video_topic_label(original_q, fallback=""))
-        if is_coding_tutor and topic_is_vague:
-            video_query = build_video_search_query(original_q, user_q, is_coding_tutor)
-        else:
-            video_query = resolved_topic
+        resolved_topic, video_query = resolve_video_request_topic_and_query(
+            original_q,
+            user_q,
+            history_dicts,
+            is_coding_tutor,
+        )
         verified_videos = await asyncio.to_thread(find_verified_videos, video_query, None, 3)
         video_block = build_video_context(verified_videos)
         # "explain X and give me a video" -> inject links and let the AI explain.
@@ -4876,15 +4876,12 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     if is_video_request(original_q):
         # Resolve pronoun follow-ups ("show me a video about it") to the real topic
         # from the previous turn so we never search/label on "it".
-        resolved_topic = resolve_video_topic(original_q, history_dicts)
-        # When the student named a clear topic in their message, search on that.
-        # Only fall back to Coding Tutor workspace context if the message itself
-        # had no real topic (e.g. "show me a video on this problem").
-        topic_is_vague = _topic_is_pronoun_only(clean_video_topic_label(original_q, fallback=""))
-        if is_coding_tutor and topic_is_vague:
-            video_query = build_video_search_query(original_q, user_q, is_coding_tutor)
-        else:
-            video_query = resolved_topic
+        resolved_topic, video_query = resolve_video_request_topic_and_query(
+            original_q,
+            user_q,
+            history_dicts,
+            is_coding_tutor,
+        )
         verified_videos = await asyncio.to_thread(find_verified_videos, video_query, None, 3)
         print(
             f"[VIDEO] request detected | key_loaded={youtube_api_available()} "
@@ -5575,7 +5572,9 @@ def build_video_search_query(display_query: str, full_query: str, is_coding_tuto
 # Words that carry no topic on their own. If a video request reduces to only
 # these ("a video about it", "show me this"), the real subject is in the prior turn.
 _PRONOUN_TOPIC_RE = re.compile(
-    r"^(?:it|this|that|them|those|these|one|ones|the topic|the subject|the same|same)$",
+    r"^(?:it|this|that|them|those|these|one|ones|the topic|the subject|the concept|"
+    r"the idea|the same|same|topic|subject|concept|concepts|idea|ideas|thing|"
+    r"explaining concepts?)$",
     re.IGNORECASE,
 )
 
@@ -5584,6 +5583,46 @@ def _topic_is_pronoun_only(topic: str) -> bool:
     """True when the extracted topic is just a pronoun/filler with no real subject."""
     cleaned = re.sub(r"\s+", " ", (topic or "")).strip(" ?!.:").lower()
     return not cleaned or bool(_PRONOUN_TOPIC_RE.match(cleaned))
+
+
+_CS_TOPIC_ALIASES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bhash\s*maps?\b|\bhashmaps?\b", re.IGNORECASE), "hash maps"),
+    (re.compile(r"\btime\s+complexity\b|\bbig\s*o\b", re.IGNORECASE), "time complexity"),
+    (re.compile(r"\bspace\s+complexity\b", re.IGNORECASE), "space complexity"),
+    (re.compile(r"\bdynamic\s+programming\b", re.IGNORECASE), "dynamic programming"),
+    (re.compile(r"\bbinary\s+search\b", re.IGNORECASE), "binary search"),
+    (re.compile(r"\bsliding\s+window\b", re.IGNORECASE), "sliding window"),
+    (re.compile(r"\btwo\s+pointers?\b", re.IGNORECASE), "two pointers"),
+    (re.compile(r"\brecursion\b", re.IGNORECASE), "recursion"),
+    (re.compile(r"\bstacks?\b", re.IGNORECASE), "stacks"),
+    (re.compile(r"\bqueues?\b", re.IGNORECASE), "queues"),
+    (re.compile(r"\bsets?\b", re.IGNORECASE), "sets"),
+    (re.compile(r"\barrays?\b|\blists?\b", re.IGNORECASE), "arrays and lists"),
+    (re.compile(r"\bstrings?\b", re.IGNORECASE), "strings"),
+    (re.compile(r"\btuples?\b", re.IGNORECASE), "tuples"),
+    (re.compile(r"\btrees?\b", re.IGNORECASE), "trees"),
+    (re.compile(r"\bgraphs?\b", re.IGNORECASE), "graphs"),
+]
+
+
+def _extract_coding_student_message(text: str) -> str:
+    """Return the visible student request from a wrapped Coding Tutor prompt."""
+    body = str(text or "")
+    marker = "Student message:"
+    if "Current coding workspace context:" in body and marker in body:
+        return body.rsplit(marker, 1)[-1].strip()
+    if "STUDENT CODING REQUEST:" in body:
+        return body.rsplit("STUDENT CODING REQUEST:", 1)[-1].strip()
+    return body.strip()
+
+
+def _canonical_coding_topic(text: str) -> str:
+    """Normalize common CS topic spellings so video search hits curated tags."""
+    visible = _extract_coding_student_message(text)
+    for pattern, label in _CS_TOPIC_ALIASES:
+        if pattern.search(visible):
+            return label
+    return ""
 
 
 def _topic_from_history(history: list[dict[str, Any]] | None) -> str:
@@ -5595,6 +5634,9 @@ def _topic_from_history(history: list[dict[str, Any]] | None) -> str:
         prev_q = (turn.get("user_query") or "").strip()
         if not prev_q or is_video_request(prev_q):
             continue  # skip empty turns and prior video asks
+        canonical = _canonical_coding_topic(prev_q)
+        if canonical:
+            return canonical
         topic = clean_video_topic_label(prev_q, fallback="")
         if topic and not _topic_is_pronoun_only(topic):
             return topic
@@ -5609,7 +5651,39 @@ def resolve_video_topic(display_query: str, history: list[dict[str, Any]] | None
         prior = _topic_from_history(history)
         if prior:
             return prior
-    return topic or display_query
+    return topic or ""
+
+
+def resolve_video_request_topic_and_query(
+    display_query: str,
+    full_query: str,
+    history: list[dict[str, Any]] | None,
+    is_coding_tutor: bool,
+) -> tuple[str, str]:
+    """Return (visible_topic, search_query) for a video request.
+
+    Coding Tutor only falls back to workspace context when both the current
+    request and the resolved history topic are vague. This keeps follow-ups like
+    "a video explaining the concept" attached to the previous concrete concept
+    ("time complexity") instead of searching for generic words or the active
+    workspace problem.
+    """
+    resolved_topic = resolve_video_topic(display_query, history)
+    current_topic = clean_video_topic_label(display_query, fallback="")
+    current_is_vague = _topic_is_pronoun_only(current_topic)
+    resolved_is_vague = _topic_is_pronoun_only(resolved_topic)
+    if is_coding_tutor and current_is_vague and resolved_is_vague:
+        hinted_topic = ""
+        hint_match = re.search(r"^Recent coding conversation topic:\s*(.+)$", full_query or "", re.MULTILINE)
+        if hint_match:
+            hinted_topic = _canonical_coding_topic(hint_match.group(1)) or clean_video_topic_label(hint_match.group(1), fallback="")
+        if hinted_topic and not _topic_is_pronoun_only(hinted_topic):
+            return hinted_topic, hinted_topic
+        workspace_query = build_video_search_query(display_query, full_query, is_coding_tutor)
+        problem_match = re.search(r"^Problem:\s*(.+)$", full_query or "", re.MULTILINE)
+        visible_topic = problem_match.group(1).strip() if problem_match else "this coding topic"
+        return visible_topic, workspace_query
+    return resolved_topic, resolved_topic
 
 
 def find_verified_videos(query: str, language: str | None = None, limit: int = 3) -> list[dict[str, Any]]:
@@ -5725,9 +5799,10 @@ def _strip_topic_filler(text: str) -> str:
     )
     # Remove remaining filler words.
     out = re.sub(
-        r"\b(?:the concept of|concept of|a|an|the|some|youtube|video|videos|tutorial|tutorials|"
-        r"lesson|lessons|clip|clips|that|this|it|explains?|explain|teach(?:es)?|me|please|pls|"
-        r"for|about|on|of)\b",
+        r"\b(?:the concept of|concept of|concepts?|ideas?|topics?|subjects?|a|an|the|some|"
+        r"youtube|video|videos|tutorial|tutorials|lesson|lessons|clip|clips|that|this|it|"
+        r"explain(?:s|ing)?|teach(?:es|ing)?|me|please|pls|"
+        r"for|about|on|of|to)\b",
         " ",
         out,
         flags=re.IGNORECASE,
@@ -5758,6 +5833,7 @@ def clean_video_topic_label(query: str, fallback: str = "that topic") -> str:
 
     # Keep only the first clause if upstream context got appended.
     candidate = re.split(r"[?!.]\s+", candidate, 1)[0].strip(" ?!.:,")
+    candidate = _canonical_coding_topic(candidate) or candidate
     return candidate or fallback
 
 

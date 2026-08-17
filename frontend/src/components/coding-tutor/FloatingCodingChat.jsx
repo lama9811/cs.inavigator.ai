@@ -18,8 +18,8 @@ const FloatingMessageMarkdown = memo(function FloatingMessageMarkdown({ text, co
   );
 });
 
-// Two optional one-tap accelerators at the top of the chat. Debug sends its
-// request immediately; Rewrite first lets the student pick a target language
+// Optional one-tap accelerators at the top of the chat. Debug sends its
+// request immediately; Ask concept focuses the input; Rewrite lets the student pick a target language
 // (so they can convert), then sends. They are shortcuts, not a required step —
 // the student can always just type a question instead.
 const REWRITE_LANGUAGES = ["Same language", "Python", "JavaScript", "Java", "C++"];
@@ -148,6 +148,7 @@ function FloatingChatWindow({
   input,
   isLoading,
   pendingFile,
+  inputPlaceholder,
   accept,
   inputRef,
   fileInputRef,
@@ -174,6 +175,7 @@ function FloatingChatWindow({
   onMinimize,
   onMaximizeToggle,
   onOpenFullChat,
+  onModeBounce,
   onClose,
   onResetPosition,
   onDragStart,
@@ -283,10 +285,18 @@ function FloatingChatWindow({
         attempts={attempts}
       />
 
-      {/* Two optional shortcuts at the top. Debug sends immediately; Rewrite opens
-          a language choice first so the student can convert before sending. You
-          can always just type a question instead. */}
+      {/* Optional shortcuts: Ask concept focuses the input, Debug sends
+          immediately, and Rewrite opens a language choice first. */}
       <div className="floating-focus-chips" aria-label="Quick actions">
+        <button
+          type="button"
+          className="floating-focus-chip"
+          onClick={() => onQuickAction("AskConcept")}
+          disabled={isLoading}
+          title="Ask a programming or computer-science concept question."
+        >
+          Ask concept
+        </button>
         <button
           type="button"
           className="floating-focus-chip"
@@ -431,7 +441,18 @@ function FloatingChatWindow({
             {msg.isStreaming && !msg.text ? (
               <FloatingThinkingSteps steps={thinkingMessages} />
             ) : (
-              <FloatingMessageMarkdown text={msg.text || ""} components={mdComponents} />
+              <>
+                <FloatingMessageMarkdown text={msg.text || ""} components={mdComponents} />
+                {msg.sender === "bot" && !msg.isStreaming && msg.suggestedMode && (
+                  <button
+                    type="button"
+                    className="floating-mode-bounce-btn"
+                    onClick={() => onModeBounce?.(msg)}
+                  >
+                    {msg.suggestedMode === "general" ? "Ask in General mode" : "Ask in CS Nav mode"}
+                  </button>
+                )}
+              </>
             )}
           </div>
         )) : showThinking ? (
@@ -514,7 +535,7 @@ function FloatingChatWindow({
                 event.currentTarget.form?.requestSubmit();
               }
             }}
-            placeholder="Paste code, an error, or ask for a review..."
+            placeholder={inputPlaceholder || "Paste code, an error, or ask for a review..."}
             disabled={isLoading}
           />
           <button
