@@ -122,6 +122,14 @@ type VisualizerFamily =
   | "set-intersection"
   | "set-unique-count"
   | "set-membership"
+  | "sliding-window-average"
+  | "sliding-window-calm-two-day"
+  | "sliding-window-longest-under-limit"
+  | "sliding-window-longest-unique"
+  | "sliding-window-max-sum"
+  | "sliding-window-min-study"
+  | "sliding-window-short-blocks"
+  | "sliding-window-three-day"
   | "sliding-window"
   | "stack-adjacent-pairs"
   | "stack-brackets"
@@ -144,6 +152,14 @@ type VisualizerFamily =
   | "tuple-pair"
   | "tuple-score-at-index"
   | "tuple-swap"
+  | "two-pointer-closest"
+  | "two-pointer-count-ends"
+  | "two-pointer-edge-pairs"
+  | "two-pointer-merge"
+  | "two-pointer-pair-sum"
+  | "two-pointer-remove-pair"
+  | "two-pointer-reverse-letters"
+  | "two-pointer-symmetric"
   | "two-pointers"
   | "union-find";
 
@@ -198,8 +214,28 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   }
   if (concept === "linked-list") return "linked-list-traverse";
   if (concept === "binary-search") return "binary-search";
-  if (concept === "two-pointers") return "two-pointers";
-  if (concept === "sliding-window") return "sliding-window";
+  if (concept === "two-pointers") {
+    if (/edge pair matches/.test(text)) return "two-pointer-edge-pairs";
+    if (/symmetric roster|palindrome|roster/.test(text)) return "two-pointer-symmetric";
+    if (/count matching ends/.test(text)) return "two-pointer-count-ends";
+    if (/merge sorted lists/.test(text)) return "two-pointer-merge";
+    if (/closest pair sum/.test(text)) return "two-pointer-closest";
+    if (/pair sum sorted/.test(text)) return "two-pointer-pair-sum";
+    if (/reverse only letters/.test(text)) return "two-pointer-reverse-letters";
+    if (/remove one target pair/.test(text)) return "two-pointer-remove-pair";
+    return "two-pointers";
+  }
+  if (concept === "sliding-window") {
+    if (/count short study blocks/.test(text)) return "sliding-window-short-blocks";
+    if (/three day study totals/.test(text)) return "sliding-window-three-day";
+    if (/any calm two day stretch/.test(text)) return "sliding-window-calm-two-day";
+    if (/longest unique window/.test(text)) return "sliding-window-longest-unique";
+    if (/window average/.test(text)) return "sliding-window-average";
+    if (/maximum window sum/.test(text)) return "sliding-window-max-sum";
+    if (/minimum study window/.test(text)) return "sliding-window-min-study";
+    if (/longest study stretch under limit/.test(text)) return "sliding-window-longest-under-limit";
+    return "sliding-window";
+  }
   if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
   if (concept === "matrix") return "matrix-traverse";
   if (concept === "prefix-sum") return "prefix-range";
@@ -392,8 +428,24 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
     case "binary-search":
       return "values=[1, 3, 5], target=3";
     case "two-pointers":
+      if (title.includes("edge pair matches")) return "words=[lab, quiz, lab]";
+      if (title.includes("symmetric roster")) return "names=[Ana, Bo, Ana]";
+      if (title.includes("count matching ends")) return "values=[1, 2, 2, 1]";
+      if (title.includes("merge sorted lists")) return "left=[1,3,5], right=[2,4]";
+      if (title.includes("pair sum sorted")) return "values=[1, 2, 4, 7], target=9";
+      if (title.includes("reverse only letters")) return "a-bC-d";
+      if (title.includes("closest pair sum")) return "values=[1, 4, 7, 10], target=12";
+      if (title.includes("remove one target pair")) return "values=[1, 2, 4, 5], target=6";
       return "values=[1, 4, 6], target=7";
     case "sliding-window":
+      if (title.includes("count short study blocks")) return "minutes=[20,30,45], limit=60";
+      if (title.includes("three day study totals")) return "minutes=[30,45,25,20]";
+      if (title.includes("any calm two day stretch")) return "minutes=[40,25,50], limit=70";
+      if (title.includes("longest unique window")) return "abcabcbb";
+      if (title.includes("window average")) return "values=[1,2,3,4], k=2";
+      if (title.includes("maximum window sum")) return "values=[2,1,5,1,3], k=3";
+      if (title.includes("minimum study window")) return "minutes=[10,20,30,40], target=70";
+      if (title.includes("longest study stretch under limit")) return "minutes=[20,30,10,40], limit=60";
       return "values=[2, 4, 1], k=2";
     case "recursion":
       return "n=3";
@@ -2226,6 +2278,8 @@ function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string,
     "sort",
   ]);
   if (!generatedConcepts.has(concept)) return false;
+  if (concept === "two-pointers") return true;
+  if (concept === "sliding-window") return true;
   if (rawSteps.length >= targetStepCount(concept)) return false;
   if (rawSteps.length < Math.min(targetStepCount(concept), 6)) return true;
   const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
@@ -5287,46 +5341,408 @@ export function generateBinarySearchSteps(context: GeneratorContext = {}): Step[
 }
 
 export function generateTwoPointerSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["left = 0; right = len(values) - 1", "pair_value = values[left] + values[right]", "left += 1 or right -= 1", "best = update(best, pair_value)"];
-  const values = [1, 4, 7, 10];
-  const phases = [
-    { left: 0, right: 3, sum: 11, title: context.title || "Two pointers", desc: "Start with one pointer on each side." },
-    { left: 0, right: 3, sum: 11, title: "Compare the outer pair", desc: "The pair 1 and 10 is checked against the target rule." },
-    { left: 1, right: 3, sum: 14, title: "Move the left pointer", desc: "If the sum is too small, moving left inward can make the sum larger." },
-    { left: 1, right: 3, sum: 14, title: "Compare again", desc: "Now 4 and 10 are the only values being decided." },
-    { left: 1, right: 2, sum: 11, title: "Move the right pointer", desc: "If the sum is too large, moving right inward can make the sum smaller." },
-    { left: 1, right: 2, sum: 11, title: "Return the match or best state", desc: "The final pointer positions explain the answer without checking every pair." },
-  ];
-  return phases.map((phase, index) => {
+  const family = detectVisualizerFamily("two-pointers", context);
+  type PointerPhase = {
+    left: number;
+    right: number;
+    title: string;
+    desc: string;
+    line: number;
+    state: Record<string, string | number | boolean>;
+  };
+  const build = (
+    values: Array<string | number>,
+    phases: PointerPhase[],
+    code: string[],
+    labels: string[] = [],
+  ): Step[] => phases.map((phase, index) => {
+    const activeIds = [`item-${phase.left}`, `item-${phase.right}`].filter((id) => !id.endsWith("--1"));
     const nodes = layoutArray(values).map((node, nodeIndex) => ({
       ...node,
       state: nodeIndex === phase.left || nodeIndex === phase.right ? "comparing" as const : "default" as const,
-      label: nodeIndex === phase.left ? "left" : nodeIndex === phase.right ? "right" : String(nodeIndex),
+      label: nodeIndex === phase.left ? "left" : nodeIndex === phase.right ? "right" : labels[nodeIndex] || String(nodeIndex),
     }));
-    return step({ concept: "two-pointers", title: phase.title, description: phase.desc, nodes, edges: [], highlights: { nodeIds: [`item-${phase.left}`, `item-${phase.right}`], lineNumbers: [Math.min(index + 1, code.length)] }, code, activeLine: Math.min(index + 1, code.length), state: { left: phase.left, right: phase.right, combined: phase.sum } }, index + 1);
+    return step({
+      concept: "two-pointers",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: activeIds, lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: {
+        left: phase.left,
+        right: phase.right,
+        left_value: values[phase.left] ?? "done",
+        right_value: values[phase.right] ?? "done",
+        ...phase.state,
+      },
+    }, index + 1);
   });
+
+  if (family === "two-pointer-edge-pairs") {
+    const values = ["lab", "quiz", "lab"];
+    const code = [
+      "place one pointer at each edge",
+      "compare the two edge words",
+      "if they match, add one to the count",
+      "move both pointers inward",
+      "stop when no outside pair remains",
+      "return the match count",
+      "finish",
+    ];
+    return build(values, [
+      { left: 0, right: 2, line: 1, title: context.title || "Edge Pair Matches", desc: "Start with the first and last words because the prompt asks for outside-in pairs.", state: { example: "words=[lab, quiz, lab]", target: "count matching edge pairs", count: 0, action: "start at edges", result: "none yet" } },
+      { left: 0, right: 2, line: 2, title: "Compare lab and lab", desc: "The outside words match, so this pair should count.", state: { example: "words=[lab, quiz, lab]", target: "count matching edge pairs", pair: "lab == lab", count: 0, action: "compare pair" } },
+      { left: 0, right: 2, line: 3, title: "Count the match", desc: "Add one because the active edge pair is equal.", state: { example: "words=[lab, quiz, lab]", target: "count matching edge pairs", pair: "lab == lab", count: 1, result: 1 } },
+      { left: 1, right: 1, line: 4, title: "Move inward", desc: "Both pointers move toward the middle after one outside pair is handled.", state: { example: "words=[lab, quiz, lab]", target: "count matching edge pairs", count: 1, action: "left and right meet" } },
+      { left: 1, right: 1, line: 5, title: "No pair remains", desc: "The middle word has no partner across from it, so it does not create another pair.", state: { example: "words=[lab, quiz, lab]", target: "count matching edge pairs", count: 1, action: "stop scanning" } },
+      { left: 1, right: 1, line: 6, title: "Return 1", desc: "Only one outside-in pair matched.", state: { example: "words=[lab, quiz, lab]", target: "count matching edge pairs", result: 1 } },
+      { left: 1, right: 1, line: 7, title: "Trace complete", desc: "The visual stops with the same count the compact example asks for.", state: { example: "words=[lab, quiz, lab]", target: "count matching edge pairs", final_result: 1 } },
+    ], code);
+  }
+
+  if (family === "two-pointer-symmetric") {
+    const values = ["Ana", "Bo", "Ana"];
+    const code = [
+      "place pointers on the first and last names",
+      "compare the active names",
+      "a mismatch would return false",
+      "move both pointers inward after a match",
+      "stop when the pointers meet or cross",
+      "return true if no mismatch happened",
+      "finish",
+    ];
+    return build(values, [
+      { left: 0, right: 2, line: 1, title: context.title || "Symmetric Roster Check", desc: "A symmetric roster must match from the outside toward the center.", state: { example: "names=[Ana, Bo, Ana]", target: "return true when symmetric", status: "checking", result: "none yet" } },
+      { left: 0, right: 2, line: 2, title: "Compare Ana and Ana", desc: "The first and last names match, so the roster can keep going.", state: { example: "names=[Ana, Bo, Ana]", target: "return true when symmetric", pair: "Ana == Ana", status: "match" } },
+      { left: 0, right: 2, line: 3, title: "No mismatch", desc: "Because this pair matched, the false path is skipped.", state: { example: "names=[Ana, Bo, Ana]", target: "return true when symmetric", decision: "keep checking" } },
+      { left: 1, right: 1, line: 4, title: "Move to the middle", desc: "Both pointers move inward. Now they meet on Bo.", state: { example: "names=[Ana, Bo, Ana]", target: "return true when symmetric", status: "middle reached" } },
+      { left: 1, right: 1, line: 5, title: "All pairs checked", desc: "A single middle item does not need a pair, so the scan is complete.", state: { example: "names=[Ana, Bo, Ana]", target: "return true when symmetric", status: "no mismatch" } },
+      { left: 1, right: 1, line: 6, title: "Return true", desc: "Every outside pair matched before the pointers met.", state: { example: "names=[Ana, Bo, Ana]", target: "return true when symmetric", result: "true" } },
+      { left: 1, right: 1, line: 7, title: "Trace complete", desc: "The compact roster reads the same forward and backward.", state: { example: "names=[Ana, Bo, Ana]", target: "return true when symmetric", final_result: "true" } },
+    ], code);
+  }
+
+  if (family === "two-pointer-count-ends") {
+    const values = [1, 2, 2, 1];
+    const code = [
+      "place pointers on both ends",
+      "compare the active values",
+      "add one when the values match",
+      "move both pointers inward",
+      "compare the next outside pair",
+      "stop when pointers cross",
+      "return the count",
+    ];
+    return build(values, [
+      { left: 0, right: 3, line: 1, title: context.title || "Count Matching Ends", desc: "Start with the values at both ends of the list.", state: { example: "values=[1, 2, 2, 1]", target: "count equal end pairs", count: 0, result: "none yet" } },
+      { left: 0, right: 3, line: 2, title: "Compare 1 and 1", desc: "The outside values match.", state: { example: "values=[1, 2, 2, 1]", target: "count equal end pairs", pair: "1 == 1", count: 0 } },
+      { left: 0, right: 3, line: 3, title: "Count first pair", desc: "Save one match before moving the pointers.", state: { example: "values=[1, 2, 2, 1]", target: "count equal end pairs", count: 1, result: 1 } },
+      { left: 1, right: 2, line: 4, title: "Move inward", desc: "Now the active pair is the next outside pair: 2 and 2.", state: { example: "values=[1, 2, 2, 1]", target: "count equal end pairs", count: 1 } },
+      { left: 1, right: 2, line: 5, title: "Compare 2 and 2", desc: "The second active pair also matches.", state: { example: "values=[1, 2, 2, 1]", target: "count equal end pairs", pair: "2 == 2", count: 2, result: 2 } },
+      { left: 2, right: 1, line: 6, title: "Pointers crossed", desc: "After moving inward again, there are no more pairs to check.", state: { example: "values=[1, 2, 2, 1]", target: "count equal end pairs", count: 2, action: "stop" } },
+      { left: 2, right: 1, line: 7, title: "Return 2", desc: "Two outside-in pairs were equal.", state: { example: "values=[1, 2, 2, 1]", target: "count equal end pairs", result: 2 } },
+    ], code);
+  }
+
+  if (family === "two-pointer-merge") {
+    const values = ["1", "3", "5", "2", "4"];
+    const labels = ["L0", "L1", "L2", "R0", "R1"];
+    const code = [
+      "point to the first unused value in each sorted list",
+      "compare the two active values",
+      "copy the smaller value to the result",
+      "move only the pointer that supplied the value",
+      "repeat until one list is empty",
+      "copy the leftovers in order",
+      "return the merged list",
+    ];
+    return build(values, [
+      { left: 0, right: 3, line: 1, title: context.title || "Merge Sorted Lists", desc: "Use one pointer for each sorted list: left list starts at 1, right list starts at 2.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", result: "[]" } },
+      { left: 0, right: 3, line: 2, title: "Compare 1 and 2", desc: "1 is smaller, so it is the next value in the merged result.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", compare: "1 vs 2", result: "[]" } },
+      { left: 0, right: 3, line: 3, title: "Copy 1", desc: "Add 1 to the result, then advance only the left-list pointer.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", copied: 1, result: "[1]" } },
+      { left: 1, right: 3, line: 4, title: "Left pointer moves", desc: "The right pointer stays on 2 because 2 has not been copied yet.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", compare: "3 vs 2", result: "[1]" } },
+      { left: 1, right: 3, line: 3, title: "Copy 2", desc: "2 is smaller than 3, so copy from the right list this time.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", copied: 2, result: "[1,2]" } },
+      { left: 1, right: 4, line: 5, title: "Repeat the pattern", desc: "Continue comparing current values; the next copied values are 3 and 4.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", result: "[1,2,3,4]" } },
+      { left: 2, right: 4, line: 6, title: "Copy leftover 5", desc: "The right list is used up, so the remaining left value keeps its order.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", copied: 5, result: "[1,2,3,4,5]" } },
+      { left: 2, right: 4, line: 7, title: "Return merged list", desc: "The result contains every value from both sorted lists.", state: { example: "left=[1,3,5], right=[2,4]", target: "merged sorted list", result: "[1,2,3,4,5]" } },
+    ], code, labels);
+  }
+
+  if (family === "two-pointer-pair-sum") {
+    const values = [1, 2, 4, 7];
+    const code = [
+      "start with the smallest and largest values",
+      "add the active pair",
+      "if the sum is too small, move left inward",
+      "if the sum is too large, move right inward",
+      "if the sum equals target, save true",
+      "stop when a match is found",
+      "return the boolean result",
+    ];
+    return build(values, [
+      { left: 0, right: 3, line: 1, title: context.title || "Pair Sum Sorted", desc: "Sorted order lets the smallest and largest values decide which pointer should move.", state: { example: "values=[1, 2, 4, 7], target=9", target: 9, sum: 8, result: "none yet" } },
+      { left: 0, right: 3, line: 2, title: "Add 1 + 7", desc: "The first pair totals 8.", state: { example: "values=[1, 2, 4, 7], target=9", target: 9, sum: 8, decision: "too small" } },
+      { left: 1, right: 3, line: 3, title: "Move left inward", desc: "A larger left value can increase the sum toward target 9.", state: { example: "values=[1, 2, 4, 7], target=9", target: 9, sum: 9, action: "left moves" } },
+      { left: 1, right: 3, line: 2, title: "Add 2 + 7", desc: "The active pair now totals 9.", state: { example: "values=[1, 2, 4, 7], target=9", target: 9, sum: 9, decision: "match" } },
+      { left: 1, right: 3, line: 5, title: "Save true", desc: "The pair uses two different positions and matches the target.", state: { example: "values=[1, 2, 4, 7], target=9", target: 9, pair: "2 + 7", result: "true" } },
+      { left: 1, right: 3, line: 6, title: "Stop early", desc: "Once true is known, no later pair can change the boolean answer.", state: { example: "values=[1, 2, 4, 7], target=9", target: 9, action: "match found", result: "true" } },
+      { left: 1, right: 3, line: 7, title: "Return true", desc: "Return true because 2 and 7 add to 9.", state: { example: "values=[1, 2, 4, 7], target=9", target: 9, result: "true" } },
+    ], code);
+  }
+
+  if (family === "two-pointer-reverse-letters") {
+    const values = ["a", "-", "b", "C", "-", "d"];
+    const code = [
+      "place pointers at both ends of the text",
+      "skip a pointer when it sees punctuation",
+      "when both pointers see letters, swap them",
+      "move both pointers inward after a swap",
+      "repeat until pointers meet or cross",
+      "keep punctuation in its original slot",
+      "return the rebuilt text",
+    ];
+    return build(values, [
+      { left: 0, right: 5, line: 1, title: context.title || "Reverse Only Letters", desc: "The pointers start on the outside characters. Punctuation must stay where it is.", state: { example: "a-bC-d", target: "reverse letters only", result: "a-bC-d" } },
+      { left: 0, right: 5, line: 3, title: "Swap a and d", desc: "Both sides are letters, so swap them.", state: { example: "a-bC-d", target: "reverse letters only", swap: "a with d", result: "d-bC-a" } },
+      { left: 1, right: 4, line: 4, title: "Move inward", desc: "After the swap, both pointers move toward the middle.", state: { example: "a-bC-d", target: "reverse letters only", action: "check punctuation", result: "d-bC-a" } },
+      { left: 1, right: 4, line: 2, title: "Skip punctuation", desc: "Both active slots are hyphens, so the pointers skip past them without moving the hyphens.", state: { example: "a-bC-d", target: "reverse letters only", skipped: "hyphens", result: "d-bC-a" } },
+      { left: 2, right: 3, line: 3, title: "Swap b and C", desc: "The next two active characters are letters, so they swap.", state: { example: "a-bC-d", target: "reverse letters only", swap: "b with C", result: "d-Cb-a" } },
+      { left: 3, right: 2, line: 5, title: "Pointers crossed", desc: "The letter reversal is done while punctuation stayed in the same slots.", state: { example: "a-bC-d", target: "reverse letters only", action: "stop", result: "d-Cb-a" } },
+      { left: 3, right: 2, line: 7, title: "Return d-Cb-a", desc: "Return the rebuilt compact string after only letters moved.", state: { example: "a-bC-d", target: "reverse letters only", result: "d-Cb-a" } },
+    ], code);
+  }
+
+  if (family === "two-pointer-closest") {
+    const values = [1, 4, 7, 10];
+    const code = [
+      "start with the smallest and largest values",
+      "add the active pair",
+      "compare its distance from the target",
+      "save the closest pair so far",
+      "move the pointer that can improve the sum",
+      "repeat until the pointers meet",
+      "return the saved closest pair",
+    ];
+    return build(values, [
+      { left: 0, right: 3, line: 1, title: context.title || "Closest Pair Sum Sorted", desc: "Start with the outside pair in the sorted list.", state: { example: "values=[1, 4, 7, 10], target=12", target: 12, sum: 11, best_pair: "none", result: "none yet" } },
+      { left: 0, right: 3, line: 2, title: "Add 1 + 10", desc: "The first pair totals 11.", state: { example: "values=[1, 4, 7, 10], target=12", target: 12, sum: 11, gap: 1 } },
+      { left: 0, right: 3, line: 4, title: "Save [1, 10]", desc: "A gap of 1 is the best seen so far.", state: { example: "values=[1, 4, 7, 10], target=12", target: 12, best_pair: "[1, 10]", gap: 1, result: "[1, 10]" } },
+      { left: 1, right: 3, line: 5, title: "Move left inward", desc: "The sum was below 12, so moving left to 4 may get closer.", state: { example: "values=[1, 4, 7, 10], target=12", target: 12, action: "left moves" } },
+      { left: 1, right: 3, line: 3, title: "Check 4 + 10", desc: "This pair totals 14, which is 2 away from target.", state: { example: "values=[1, 4, 7, 10], target=12", target: 12, sum: 14, gap: 2, best_pair: "[1, 10]" } },
+      { left: 1, right: 2, line: 6, title: "Check final pair", desc: "Move right inward and compare 4 + 7. It ties the old gap, so the first best pair stays saved.", state: { example: "values=[1, 4, 7, 10], target=12", target: 12, sum: 11, gap: 1, best_pair: "[1, 10]" } },
+      { left: 1, right: 2, line: 7, title: "Return [1, 10]", desc: "The saved closest pair is returned.", state: { example: "values=[1, 4, 7, 10], target=12", target: 12, result: "[1, 10]" } },
+    ], code);
+  }
+
+  if (family === "two-pointer-remove-pair") {
+    const values = [1, 2, 4, 5];
+    const code = [
+      "start with the smallest and largest values",
+      "add the active pair",
+      "move left when the sum is too small",
+      "move right when the sum is too large",
+      "when the sum matches, remove both active values",
+      "keep the remaining values in order",
+      "return the remaining list",
+    ];
+    return build(values, [
+      { left: 0, right: 3, line: 1, title: context.title || "Remove One Target Pair", desc: "The smallest and largest values are checked first because the list is sorted.", state: { example: "values=[1, 2, 4, 5], target=6", target: 6, result: "[1,2,4,5]" } },
+      { left: 0, right: 3, line: 2, title: "Add 1 + 5", desc: "The active pair totals 6.", state: { example: "values=[1, 2, 4, 5], target=6", target: 6, sum: 6, decision: "match" } },
+      { left: 0, right: 3, line: 5, title: "Remove the pair", desc: "Because 1 + 5 hits the target, remove those two active values.", state: { example: "values=[1, 2, 4, 5], target=6", target: 6, removed: "1 and 5", result: "[2,4]" } },
+      { left: 1, right: 2, line: 6, title: "Keep middle values", desc: "The values between the removed pair stay in their original order.", state: { example: "values=[1, 2, 4, 5], target=6", target: 6, kept: "2, 4", result: "[2,4]" } },
+      { left: 1, right: 2, line: 6, title: "No second removal", desc: "The prompt asks for the first target pair found, so the trace does not keep removing pairs.", state: { example: "values=[1, 2, 4, 5], target=6", target: 6, action: "stop after first pair", result: "[2,4]" } },
+      { left: 1, right: 2, line: 7, title: "Return remaining list", desc: "Return only the numbers left after removing the matching pair.", state: { example: "values=[1, 2, 4, 5], target=6", target: 6, result: "[2,4]" } },
+      { left: 1, right: 2, line: 7, title: "Trace complete", desc: "The compact example ends with [2, 4].", state: { example: "values=[1, 2, 4, 5], target=6", target: 6, final_result: "[2,4]" } },
+    ], code);
+  }
+
+  const values = [1, 4, 6];
+  const code = [
+    "place one pointer at each needed side",
+    "compare the two active values",
+    "move the pointer chosen by the rule",
+    "compare the new active pair",
+    "save the match or best state",
+    "stop when the pointers meet or cross",
+    "return the result",
+  ];
+  return build(values, [
+    { left: 0, right: 2, line: 1, title: context.title || "Two pointers", desc: "Start with one pointer on each side.", state: { example: "values=[1, 4, 6], target=7", target: 7, result: "none yet" } },
+    { left: 0, right: 2, line: 2, title: "Compare 1 and 6", desc: "The active values are checked together before either pointer moves.", state: { example: "values=[1, 4, 6], target=7", target: 7, sum: 7, result: "match" } },
+    { left: 0, right: 2, line: 5, title: "Save match", desc: "The active pair matches the target rule.", state: { example: "values=[1, 4, 6], target=7", target: 7, pair: "1 + 6", result: "match" } },
+    { left: 0, right: 2, line: 7, title: "Return result", desc: "Return the problem's requested result from the saved state.", state: { example: "values=[1, 4, 6], target=7", target: 7, result: "match" } },
+  ], code);
 }
 
 export function generateSlidingWindowSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["left = 0; total = 0; best = 0", "total += values[right]", "best = max(best, total)", "if window too large:", "  total -= values[left]", "  left += 1", "return best"];
-  const values = [2, 4, 1, 5];
-  const phases = [
-    { window: [0, 0], total: 0, best: 0, line: 1, title: context.title || "Sliding window", desc: "Start with an empty total and both edges ready at the left." },
-    { window: [0, 0], total: 2, best: 0, line: 2, title: "Add the right item", desc: "The right edge brings 2 into the window." },
-    { window: [0, 1], total: 6, best: 0, line: 2, title: "Grow the window", desc: "Add 4 without recounting the previous value." },
-    { window: [0, 1], total: 6, best: 6, line: 3, title: "Save the best", desc: "This window is better than the old best, so save 6." },
-    { window: [0, 2], total: 7, best: 6, line: 2, title: "Grow once more", desc: "Add 1. Now the window must be checked against the rule." },
-    { window: [1, 2], total: 5, best: 6, line: 5, title: "Remove the left item", desc: "Remove 2 from the left edge instead of recounting the whole window." },
-    { window: [1, 3], total: 10, best: 10, line: 3, title: "Repeat and update", desc: "The same grow/check/update pattern finds a new best window." },
-    { window: [1, 3], total: 10, best: 10, line: 7, title: "Return best", desc: "The answer comes from the best saved window, not just the last move." },
-  ];
-  return phases.map((phase, index) => {
+  const family = detectVisualizerFamily("sliding-window", context);
+  type WindowPhase = {
+    window: [number, number];
+    line: number;
+    title: string;
+    desc: string;
+    state: Record<string, string | number | boolean>;
+  };
+  const build = (
+    values: Array<string | number>,
+    phases: WindowPhase[],
+    code: string[],
+  ): Step[] => phases.map((phase, index) => {
     const nodes = layoutArray(values).map((node, nodeIndex) => ({
       ...node,
       state: nodeIndex >= phase.window[0] && nodeIndex <= phase.window[1] ? "active" as const : "default" as const,
     }));
-    return step({ concept: "sliding-window", title: phase.title, description: phase.desc, nodes, edges: [], highlights: { nodeIds: nodes.filter((node) => node.state === "active").map((node) => node.id), lineNumbers: [phase.line] }, code, activeLine: phase.line, state: { window: `${phase.window[0]}-${phase.window[1]}`, total: phase.total, best: phase.best } }, index + 1);
+    const activeIds = nodes.filter((node) => node.state === "active").map((node) => node.id);
+    return step({
+      concept: "sliding-window",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: activeIds, lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: { window: `${phase.window[0]}-${phase.window[1]}`, window_start: phase.window[0], window_end: phase.window[1], ...phase.state },
+    }, index + 1);
   });
+
+  if (family === "sliding-window-short-blocks") {
+    const values = [20, 30, 45];
+    const code = ["choose the first two-session window", "add the two active sessions", "if total fits the limit, count it", "slide the window one step right", "reuse the old total instead of restarting", "check the new window", "return the count", "finish"];
+    return build(values, [
+      { window: [0, 1], line: 1, title: context.title || "Count Short Study Blocks", desc: "Start with the first two neighboring study sessions.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", limit: 60, total: 50, count: 0 } },
+      { window: [0, 1], line: 2, title: "Add 20 + 30", desc: "The first window totals 50 minutes.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", total: 50, limit: 60, count: 0 } },
+      { window: [0, 1], line: 3, title: "Count first window", desc: "50 is within the limit, so the count becomes 1.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", total: 50, count: 1, result: 1 } },
+      { window: [1, 2], line: 4, title: "Slide right", desc: "The window drops 20 and includes 45.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", leaving: 20, entering: 45, count: 1 } },
+      { window: [1, 2], line: 5, title: "Reuse total", desc: "Update the total from 50 to 75 instead of adding from scratch.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", total: 75, count: 1 } },
+      { window: [1, 2], line: 6, title: "Check 75", desc: "75 is over the limit, so the count does not change.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", total: 75, decision: "too high", count: 1 } },
+      { window: [1, 2], line: 7, title: "Return 1", desc: "Only one two-session window fits within 60 minutes.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", result: 1 } },
+      { window: [1, 2], line: 8, title: "Trace complete", desc: "The compact trace ends with the same count the prompt asks for.", state: { example: "minutes=[20,30,45], limit=60", target: "count two-session windows within limit", final_result: 1 } },
+    ], code);
+  }
+
+  if (family === "sliding-window-three-day") {
+    const values = [30, 45, 25, 20];
+    const code = ["choose the first three-day window", "add the active days", "save that total", "slide one day right", "subtract the day that left", "add the day that entered", "save the next total", "return all totals"];
+    return build(values, [
+      { window: [0, 2], line: 1, title: context.title || "Three Day Study Totals", desc: "The first fixed-size window covers days 0 through 2.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", total: 100, result: "[]" } },
+      { window: [0, 2], line: 2, title: "Add first three days", desc: "30 + 45 + 25 gives the first three-day total.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", total: 100 } },
+      { window: [0, 2], line: 3, title: "Save 100", desc: "The first window total is stored in the result list.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", total: 100, result: "[100]" } },
+      { window: [1, 3], line: 4, title: "Slide to days 1-3", desc: "The window moves one day right.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", leaving: 30, entering: 20, result: "[100]" } },
+      { window: [1, 3], line: 5, title: "Subtract 30", desc: "Remove the day that left the window.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", total: 70, result: "[100]" } },
+      { window: [1, 3], line: 6, title: "Add 20", desc: "Add the day that entered to get the new total.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", total: 90, result: "[100]" } },
+      { window: [1, 3], line: 7, title: "Save 90", desc: "The second three-day total is stored.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", total: 90, result: "[100,90]" } },
+      { window: [1, 3], line: 8, title: "Return totals", desc: "Return both three-day totals in order.", state: { example: "minutes=[30,45,25,20]", target: "totals for every three-day stretch", result: "[100,90]" } },
+    ], code);
+  }
+
+  if (family === "sliding-window-calm-two-day") {
+    const values = [40, 25, 50];
+    const code = ["choose the first two-day window", "add the active days", "if total is within limit, save true", "otherwise slide right", "check the next two-day window", "stop once true is known", "return the boolean result", "finish"];
+    return build(values, [
+      { window: [0, 1], line: 1, title: context.title || "Any Calm Two Day Stretch", desc: "Start with the first neighboring pair.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", limit: 70, total: 65, result: "none yet" } },
+      { window: [0, 1], line: 2, title: "Add 40 + 25", desc: "The first two-day window totals 65.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", total: 65, limit: 70 } },
+      { window: [0, 1], line: 3, title: "65 fits", desc: "65 is at or below 70, so the answer is true.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", decision: "fits", result: "true" } },
+      { window: [0, 1], line: 6, title: "Stop early", desc: "A true answer cannot be made false by later windows.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", action: "true found", result: "true" } },
+      { window: [1, 2], line: 4, title: "Next window skipped", desc: "The window [25, 50] exists, but it is not needed after true is known.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", skipped: "25 + 50", result: "true" } },
+      { window: [0, 1], line: 6, title: "Keep boolean true", desc: "The saved boolean answer remains true.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", result: "true" } },
+      { window: [0, 1], line: 7, title: "Return true", desc: "Return a real boolean value, not the word as plain text.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", result: "true" } },
+      { window: [0, 1], line: 8, title: "Trace complete", desc: "The compact example has at least one calm two-day stretch.", state: { example: "minutes=[40,25,50], limit=70", target: "return true if any two-day total fits", final_result: "true" } },
+    ], code);
+  }
+
+  if (family === "sliding-window-longest-unique") {
+    const values = ["a", "b", "c", "a", "b", "c", "b", "b"];
+    const code = ["start with an empty seen window", "expand right while characters are new", "save the longest length", "when a repeat appears, move left", "remove old characters until repeat is gone", "continue expanding", "return the best length", "finish"];
+    return build(values, [
+      { window: [0, 0], line: 1, title: context.title || "Longest Unique Window", desc: "Begin the window at the first character.", state: { example: "abcabcbb", target: "longest substring with no repeats", seen: "a", best: 1 } },
+      { window: [0, 1], line: 2, title: "Expand to b", desc: "b is not in the window, so it can join.", state: { example: "abcabcbb", target: "longest substring with no repeats", seen: "a,b", best: 2 } },
+      { window: [0, 2], line: 3, title: "Save abc", desc: "abc has three unique characters, so best becomes 3.", state: { example: "abcabcbb", target: "longest substring with no repeats", seen: "a,b,c", best: 3, result: 3 } },
+      { window: [0, 3], line: 4, title: "Repeat a appears", desc: "The right edge sees another a, which breaks the unique rule.", state: { example: "abcabcbb", target: "longest substring with no repeats", repeat: "a", best: 3 } },
+      { window: [1, 3], line: 5, title: "Move left past old a", desc: "Remove the earlier a so the current window can be unique again.", state: { example: "abcabcbb", target: "longest substring with no repeats", seen: "b,c,a", best: 3 } },
+      { window: [2, 4], line: 6, title: "Continue pattern", desc: "The same expand-and-shrink rule keeps the window unique.", state: { example: "abcabcbb", target: "longest substring with no repeats", window_text: "cab", best: 3 } },
+      { window: [2, 4], line: 7, title: "Return 3", desc: "No later unique window beats length 3.", state: { example: "abcabcbb", target: "longest substring with no repeats", best: 3, result: 3 } },
+      { window: [2, 4], line: 8, title: "Trace complete", desc: "The longest unique substring length is 3.", state: { example: "abcabcbb", target: "longest substring with no repeats", final_result: 3 } },
+    ], code);
+  }
+
+  if (family === "sliding-window-average") {
+    const values = [1, 2, 3, 4];
+    const code = ["choose the first size-k window", "add the active values", "divide by k and save average", "slide one step right", "subtract leaving value", "add entering value", "save the next average", "return all averages"];
+    return build(values, [
+      { window: [0, 1], line: 1, title: context.title || "Window Average", desc: "For k = 2, the first window covers values 1 and 2.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", k: 2, total: 3, result: "[]" } },
+      { window: [0, 1], line: 2, title: "Add 1 + 2", desc: "The first window total is 3.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", total: 3 } },
+      { window: [0, 1], line: 3, title: "Save 1.5", desc: "3 divided by k=2 gives 1.5.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", average: 1.5, result: "[1.5]" } },
+      { window: [1, 2], line: 4, title: "Slide to 2 and 3", desc: "The window drops 1 and includes 3.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", leaving: 1, entering: 3, result: "[1.5]" } },
+      { window: [1, 2], line: 6, title: "Save 2.5", desc: "The updated total is 5, so the average is 2.5.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", total: 5, average: 2.5, result: "[1.5,2.5]" } },
+      { window: [2, 3], line: 4, title: "Slide to 3 and 4", desc: "Move one step again without recalculating from scratch.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", leaving: 2, entering: 4, result: "[1.5,2.5]" } },
+      { window: [2, 3], line: 7, title: "Save 3.5", desc: "The last window average is 3.5.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", average: 3.5, result: "[1.5,2.5,3.5]" } },
+      { window: [2, 3], line: 8, title: "Return averages", desc: "Return the averages in window order.", state: { example: "values=[1,2,3,4], k=2", target: "average for every size-2 window", result: "[1.5,2.5,3.5]" } },
+    ], code);
+  }
+
+  if (family === "sliding-window-max-sum") {
+    const values = [2, 1, 5, 1, 3];
+    const code = ["choose the first size-k window", "add the active values", "save the first sum as best", "slide one step right", "update total by leaving and entering values", "if total is larger, update best", "repeat for remaining windows", "return best sum"];
+    return build(values, [
+      { window: [0, 2], line: 1, title: context.title || "Maximum Window Sum", desc: "For k = 3, start with 2, 1, and 5.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", k: 3, total: 8, best: 0 } },
+      { window: [0, 2], line: 2, title: "Add first window", desc: "2 + 1 + 5 totals 8.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", total: 8 } },
+      { window: [0, 2], line: 3, title: "Best starts at 8", desc: "The first complete window becomes the best so far.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", total: 8, best: 8, result: 8 } },
+      { window: [1, 3], line: 4, title: "Slide to 1,5,1", desc: "Drop 2 and include the next 1.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", leaving: 2, entering: 1, best: 8 } },
+      { window: [1, 3], line: 5, title: "Total becomes 7", desc: "The new window total is lower, so best stays 8.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", total: 7, best: 8 } },
+      { window: [2, 4], line: 4, title: "Slide to 5,1,3", desc: "Drop 1 and include 3 for the final window.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", leaving: 1, entering: 3, best: 8 } },
+      { window: [2, 4], line: 6, title: "Update best to 9", desc: "5 + 1 + 3 totals 9, which beats the old best.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", total: 9, best: 9, result: 9 } },
+      { window: [2, 4], line: 8, title: "Return 9", desc: "The largest size-3 window sum is 9.", state: { example: "values=[2,1,5,1,3], k=3", target: "largest size-3 window sum", result: 9 } },
+    ], code);
+  }
+
+  if (family === "sliding-window-min-study") {
+    const values = [10, 20, 30, 40];
+    const code = ["expand right until total reaches target", "add each entering session", "when total is enough, save window length", "shrink from the left to try shorter", "keep the shortest length seen", "continue until right reaches the end", "return shortest length or 0", "finish"];
+    return build(values, [
+      { window: [0, 0], line: 1, title: context.title || "Minimum Study Window", desc: "Start growing a window until it can reach target 70.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, total: 10, best_length: "none" } },
+      { window: [0, 1], line: 2, title: "Grow to 30", desc: "Add 20. The total is still below target.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, total: 30, best_length: "none" } },
+      { window: [0, 2], line: 2, title: "Grow to 60", desc: "Add 30. Still not enough.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, total: 60, best_length: "none" } },
+      { window: [0, 3], line: 3, title: "Reach 100", desc: "Add 40. Now the window reaches the target, so save length 4.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, total: 100, best_length: 4, result: 4 } },
+      { window: [1, 3], line: 4, title: "Shrink from left", desc: "Remove 10 and keep checking because the total is still at least 70.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, total: 90, best_length: 3, result: 3 } },
+      { window: [2, 3], line: 5, title: "Shrink again", desc: "Remove 20. The window [30, 40] still reaches 70, so length 2 is best.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, total: 70, best_length: 2, result: 2 } },
+      { window: [3, 3], line: 6, title: "Too short after shrink", desc: "Removing 30 leaves only 40, which is below target, so stop shrinking.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, total: 40, best_length: 2 } },
+      { window: [2, 3], line: 7, title: "Return 2", desc: "The shortest window that reaches 70 has length 2.", state: { example: "minutes=[10,20,30,40], target=70", target: 70, result: 2 } },
+    ], code);
+  }
+
+  if (family === "sliding-window-longest-under-limit") {
+    const values = [20, 30, 10, 40];
+    const code = ["expand right to grow the study stretch", "add the entering minutes", "if total is within limit, update best length", "if total is too high, remove from the left", "slide left until the limit fits again", "continue growing", "return the longest saved length", "finish"];
+    return build(values, [
+      { window: [0, 0], line: 1, title: context.title || "Longest Study Stretch Under Limit", desc: "Start with the first study session and grow while the total fits.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", limit: 60, total: 20, best: 1 } },
+      { window: [0, 1], line: 2, title: "Add 30", desc: "20 + 30 totals 50, still within the limit.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", total: 50, best: 2 } },
+      { window: [0, 2], line: 3, title: "Add 10 and save 3", desc: "The total becomes 60, so a length-3 stretch fits exactly.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", total: 60, best: 3, result: 3 } },
+      { window: [0, 3], line: 2, title: "Add 40", desc: "Growing to include 40 makes the total 100, which is too high.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", total: 100, decision: "too high", best: 3 } },
+      { window: [1, 3], line: 4, title: "Remove 20", desc: "Slide the left edge forward to lower the total.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", leaving: 20, total: 80, best: 3 } },
+      { window: [2, 3], line: 5, title: "Remove 30", desc: "The total is now 50, so the window fits again.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", leaving: 30, total: 50, best: 3 } },
+      { window: [2, 3], line: 6, title: "Best stays 3", desc: "The current fitting stretch has length 2, so it does not beat 3.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", total: 50, best: 3 } },
+      { window: [0, 2], line: 7, title: "Return 3", desc: "The longest stretch under the limit is the first three sessions.", state: { example: "minutes=[20,30,10,40], limit=60", target: "longest stretch with total at most limit", result: 3 } },
+    ], code);
+  }
+
+  const values = [2, 4, 1, 5];
+  const code = ["start with an empty window", "add the right item", "measure the current window", "update the best answer", "slide left when the rule says to", "repeat the same window rule", "return the best value", "finish"];
+  return build(values, [
+    { window: [0, 0], line: 1, title: context.title || "Sliding window", desc: "Start with both edges at the first value.", state: { example: "values=[2,4,1,5]", target: "track a moving window", total: 2, best: 0 } },
+    { window: [0, 0], line: 2, title: "Add 2", desc: "The right edge brings one value into the window.", state: { example: "values=[2,4,1,5]", target: "track a moving window", total: 2, best: 0 } },
+    { window: [0, 1], line: 3, title: "Grow to 2,4", desc: "The window expands without restarting the count.", state: { example: "values=[2,4,1,5]", target: "track a moving window", total: 6, best: 6 } },
+    { window: [0, 1], line: 4, title: "Save best", desc: "The current window becomes the best seen so far.", state: { example: "values=[2,4,1,5]", target: "track a moving window", total: 6, best: 6, result: 6 } },
+    { window: [1, 2], line: 5, title: "Slide left", desc: "The left edge moves so the next window reuses the prior state.", state: { example: "values=[2,4,1,5]", target: "track a moving window", total: 5, best: 6 } },
+    { window: [1, 3], line: 6, title: "Repeat", desc: "Grow and check again with the same rule.", state: { example: "values=[2,4,1,5]", target: "track a moving window", total: 10, best: 10 } },
+    { window: [1, 3], line: 7, title: "Return best", desc: "Return the saved best value.", state: { example: "values=[2,4,1,5]", target: "track a moving window", result: 10 } },
+    { window: [1, 3], line: 8, title: "Trace complete", desc: "The sliding-window pattern is ready to apply to the full prompt.", state: { example: "values=[2,4,1,5]", target: "track a moving window", final_result: 10 } },
+  ], code);
 }
 
 export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {

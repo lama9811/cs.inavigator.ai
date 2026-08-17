@@ -97,7 +97,23 @@ const familyStepTargets = {
   "queue-window-count": 5,
   "queue-fifo": 6,
   "binary-search": 8,
+  "two-pointer-closest": 7,
+  "two-pointer-count-ends": 7,
+  "two-pointer-edge-pairs": 7,
+  "two-pointer-merge": 8,
+  "two-pointer-pair-sum": 7,
+  "two-pointer-remove-pair": 7,
+  "two-pointer-reverse-letters": 7,
+  "two-pointer-symmetric": 7,
   "two-pointers": 7,
+  "sliding-window-average": 8,
+  "sliding-window-calm-two-day": 8,
+  "sliding-window-longest-under-limit": 8,
+  "sliding-window-longest-unique": 8,
+  "sliding-window-max-sum": 8,
+  "sliding-window-min-study": 8,
+  "sliding-window-short-blocks": 8,
+  "sliding-window-three-day": 8,
   "sliding-window": 8,
   "matrix-traverse": 7,
   "dp-table": 8,
@@ -200,6 +216,28 @@ const trueStackQueueFamilies = {
   "medium-71": { family: "stack-adjacent-pairs", expected: "ca" },
 };
 
+const trueTwoPointerFamilies = {
+  "easy-42": { family: "two-pointer-edge-pairs", sample: "words=[lab, quiz, lab]", expected: "1" },
+  "easy-57": { family: "two-pointer-symmetric", sample: "names=[Ana, Bo, Ana]", expected: "true" },
+  "easy-79": { family: "two-pointer-count-ends", sample: "values=[1, 2, 2, 1]", expected: "2" },
+  "medium-05": { family: "two-pointer-merge", sample: "left=[1,3,5], right=[2,4]", expected: "[1,2,3,4,5]" },
+  "medium-21": { family: "two-pointer-pair-sum", sample: "values=[1, 2, 4, 7], target=9", expected: "true" },
+  "medium-38": { family: "two-pointer-reverse-letters", sample: "a-bC-d", expected: "d-Cb-a" },
+  "medium-52": { family: "two-pointer-closest", sample: "values=[1, 4, 7, 10], target=12", expected: "[1,10]" },
+  "medium-69": { family: "two-pointer-remove-pair", sample: "values=[1, 2, 4, 5], target=6", expected: "[2,4]" },
+};
+
+const trueSlidingWindowFamilies = {
+  "easy-43": { family: "sliding-window-short-blocks", sample: "minutes=[20,30,45], limit=60", expected: "1" },
+  "easy-58": { family: "sliding-window-three-day", sample: "minutes=[30,45,25,20]", expected: "[100,90]" },
+  "easy-84": { family: "sliding-window-calm-two-day", sample: "minutes=[40,25,50], limit=70", expected: "true" },
+  "medium-03": { family: "sliding-window-longest-unique", sample: "abcabcbb", expected: "3" },
+  "medium-18": { family: "sliding-window-average", sample: "values=[1,2,3,4], k=2", expected: "[1.5,2.5,3.5]" },
+  "medium-27": { family: "sliding-window-max-sum", sample: "values=[2,1,5,1,3], k=3", expected: "9" },
+  "medium-39": { family: "sliding-window-min-study", sample: "minutes=[10,20,30,40], target=70", expected: "2" },
+  "medium-53": { family: "sliding-window-longest-under-limit", sample: "minutes=[20,30,10,40], limit=60", expected: "3" },
+};
+
 function visualizerFamilyText(problem) {
   return `${problem?.title || ""} ${problem?.topic || ""} ${problem?.prompt || ""} ${problem?.visualizer?.title || ""} ${problem?.visualizer?.caption || ""} ${problem?.visualizer?.concept || ""}`.toLowerCase();
 }
@@ -255,8 +293,28 @@ function detectVisualizerFamily(problem, concept) {
   }
   if (concept === "linked-list") return "linked-list-traverse";
   if (concept === "binary-search") return "binary-search";
-  if (concept === "two-pointers") return "two-pointers";
-  if (concept === "sliding-window") return "sliding-window";
+  if (concept === "two-pointers") {
+    if (/edge pair matches/.test(text)) return "two-pointer-edge-pairs";
+    if (/symmetric roster|palindrome|roster/.test(text)) return "two-pointer-symmetric";
+    if (/count matching ends/.test(text)) return "two-pointer-count-ends";
+    if (/merge sorted lists/.test(text)) return "two-pointer-merge";
+    if (/closest pair sum/.test(text)) return "two-pointer-closest";
+    if (/pair sum sorted/.test(text)) return "two-pointer-pair-sum";
+    if (/reverse only letters/.test(text)) return "two-pointer-reverse-letters";
+    if (/remove one target pair/.test(text)) return "two-pointer-remove-pair";
+    return "two-pointers";
+  }
+  if (concept === "sliding-window") {
+    if (/count short study blocks/.test(text)) return "sliding-window-short-blocks";
+    if (/three day study totals/.test(text)) return "sliding-window-three-day";
+    if (/any calm two day stretch/.test(text)) return "sliding-window-calm-two-day";
+    if (/longest unique window/.test(text)) return "sliding-window-longest-unique";
+    if (/window average/.test(text)) return "sliding-window-average";
+    if (/maximum window sum/.test(text)) return "sliding-window-max-sum";
+    if (/minimum study window/.test(text)) return "sliding-window-min-study";
+    if (/longest study stretch under limit/.test(text)) return "sliding-window-longest-under-limit";
+    return "sliding-window";
+  }
   if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
   if (concept === "matrix") return "matrix-traverse";
   if (concept === "prefix-sum") return "prefix-range";
@@ -420,6 +478,8 @@ function compactVisualInput(problem, concept, state = {}) {
     return "times=[1,2,8,12], window=5";
   }
   if (family === "queue-ticket-rounds") return "names=[Ana, Bo, Cy], tickets=[1,2,1]";
+  if (trueTwoPointerFamilies[problem.id]) return trueTwoPointerFamilies[problem.id].sample;
+  if (trueSlidingWindowFamilies[problem.id]) return trueSlidingWindowFamilies[problem.id].sample;
   if (title.includes("vowel")) return "Code";
   if (title.includes("palindrome")) return "level";
   if (title.includes("reverse words")) return "red blue";
@@ -485,6 +545,8 @@ function valuesFromVisualSample(sample) {
 
 function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
   if (!generatedOverrideConcepts.has(concept)) return false;
+  if (concept === "two-pointers") return true;
+  if (concept === "sliding-window") return true;
   const target = targetStepCountFor(problem, concept);
   if (!rawSteps.length || rawSteps.length >= target) return false;
   if (rawSteps.length < Math.min(target, 6)) return true;
@@ -662,6 +724,30 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     const requiredStackQueue = trueStackQueueFamilies[problem.id];
     if (requiredStackQueue && family !== requiredStackQueue.family) {
       warnings.push(`${problem.id} ${problem.title}: Stack/Queue visualizer routes to "${family}", expected "${requiredStackQueue.family}"`);
+    }
+    const requiredTwoPointer = trueTwoPointerFamilies[problem.id];
+    if (requiredTwoPointer) {
+      if (family !== requiredTwoPointer.family) {
+        warnings.push(`${problem.id} ${problem.title}: Two Pointers visualizer routes to "${family}", expected "${requiredTwoPointer.family}"`);
+      }
+      if (sample !== requiredTwoPointer.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Two Pointers sample is "${sample}", expected "${requiredTwoPointer.sample}"`);
+      }
+      if (family === "two-pointers") {
+        warnings.push(`${problem.id} ${problem.title}: Two Pointers visualizer still uses shared generic family`);
+      }
+    }
+    const requiredSlidingWindow = trueSlidingWindowFamilies[problem.id];
+    if (requiredSlidingWindow) {
+      if (family !== requiredSlidingWindow.family) {
+        warnings.push(`${problem.id} ${problem.title}: Sliding Window visualizer routes to "${family}", expected "${requiredSlidingWindow.family}"`);
+      }
+      if (sample !== requiredSlidingWindow.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Sliding Window sample is "${sample}", expected "${requiredSlidingWindow.sample}"`);
+      }
+      if (family === "sliding-window") {
+        warnings.push(`${problem.id} ${problem.title}: Sliding Window visualizer still uses shared generic family`);
+      }
     }
     const requiredString = trueStringFamilies[problem.id];
     if (requiredString) {

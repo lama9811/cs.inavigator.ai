@@ -274,7 +274,7 @@ function contiguousRange(step: Step, nodes: VisualNode[]): [number, number] | nu
 }
 
 function ArrayRow({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
-  const range = step.concept === "sliding-window" || step.concept === "binary-search" ? contiguousRange(step, nodes) : null;
+  const range = step.concept === "binary-search" ? contiguousRange(step, nodes) : null;
   return (
     <div className="ucv-array-row" style={{ "--ucv-array-count": nodes.length } as CSSProperties}>
       {range ? (
@@ -848,6 +848,8 @@ function SetView({ step }: { step: Step }) {
 
 function ArrayTraceState({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
   if (!["array", "search", "sort", "binary-search", "two-pointers", "sliding-window"].includes(step.concept)) return null;
+  if (step.concept === "two-pointers") return null;
+  if (step.concept === "sliding-window") return null;
   const activeIndex = activeNodeIndex(step, nodes.length);
   const current = step.state?.current ?? nodes[activeIndex]?.value ?? "item";
   const hasReturned = step.state?.returned === true;
@@ -947,7 +949,7 @@ const ARRAY_STATE_PANEL_EXCLUDED = new Set([
 ]);
 
 function shouldShowArrayStatePanel(step: Step): boolean {
-  return step.concept === "array" || step.concept === "search" || step.concept === "sort";
+  return step.concept === "array" || step.concept === "search" || step.concept === "sort" || step.concept === "two-pointers" || step.concept === "sliding-window";
 }
 
 function ArrayStatePanel({ step }: { step: Step }) {
@@ -964,6 +966,133 @@ function ArrayStatePanel({ step }: { step: Step }) {
           <strong className="ucv-array-state-panel-value">{example}</strong>
         </div>
       ) : null}
+      {variables.length ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.map(([key, value]) => (
+              <div className="ucv-array-state-panel-row" key={key}>
+                <span>{arrayStateLabel(key)}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {resultSoFar ? (
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
+const TWO_POINTER_STATE_EXCLUDED = new Set([
+  "answer",
+  "example",
+  "final_result",
+  "left",
+  "left_value",
+  "result",
+  "returned",
+  "right",
+  "right_value",
+  "target",
+  "visual_family",
+]);
+
+function TwoPointerStatePanel({ step }: { step: Step }) {
+  const state = step.state || {};
+  const variables = Object.entries(state).filter(([key, value]) => !TWO_POINTER_STATE_EXCLUDED.has(key) && typeof value !== "undefined" && value !== "");
+  const example = formatArrayStateValue(state.example);
+  const target = formatArrayStateValue(state.target ?? "use both pointers");
+  const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.final_result);
+  return (
+    <aside className="ucv-array-state-panel ucv-two-pointer-state-panel" aria-label="Two pointer trace memory">
+      {example ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">example</span>
+          <strong className="ucv-array-state-panel-value">{example}</strong>
+        </div>
+      ) : null}
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">target</span>
+        <strong className="ucv-array-state-panel-value">{target}</strong>
+      </div>
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">pointers</span>
+        <div className="ucv-array-state-panel-list">
+          <div className="ucv-array-state-panel-row">
+            <span>left</span>
+            <strong>{formatArrayStateValue(state.left_value ?? state.left)}</strong>
+          </div>
+          <div className="ucv-array-state-panel-row">
+            <span>right</span>
+            <strong>{formatArrayStateValue(state.right_value ?? state.right)}</strong>
+          </div>
+        </div>
+      </div>
+      {variables.length ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.map(([key, value]) => (
+              <div className="ucv-array-state-panel-row" key={key}>
+                <span>{arrayStateLabel(key)}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {resultSoFar ? (
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
+const SLIDING_WINDOW_STATE_EXCLUDED = new Set([
+  "answer",
+  "example",
+  "final_result",
+  "result",
+  "returned",
+  "target",
+  "visual_family",
+  "window",
+  "window_end",
+  "window_start",
+]);
+
+function SlidingWindowStatePanel({ step }: { step: Step }) {
+  const state = step.state || {};
+  const variables = Object.entries(state).filter(([key, value]) => !SLIDING_WINDOW_STATE_EXCLUDED.has(key) && typeof value !== "undefined" && value !== "");
+  const example = formatArrayStateValue(state.example);
+  const target = formatArrayStateValue(state.target ?? "track a moving window");
+  const windowValue = formatArrayStateValue(state.window ?? `${state.window_start ?? 0}-${state.window_end ?? 0}`);
+  const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? state.best);
+  return (
+    <aside className="ucv-array-state-panel ucv-sliding-window-state-panel" aria-label="Sliding window trace memory">
+      {example ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">example</span>
+          <strong className="ucv-array-state-panel-value">{example}</strong>
+        </div>
+      ) : null}
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">target</span>
+        <strong className="ucv-array-state-panel-value">{target}</strong>
+      </div>
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">window</span>
+        <strong className="ucv-array-state-panel-value">{windowValue}</strong>
+      </div>
       {variables.length ? (
         <div className="ucv-array-state-panel-section">
           <span className="ucv-array-state-panel-label">variables</span>
@@ -1014,7 +1143,7 @@ export function ArrayVisualizer({ step }: { step: Step }) {
       {step.concept === "sliding-window" ? <div className="ucv-pointer-guide"><span>left edge</span><span>right edge</span></div> : null}
       {showStatePanel ? (
         <div className="ucv-array-visual-layout">
-          <ArrayStatePanel step={step} />
+          {step.concept === "two-pointers" ? <TwoPointerStatePanel step={step} /> : step.concept === "sliding-window" ? <SlidingWindowStatePanel step={step} /> : <ArrayStatePanel step={step} />}
           <div className="ucv-array-main-region">
             <ArrayRow step={step} nodes={nodes} />
             <ArrayTraceState step={step} nodes={nodes} />

@@ -979,6 +979,64 @@
   max-width: none;
 }
 
+.ucv-canvas--two-pointers .ucv-array-visual-layout {
+  grid-template-columns: minmax(9rem, 12.5rem) minmax(0, 1fr);
+  width: min(860px, 100%);
+}
+
+.ucv-canvas--two-pointers .ucv-pointer-guide {
+  width: min(520px, 100%);
+  font-size: 0.66rem;
+}
+
+.ucv-canvas--two-pointers .ucv-array-row {
+  grid-template-columns: repeat(var(--ucv-array-count), minmax(3.25rem, 5.6rem));
+  max-width: min(620px, 100%);
+  padding: 1rem clamp(0.75rem, 2vw, 1.4rem);
+}
+
+.ucv-canvas--two-pointers .ucv-array-cell {
+  min-height: 58px;
+  border-radius: 11px;
+}
+
+.ucv-canvas--two-pointers .ucv-array-cell strong {
+  font-size: clamp(0.82rem, 1.05vw, 1rem);
+}
+
+.ucv-canvas--two-pointers .ucv-array-cell span {
+  font-size: 0.62rem;
+}
+
+.ucv-canvas--sliding-window .ucv-array-visual-layout {
+  grid-template-columns: minmax(9rem, 12.5rem) minmax(0, 1fr);
+  width: min(860px, 100%);
+}
+
+.ucv-canvas--sliding-window .ucv-pointer-guide {
+  width: min(520px, 100%);
+  font-size: 0.66rem;
+}
+
+.ucv-canvas--sliding-window .ucv-array-row {
+  grid-template-columns: repeat(var(--ucv-array-count), minmax(3.25rem, 5.6rem));
+  max-width: min(620px, 100%);
+  padding: 1rem clamp(0.75rem, 2vw, 1.4rem);
+}
+
+.ucv-canvas--sliding-window .ucv-array-cell {
+  min-height: 58px;
+  border-radius: 11px;
+}
+
+.ucv-canvas--sliding-window .ucv-array-cell strong {
+  font-size: clamp(0.82rem, 1.05vw, 1rem);
+}
+
+.ucv-canvas--sliding-window .ucv-array-cell span {
+  font-size: 0.62rem;
+}
+
 .ucv-array-cell {
   position: relative;
   z-index: 1;
