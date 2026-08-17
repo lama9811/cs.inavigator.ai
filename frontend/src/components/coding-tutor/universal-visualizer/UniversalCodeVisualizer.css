@@ -591,12 +591,39 @@
 }
 
 .ucv-stack-canvas {
-  align-items: end;
+  align-items: center;
+}
+
+.ucv-stack-layout,
+.ucv-queue-layout {
+  display: grid;
+  grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr);
+  align-items: center;
+  width: min(860px, 100%);
+  gap: clamp(0.85rem, 2.2vw, 1.4rem);
+  padding-inline: clamp(0.25rem, 1vw, 0.65rem);
+  box-sizing: border-box;
+}
+
+.ucv-stack-state-panel {
+  border-color: color-mix(in srgb, #f59e0b 44%, var(--ct-border, #c7d6ea));
+  background: linear-gradient(145deg,
+    color-mix(in srgb, #fef3c7 42%, var(--ct-panel, #fff)),
+    color-mix(in srgb, #dbeafe 28%, var(--ct-panel, #fff))
+  );
+}
+
+.ucv-queue-state-panel {
+  border-color: color-mix(in srgb, #06b6d4 44%, var(--ct-border, #c7d6ea));
+  background: linear-gradient(145deg,
+    color-mix(in srgb, #cffafe 42%, var(--ct-panel, #fff)),
+    color-mix(in srgb, #dbeafe 30%, var(--ct-panel, #fff))
+  );
 }
 
 .ucv-stack-shell {
   display: grid;
-  min-width: min(360px, 100%);
+  min-width: min(320px, 100%);
   justify-items: center;
   align-self: end;
   gap: 0.45rem;
@@ -608,7 +635,7 @@
   align-items: stretch;
   justify-content: flex-start;
   min-height: 270px;
-  width: min(240px, 72vw);
+  width: min(220px, 72vw);
   padding: 0.35rem 1.25rem 0;
   border-bottom: 8px solid color-mix(in srgb, var(--ct-primary, #082343) 78%, transparent);
   border-inline: 3px solid color-mix(in srgb, var(--ct-border-strong, #94a3b8) 70%, transparent);
@@ -649,11 +676,12 @@
 
 .ucv-queue-shell {
   justify-items: center;
+  min-width: 0;
 }
 
 .ucv-queue-guide {
   display: flex;
-  width: min(560px, 100%);
+  width: min(500px, 100%);
   align-items: center;
   justify-content: space-between;
   color: var(--ct-muted, #5d6b82);
@@ -684,16 +712,24 @@
 }
 
 .ucv-queue-item {
-  min-width: 112px;
-  min-height: 72px;
+  min-width: 92px;
+  min-height: 62px;
   border-radius: 12px;
+}
+
+.ucv-queue-item strong {
+  font-size: clamp(0.78rem, 0.95vw, 0.92rem);
+}
+
+.ucv-queue-item span {
+  font-size: 0.62rem;
 }
 
 .ucv-queue-order-mark {
   display: inline-block;
-  width: clamp(1.75rem, 3.4vw, 3rem);
+  width: clamp(1.1rem, 2.4vw, 2.1rem);
   height: 3px;
-  margin: 0 0.45rem;
+  margin: 0 0.3rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--ct-border-strong, #94a3b8) 62%, transparent);
   opacity: 0.78;
@@ -703,9 +739,9 @@
 .ucv-queue-entry {
   display: inline-flex;
   flex: 0 0 auto;
-  width: clamp(2.4rem, 5vw, 4.2rem);
+  width: clamp(1.8rem, 3.2vw, 3rem);
   height: 3px;
-  margin: 0 0.55rem;
+  margin: 0 0.35rem;
   border-radius: 999px;
   background: var(--ct-accent, #f97316);
   position: relative;

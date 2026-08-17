@@ -192,8 +192,8 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/help session finish order|tickets/.test(text)) return "queue-ticket-rounds";
     if (/recent queue counts|rate limiter|window/.test(text)) return "queue-window-count";
     if (/serve first students|queue front after serves|servecount/.test(text)) return "queue-serve-count";
-    if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
     if (/help desk|ticket|support/.test(text)) return "queue-help-desk";
+    if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
     return "queue-fifo";
   }
   if (concept === "linked-list") return "linked-list-traverse";
@@ -351,9 +351,27 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
   if (family === "string-normalize-emails") return "emails=[Ada@MSU.edu, ada@msu.edu, Bo@MSU.edu]";
   if (family === "string-prefix-search") return "words=[code, card, car], prefix=ca";
   if (family === "string-palindrome") return "level";
-  if (family === "stack-min") return "commands=[push 3, push 1, push 2, min, pop, min]";
+  if (family === "stack-brackets") return "{[()]}";
+  if (family === "stack-min") return "commands=[push 3, push 1, min, pop, top]";
+  if (family === "stack-monotonic") return "temperatures=[70,72,71,75]";
+  if (family === "stack-adjacent-pairs") return "text=abbaca";
+  if (family === "stack-commands") {
+    if (/max plate|height/.test(title)) return "commands=[push, push, pop, push]";
+    if (/undo/.test(title)) return "actions=[open, type, undo]";
+    return "commands=[push tray, push cup, pop]";
+  }
   if (family === "recursion-nested-list") return "value=[1,[2,[3]]]";
   if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
+  if (family === "queue-serve-count") return "names=[Ana, Bo, Cy], serveCount=2";
+  if (family === "queue-line-commands") {
+    if (/front after/.test(title)) return "commands=[join Ana, join Bo, serve]";
+    return "commands=[join Ana, join Bo, serve, join Cy]";
+  }
+  if (family === "queue-window-count") {
+    if (/rate limiter/.test(title)) return "k=2, window=10, times=[1,2,11]";
+    return "times=[1,2,8,12], window=5";
+  }
+  if (family === "queue-ticket-rounds") return "names=[Ana, Bo, Cy], tickets=[1,2,1]";
 
   if (title.includes("vowel")) return "Code";
   if (title.includes("palindrome")) return "level";
@@ -839,6 +857,7 @@ function visualPseudocodeForStep(
 }
 
 function expandPseudocodeLines(lines: string[], concept: string): string[] {
+  if ((concept === "stack" || concept === "queue") && lines.length > 0) return lines;
   const target = targetStepCount(concept);
   if (lines.length >= target) return lines;
   const additions: Record<string, string[]> = {
@@ -4598,16 +4617,65 @@ export function generateStackSteps(context: GeneratorContext = {}): Step[] {
   ];
 }
 
+export function generateBalancedBracketSteps(context: GeneratorContext = {}): Step[] {
+  const code = [
+    "read brackets from left to right",
+    "opening brackets wait on the stack",
+    "a closing bracket must match the current top",
+    "when it matches, remove that opening bracket",
+    "a mismatch would return false",
+    "after the scan, an empty stack means true",
+    "return the boolean result",
+    "stop",
+  ];
+  const phases = [
+    { title: context.title || "Balanced Brackets", symbol: "{", stack: ["{"], active: 0, line: 2, desc: "The first symbol opens a group, so it waits on the stack.", state: { action: "push {", top: "{", result: "not decided" } },
+    { title: "Push [", symbol: "[", stack: ["{", "["], active: 1, line: 2, desc: "[ opens inside {, so it is placed on top.", state: { action: "push [", top: "[", result: "not decided" } },
+    { title: "Push (", symbol: "(", stack: ["{", "[", "("], active: 2, line: 2, desc: "( opens inside [, so it becomes the newest item.", state: { action: "push (", top: "(", result: "not decided" } },
+    { title: "Match ) with (", symbol: ")", stack: ["{", "["], active: 1, line: 3, desc: ") must match the top opening bracket. The top is (, so that pair closes.", state: { action: "match ) with (", top: "[", removed_pair: "()", result: "not decided" } },
+    { title: "Match ] with [", symbol: "]", stack: ["{"], active: 0, line: 3, desc: "] now checks the next top. It matches [, so that pair closes.", state: { action: "match ] with [", top: "{", removed_pair: "[]", result: "not decided" } },
+    { title: "Match } with {", symbol: "}", stack: [] as string[], active: -1, line: 3, desc: "} checks the final opening bracket. It matches {, leaving the stack empty.", state: { action: "match } with {", top: "empty", removed_pair: "{}", result: "not decided" } },
+    { title: "Stack is empty", symbol: "end", stack: [] as string[], active: -1, line: 6, desc: "Every opening bracket found its matching closing bracket.", state: { action: "scan complete", top: "empty", stack_state: "empty", result: "true" } },
+    { title: "Return true", symbol: "return", stack: [] as string[], active: -1, line: 7, desc: "Return true because no mismatch happened and no opening bracket is left waiting.", state: { action: "return boolean", result: "true" } },
+  ];
+  return phases.map((phase, index) => {
+    const nodes = phase.stack.length
+      ? phase.stack.map((value, stackIndex) => ({
+          id: `stack-${stackIndex}`,
+          x: 455,
+          y: 405 - stackIndex * 76,
+          value,
+          label: stackIndex === phase.stack.length - 1 ? "top" : "",
+          type: "array-cell" as const,
+          state: stackIndex === phase.active ? "active" as const : "default" as const,
+          meta: { role: "stack-item" },
+        }))
+      : [{ id: "empty-stack", x: 455, y: 405, value: "empty", label: "stack", type: "logic-node" as const, state: "inactive" as const, meta: { role: "stack-item" } }];
+    return step({
+      concept: "stack",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: [phase.stack.length ? `stack-${Math.max(0, phase.active)}` : "empty-stack"], lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: { example: "{[()]}", target: "return true if balanced", symbol: phase.symbol, ...phase.state },
+    }, index + 1);
+  });
+}
+
 export function generateMinStackSteps(context: GeneratorContext = {}): Step[] {
   const code = [
-    "values = []",
-    "mins = []",
-    "push(3)",
-    "push(1)",
-    "push(2)",
-    "get_min()",
-    "pop()",
-    "return get_min()",
+    "start with an empty value stack",
+    "keep a matching stack of minimums",
+    "push 3 onto both stacks",
+    "push 1 and update the minimum",
+    "min reads the current minimum",
+    "pop removes the top from both stacks",
+    "top reads the current top value",
+    "return the recorded outputs",
   ];
   const makeStackNodes = (values: number[], mins: number[], activeValue = -1, activeMin = -1, result = "not returned yet"): Node[] => {
     const valueNodes = values.map((value, index) => ({
@@ -4642,14 +4710,14 @@ export function generateMinStackSteps(context: GeneratorContext = {}): Step[] {
     { id: "value-min-rule", from: "value-label", to: "min-label", type: "pointer", state: "default" },
   ];
   const phases = [
-    { title: context.title || "Min stack starts empty", desc: "A min stack keeps normal values and a second stack of the minimum after each push.", values: [] as number[], mins: [] as number[], valueActive: -1, minActive: -1, line: 1, result: "not returned yet", state: { values: "empty", mins: "empty" } },
-    { title: "Push 3", desc: "3 enters the value stack. Because it is the only value, it is also the current minimum.", values: [3], mins: [3], valueActive: 0, minActive: 0, line: 3, result: "not returned yet", state: { top: 3, min: 3 } },
-    { title: "Push 1", desc: "1 is smaller than 3, so the minimum stack records 1 as the new minimum.", values: [3, 1], mins: [3, 1], valueActive: 1, minActive: 1, line: 4, result: "not returned yet", state: { top: 1, min: 1 } },
-    { title: "Push 2", desc: "2 goes on top, but the minimum is still 1. The min stack repeats 1 to stay aligned.", values: [3, 1, 2], mins: [3, 1, 1], valueActive: 2, minActive: 2, line: 5, result: "not returned yet", state: { top: 2, min: 1 } },
-    { title: "Read current minimum", desc: "get_min reads the top of the minimum stack without removing any value.", values: [3, 1, 2], mins: [3, 1, 1], valueActive: -1, minActive: 2, line: 6, result: "1", state: { returned: 1 } },
-    { title: "Pop top value", desc: "pop removes 2 from both stacks, so the value stack and min stack stay the same height.", values: [3, 1], mins: [3, 1], valueActive: 1, minActive: 1, line: 7, result: "not returned yet", state: { popped: 2, min: 1 } },
-    { title: "Minimum stays 1", desc: "After removing 2, the top of the minimum stack is still 1.", values: [3, 1], mins: [3, 1], valueActive: -1, minActive: 1, line: 8, result: "1", state: { min: 1 } },
-    { title: "Return 1", desc: "The final minimum is available in constant time from the top of the min stack.", values: [3, 1], mins: [3, 1], valueActive: -1, minActive: 1, line: 8, result: "1", state: { result: 1 } },
+    { title: context.title || "Min Stack Operations", desc: "Trace the exact sample commands: push 3, push 1, min, pop, top.", values: [] as number[], mins: [] as number[], valueActive: -1, minActive: -1, line: 1, result: "not returned yet", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", values: "empty", mins: "empty", outputs: "empty" } },
+    { title: "Push 3", desc: "3 enters the value stack. Because it is the only value, it is also the current minimum.", values: [3], mins: [3], valueActive: 0, minActive: 0, line: 3, result: "not returned yet", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", command: "push 3", top: 3, min: 3, outputs: "empty" } },
+    { title: "Push 1", desc: "1 is smaller than 3, so the minimum stack records 1 as the new minimum.", values: [3, 1], mins: [3, 1], valueActive: 1, minActive: 1, line: 4, result: "not returned yet", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", command: "push 1", top: 1, min: 1, outputs: "empty" } },
+    { title: "Read min", desc: "The min command reads the top of the minimum stack and records 1.", values: [3, 1], mins: [3, 1], valueActive: -1, minActive: 1, line: 5, result: "[1]", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", command: "min", min: 1, outputs: "[1]" } },
+    { title: "Pop 1", desc: "pop removes the top value and the aligned minimum entry, so both stacks shrink together.", values: [3], mins: [3], valueActive: 0, minActive: 0, line: 6, result: "[1]", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", command: "pop", popped: 1, top: 3, min: 3, outputs: "[1]" } },
+    { title: "Read top", desc: "After popping 1, the top command reads 3 and records it as the second output.", values: [3], mins: [3], valueActive: 0, minActive: -1, line: 7, result: "[1, 3]", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", command: "top", top: 3, outputs: "[1, 3]" } },
+    { title: "Outputs are ready", desc: "Only min and top commands produce outputs, so the saved output list is [1, 3].", values: [3], mins: [3], valueActive: -1, minActive: -1, line: 8, result: "[1, 3]", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", outputs: "[1, 3]" } },
+    { title: "Return [1, 3]", desc: "Return the recorded outputs in command order: min gave 1, then top gave 3.", values: [3], mins: [3], valueActive: -1, minActive: -1, line: 8, result: "[1, 3]", state: { example: "push 3, push 1, min, pop, top", target: "outputs for min and top", result: "[1, 3]" } },
   ];
   return phases.map((phase, index) => step({
     concept: "stack",
@@ -4676,24 +4744,36 @@ export function generateMinStackSteps(context: GeneratorContext = {}): Step[] {
 export function generateCommandStackSteps(context: GeneratorContext = {}): Step[] {
   const text = visualizerFamilyText(context);
   const isUndo = /undo/.test(text);
+  const isHeight = /height|max plate/.test(text);
   const code = isUndo
-    ? ["stack = []", "push each normal action", "when action is undo, pop the latest action", "return remaining actions"]
-    : ["stack = []", "for each command", "if command starts with push, add to top", "if command is pop, remove top", "return top or height"];
+    ? ["start with an empty stack", "push each normal action", "when action is undo, remove the latest action", "return remaining actions"]
+    : isHeight
+      ? ["start with an empty plate stack", "push adds one plate to the top", "after each push, update current height", "pop removes the top plate if present", "keep the largest height seen", "return the largest height"]
+      : ["start with an empty stack", "read each command", "push adds one item to the top", "pop removes the top item if present", "return the requested stack state"];
   const phases = isUndo
     ? [
-        { title: context.title || "Undo Latest Action", desc: "Start with an empty action stack.", stack: [] as string[], line: 1, state: { top: "empty", height: 0 } },
-        { title: "Push open", desc: "open is a normal action, so it goes on the stack.", stack: ["open"], active: 0, line: 2, state: { top: "open", height: 1 } },
-        { title: "Push type", desc: "type is now the latest action at the top.", stack: ["open", "type"], active: 1, line: 2, state: { top: "type", height: 2 } },
-        { title: "Undo removes type", desc: "undo pops the newest action only, leaving open in place.", stack: ["open"], active: 0, line: 3, state: { popped: "type", top: "open" } },
-        { title: "Return remaining actions", desc: "The stack now contains the actions that were not undone.", stack: ["open"], active: 0, line: 4, state: { result: "[open]" } },
+        { title: context.title || "Undo Latest Action", desc: "Start with an empty action stack.", stack: [] as string[], line: 1, state: { example: "open, type, undo", target: "actions left after undo", top: "empty", height: 0 } },
+        { title: "Push open", desc: "open is a normal action, so it goes on the stack.", stack: ["open"], active: 0, line: 2, state: { example: "open, type, undo", target: "actions left after undo", action: "push open", top: "open", height: 1 } },
+        { title: "Push type", desc: "type is now the latest action at the top.", stack: ["open", "type"], active: 1, line: 2, state: { example: "open, type, undo", target: "actions left after undo", action: "push type", top: "type", height: 2 } },
+        { title: "Undo removes type", desc: "undo pops the newest action only, leaving open in place.", stack: ["open"], active: 0, line: 3, state: { example: "open, type, undo", target: "actions left after undo", action: "undo", popped: "type", top: "open", height: 1 } },
+        { title: "Return remaining actions", desc: "The stack now contains the actions that were not undone.", stack: ["open"], active: 0, line: 4, state: { example: "open, type, undo", target: "actions left after undo", result: "[open]" } },
       ]
-    : [
-        { title: context.title || "Stack Top After Plates", desc: "Start with an empty stack of items.", stack: [] as string[], line: 1, state: { top: "empty", height: 0 } },
-        { title: "Push tray", desc: "tray goes on the bottom because the stack was empty.", stack: ["tray"], active: 0, line: 3, state: { top: "tray", height: 1 } },
-        { title: "Push cup", desc: "cup is placed above tray and becomes the top.", stack: ["tray", "cup"], active: 1, line: 3, state: { top: "cup", height: 2 } },
-        { title: "Pop cup", desc: "pop removes only the top item, so tray is uncovered.", stack: ["tray"], active: 0, line: 4, state: { popped: "cup", top: "tray" } },
-        { title: "Return tray", desc: "The remaining top item is tray.", stack: ["tray"], active: 0, line: 5, state: { result: "tray" } },
-      ];
+    : isHeight
+      ? [
+          { title: context.title || "Max Plate Stack Height", desc: "Start with no plates. The current height and best height are both 0.", stack: [] as string[], line: 1, state: { example: "push, push, pop, push", target: "largest height reached", command: "start", height: 0, max_height: 0 } },
+          { title: "Push tray", desc: "A push adds one item to the top, so the current height becomes 1.", stack: ["tray"], active: 0, line: 2, state: { example: "push, push, pop, push", target: "largest height reached", command: "push tray", top: "tray", height: 1, max_height: 1 } },
+          { title: "Push cup", desc: "The second push places cup above tray. Height 2 is the largest height seen so far.", stack: ["tray", "cup"], active: 1, line: 3, state: { example: "push, push, pop, push", target: "largest height reached", command: "push cup", top: "cup", height: 2, max_height: 2 } },
+          { title: "Pop cup", desc: "A pop removes only the top item. The current height drops, but the best height stays 2.", stack: ["tray"], active: 0, line: 4, state: { example: "push, push, pop, push", target: "largest height reached", command: "pop", popped: "cup", top: "tray", height: 1, max_height: 2 } },
+          { title: "Push bowl", desc: "Another push raises the current height back to 2. The maximum is still 2.", stack: ["tray", "bowl"], active: 1, line: 3, state: { example: "push, push, pop, push", target: "largest height reached", command: "push bowl", top: "bowl", height: 2, max_height: 2 } },
+          { title: "Return max height", desc: "Return the largest height reached at any point, not the item on top.", stack: ["tray", "bowl"], active: 1, line: 6, state: { example: "push, push, pop, push", target: "largest height reached", height: 2, max_height: 2, result: 2 } },
+        ]
+      : [
+          { title: context.title || "Stack Top After Plates", desc: "Start with an empty stack of items.", stack: [] as string[], line: 1, state: { example: "push tray, push cup, pop", target: "final top item", top: "empty", height: 0 } },
+          { title: "Push tray", desc: "tray goes on the bottom because the stack was empty.", stack: ["tray"], active: 0, line: 3, state: { example: "push tray, push cup, pop", target: "final top item", command: "push tray", top: "tray", height: 1 } },
+          { title: "Push cup", desc: "cup is placed above tray and becomes the top.", stack: ["tray", "cup"], active: 1, line: 3, state: { example: "push tray, push cup, pop", target: "final top item", command: "push cup", top: "cup", height: 2 } },
+          { title: "Pop cup", desc: "pop removes only the top item, so tray is uncovered.", stack: ["tray"], active: 0, line: 4, state: { example: "push tray, push cup, pop", target: "final top item", command: "pop", popped: "cup", top: "tray", height: 1 } },
+          { title: "Return tray", desc: "The remaining top item is tray.", stack: ["tray"], active: 0, line: 5, state: { example: "push tray, push cup, pop", target: "final top item", result: "tray" } },
+        ];
   return phases.map((phase, index) => {
     const nodes: Node[] = phase.stack.length
       ? phase.stack.map((value, stackIndex) => ({
@@ -4797,12 +4877,12 @@ export function generateQueueSteps(context: GeneratorContext = {}): Step[] {
   const joined = layoutArray([firstItem, secondItem, thirdItem], { y: 260, type: "array-cell" });
   const served = layoutArray([secondItem, thirdItem], { y: 260, type: "array-cell" });
   return [
-    step({ concept: "queue", title: context.title || "Queue", description: "The front leaves first. New arrivals join the back.", nodes: withNodeState(first, ["item-0"], "active"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [1] }, code, activeLine: 1, state: { front: firstItem, back: secondItem } }, 1),
-    step({ concept: "queue", title: "Join at the back", description: `${thirdItem} joins behind everyone already waiting.`, nodes: withNodeState(joined, ["item-2"], "active"), edges: [], highlights: { nodeIds: ["item-2"], lineNumbers: [2] }, code, activeLine: 2, state: { front: firstItem, back: thirdItem } }, 2),
-    step({ concept: "queue", title: "Front does not move yet", description: `Adding ${thirdItem} does not affect ${firstItem}. The oldest item still owns the front.`, nodes: withNodeState(joined, ["item-0"], "visited"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [3] }, code, activeLine: 3, state: { front: firstItem, back: thirdItem } }, 3),
-    step({ concept: "queue", title: "Serve the front", description: `${firstItem} leaves first because ${firstItem} has waited the longest.`, nodes: withNodeState(joined, ["item-0"], "active"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [4] }, code, activeLine: 4, state: { served: firstItem } }, 4),
-    step({ concept: "queue", title: "Next front appears", description: `After ${firstItem} leaves, ${secondItem} becomes the front without changing the order of the remaining line.`, nodes: withNodeState(served, ["item-0"], "active"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [5] }, code, activeLine: 5, state: { front: secondItem, back: thirdItem } }, 5),
-    step({ concept: "queue", title: "Finish in waiting order", description: "The queue rule is first-in, first-out: the order of service follows the order of arrival.", nodes: withNodeState(served, ["item-0", "item-1"], "visited"), edges: [], highlights: { nodeIds: ["item-0", "item-1"], lineNumbers: [6] }, code, activeLine: 6, state: { rule: "FIFO" } }, 6),
+    step({ concept: "queue", title: context.title || "Queue", description: "The front leaves first. New arrivals join the back.", nodes: withNodeState(first, ["item-0"], "active"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [1] }, code, activeLine: 1, state: { example: `${firstItem}, ${secondItem}; ${thirdItem} joins`, target: "serve oldest first", front: firstItem, back: secondItem } }, 1),
+    step({ concept: "queue", title: "Join at the back", description: `${thirdItem} joins behind everyone already waiting.`, nodes: withNodeState(joined, ["item-2"], "active"), edges: [], highlights: { nodeIds: ["item-2"], lineNumbers: [2] }, code, activeLine: 2, state: { example: `${firstItem}, ${secondItem}; ${thirdItem} joins`, target: "serve oldest first", action: "enqueue", front: firstItem, back: thirdItem } }, 2),
+    step({ concept: "queue", title: "Front does not move yet", description: `Adding ${thirdItem} does not affect ${firstItem}. The oldest item still owns the front.`, nodes: withNodeState(joined, ["item-0"], "visited"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [3] }, code, activeLine: 3, state: { example: `${firstItem}, ${secondItem}; ${thirdItem} joins`, target: "serve oldest first", front: firstItem, back: thirdItem } }, 3),
+    step({ concept: "queue", title: "Serve the front", description: `${firstItem} leaves first because ${firstItem} has waited the longest.`, nodes: withNodeState(joined, ["item-0"], "active"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [4] }, code, activeLine: 4, state: { example: `${firstItem}, ${secondItem}; ${thirdItem} joins`, target: "serve oldest first", action: "dequeue", served: firstItem } }, 4),
+    step({ concept: "queue", title: "Next front appears", description: `After ${firstItem} leaves, ${secondItem} becomes the front without changing the order of the remaining line.`, nodes: withNodeState(served, ["item-0"], "active"), edges: [], highlights: { nodeIds: ["item-0"], lineNumbers: [5] }, code, activeLine: 5, state: { example: `${firstItem}, ${secondItem}; ${thirdItem} joins`, target: "serve oldest first", front: secondItem, back: thirdItem } }, 5),
+    step({ concept: "queue", title: "Finish in waiting order", description: "The queue rule is first-in, first-out: the order of service follows the order of arrival.", nodes: withNodeState(served, ["item-0", "item-1"], "visited"), edges: [], highlights: { nodeIds: ["item-0", "item-1"], lineNumbers: [6] }, code, activeLine: 6, state: { example: `${firstItem}, ${secondItem}; ${thirdItem} joins`, target: "serve oldest first", rule: "FIFO", result: `${secondItem}, ${thirdItem} remain` } }, 6),
   ];
 }
 
@@ -4974,6 +5054,8 @@ export function generateHelpDeskQueueSteps(context: GeneratorContext = {}): Step
       activeLine: phase.line,
       workflow: workflowFromLabels(phases.map((item) => item.title), index),
       state: {
+        example: "join Ana, join Bo, serve, serve, serve",
+        target: "served order",
         command: commands[phase.commandIndex],
         waiting: phase.queue.length ? phase.queue.join(", ") : "empty",
         served: phase.served.length ? phase.served.join(", ") : "none yet",
@@ -4986,22 +5068,22 @@ export function generateHelpDeskQueueSteps(context: GeneratorContext = {}): Step
 export function generateServeCountQueueSteps(context: GeneratorContext = {}): Step[] {
   const isFrontOnly = /front/i.test(context.title || "");
   const code = isFrontOnly
-    ? ["front_index = serveCount", "if front_index is inside names", "return names[front_index]", "otherwise return none"]
-    : ["served = []", "repeat serveCount times", "move front name into served", "return served"];
+    ? ["count how many students are served", "move the front forward after each serve", "if someone remains, that person is the front", "otherwise return none"]
+    : ["start with an empty served list", "repeat until the serve count is used", "move the front name into served", "return the served names"];
   const names = ["Ana", "Bo", "Cy"];
   const phases = isFrontOnly
     ? [
-        { title: context.title || "Queue Front After Serves", queue: names, served: [] as string[], active: 0, desc: "The line starts in arrival order: Ana, Bo, Cy.", line: 1, state: { front: "Ana", serveCount: 2 } },
-        { title: "Serve Ana", queue: ["Bo", "Cy"], served: ["Ana"], active: 0, desc: "One serve removes the front, so Bo moves forward.", line: 1, state: { served_count: 1, front: "Bo" } },
-        { title: "Serve Bo", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "The second serve removes Bo.", line: 1, state: { served_count: 2, front: "Cy" } },
-        { title: "Return Cy", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "After two serves, Cy is at the front.", line: 3, state: { result: "Cy" } },
+        { title: context.title || "Queue Front After Serves", queue: names, served: [] as string[], active: 0, desc: "The line starts in arrival order: Ana, Bo, Cy.", line: 1, state: { example: "Ana, Bo, Cy; serve 2", target: "front after serving", front: "Ana", serveCount: 2 } },
+        { title: "Serve Ana", queue: ["Bo", "Cy"], served: ["Ana"], active: 0, desc: "One serve removes the front, so Bo moves forward.", line: 1, state: { example: "Ana, Bo, Cy; serve 2", target: "front after serving", served_count: 1, front: "Bo" } },
+        { title: "Serve Bo", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "The second serve removes Bo.", line: 1, state: { example: "Ana, Bo, Cy; serve 2", target: "front after serving", served_count: 2, front: "Cy" } },
+        { title: "Return Cy", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "After two serves, Cy is at the front.", line: 3, state: { example: "Ana, Bo, Cy; serve 2", target: "front after serving", result: "Cy" } },
       ]
     : [
-        { title: context.title || "Serve First Students", queue: names, served: [] as string[], active: 0, desc: "The queue starts with Ana at the front.", line: 1, state: { serveCount: 2, served: "none yet" } },
-        { title: "Serve Ana", queue: ["Bo", "Cy"], served: ["Ana"], active: 0, desc: "Ana leaves first because she is at the front.", line: 3, state: { served: "[Ana]" } },
-        { title: "Serve Bo", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "Bo becomes front after Ana leaves, then Bo is served.", line: 3, state: { served: "[Ana, Bo]" } },
-        { title: "Stop after two serves", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "serveCount is 2, so Cy remains waiting.", line: 2, state: { remaining: "[Cy]" } },
-        { title: "Return served students", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "Return exactly the names that were served.", line: 4, state: { result: "[Ana, Bo]" } },
+        { title: context.title || "Serve First Students", queue: names, served: [] as string[], active: 0, desc: "The queue starts with Ana at the front.", line: 1, state: { example: "Ana, Bo, Cy; serve 2", target: "names served", serveCount: 2, served: "none yet" } },
+        { title: "Serve Ana", queue: ["Bo", "Cy"], served: ["Ana"], active: 0, desc: "Ana leaves first because she is at the front.", line: 3, state: { example: "Ana, Bo, Cy; serve 2", target: "names served", served: "[Ana]" } },
+        { title: "Serve Bo", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "Bo becomes front after Ana leaves, then Bo is served.", line: 3, state: { example: "Ana, Bo, Cy; serve 2", target: "names served", served: "[Ana, Bo]" } },
+        { title: "Stop after two serves", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "serveCount is 2, so Cy remains waiting.", line: 2, state: { example: "Ana, Bo, Cy; serve 2", target: "names served", remaining: "[Cy]" } },
+        { title: "Return served students", queue: ["Cy"], served: ["Ana", "Bo"], active: 0, desc: "Return exactly the names that were served.", line: 4, state: { example: "Ana, Bo, Cy; serve 2", target: "names served", result: "[Ana, Bo]" } },
       ];
   return phases.map((phase, index) => {
     const queueNodes = phase.queue.map((name, itemIndex) => ({ id: `queue-${itemIndex}`, x: 300 + itemIndex * 150, y: 270, value: name, label: itemIndex === 0 ? "front" : "waiting", type: "array-cell" as const, state: itemIndex === phase.active ? "active" as const : "queued" as const }));
@@ -5024,16 +5106,18 @@ export function generateServeCountQueueSteps(context: GeneratorContext = {}): St
 
 export function generateLineCommandQueueSteps(context: GeneratorContext = {}): Step[] {
   const isFrontAfter = /front/i.test(context.title || "");
-  const code = ["queue = []", "read each command", "join adds to the back", "serve removes from the front", "return the requested queue state"];
+  const code = ["start with an empty queue", "read each command", "join adds to the back", "serve removes from the front", "return the requested queue state"];
+  const example = isFrontAfter ? "join Ana, join Bo, serve" : "join Ana, join Bo, serve, join Cy";
+  const target = isFrontAfter ? "front name" : "remaining line";
   const phases = [
-    { title: context.title || "Dining Line After Commands", command: "join Ana", queue: ["Ana"], served: [] as string[], desc: "Ana joins an empty line and becomes the front.", line: 3, state: { front: "Ana", back: "Ana" } },
-    { title: "Bo joins the back", command: "join Bo", queue: ["Ana", "Bo"], served: [] as string[], desc: "Bo joins behind Ana. The front stays Ana.", line: 3, state: { front: "Ana", back: "Bo" } },
-    { title: "Serve Ana", command: "serve", queue: ["Bo"], served: ["Ana"], desc: "serve removes the oldest waiting student: Ana.", line: 4, state: { served: "Ana", front: "Bo" } },
+    { title: context.title || "Dining Line After Commands", command: "join Ana", queue: ["Ana"], served: [] as string[], desc: "Ana joins an empty line and becomes the front.", line: 3, state: { example, target, command: "join Ana", front: "Ana", back: "Ana" } },
+    { title: "Bo joins the back", command: "join Bo", queue: ["Ana", "Bo"], served: [] as string[], desc: "Bo joins behind Ana. The front stays Ana.", line: 3, state: { example, target, command: "join Bo", front: "Ana", back: "Bo" } },
+    { title: "Serve Ana", command: "serve", queue: ["Bo"], served: ["Ana"], desc: "serve removes the oldest waiting student: Ana.", line: 4, state: { example, target, command: "serve", served: "Ana", front: "Bo" } },
     ...(isFrontAfter
-      ? [{ title: "Return Bo", command: "return", queue: ["Bo"], served: ["Ana"], desc: "Bo is now the front of the line.", line: 5, state: { result: "Bo" } }]
+      ? [{ title: "Return Bo", command: "return", queue: ["Bo"], served: ["Ana"], desc: "Bo is now the front of the line.", line: 5, state: { example, target, result: "Bo" } }]
       : [
-          { title: "Cy joins behind Bo", command: "join Cy", queue: ["Bo", "Cy"], served: ["Ana"], desc: "Cy joins the back after Bo.", line: 3, state: { front: "Bo", back: "Cy" } },
-          { title: "Return remaining line", command: "return", queue: ["Bo", "Cy"], served: ["Ana"], desc: "The remaining queue is Bo followed by Cy.", line: 5, state: { result: "[Bo, Cy]" } },
+          { title: "Cy joins behind Bo", command: "join Cy", queue: ["Bo", "Cy"], served: ["Ana"], desc: "Cy joins the back after Bo.", line: 3, state: { example, target, command: "join Cy", front: "Bo", back: "Cy" } },
+          { title: "Return remaining line", command: "return", queue: ["Bo", "Cy"], served: ["Ana"], desc: "The remaining queue is Bo followed by Cy.", line: 5, state: { example, target, result: "[Bo, Cy]" } },
         ]),
   ];
   return phases.map((phase, index) => {
@@ -5064,17 +5148,17 @@ export function generateQueueWindowSteps(context: GeneratorContext = {}): Step[]
     : ["queue keeps recent times", "remove times outside the window", "append current time", "save current queue size", "return counts"];
   const phases = isRateLimiter
     ? [
-        { title: context.title || "Rate Limiter", time: 1, queue: [1], desc: "At time 1, the recent accepted queue is empty, so allow it.", line: 4, state: { decision: "true", queue: "[1]" } },
-        { title: "Allow time 2", time: 2, queue: [1, 2], desc: "Both 1 and 2 are within the window, and capacity k=2 allows the second request.", line: 4, state: { decision: "true", queue: "[1, 2]" } },
-        { title: "Drop expired time 1", time: 11, queue: [2], desc: "At time 11, time 1 is outside the 10-second window, so it leaves the queue.", line: 2, state: { removed: 1, queue: "[2]" } },
-        { title: "Allow time 11", time: 11, queue: [2, 11], desc: "After removing expired times, there is room to accept 11.", line: 4, state: { decision: "true", result: "[true,true,true]" } },
+        { title: context.title || "Rate Limiter", time: 1, queue: [1], desc: "At time 1, the recent accepted queue is empty, so allow it.", line: 4, state: { example: "k=2, window=10, times=[1,2,11]", target: "allowed decisions", time: 1, decision: "true", queue: "[1]", result: "[true]" } },
+        { title: "Allow time 2", time: 2, queue: [1, 2], desc: "Both 1 and 2 are within the window, and capacity k=2 allows the second request.", line: 4, state: { example: "k=2, window=10, times=[1,2,11]", target: "allowed decisions", time: 2, decision: "true", queue: "[1, 2]", result: "[true,true]" } },
+        { title: "Drop expired time 1", time: 11, queue: [2], desc: "At time 11, time 1 is outside the 10-second window, so it leaves the queue.", line: 2, state: { example: "k=2, window=10, times=[1,2,11]", target: "allowed decisions", time: 11, removed: 1, queue: "[2]", result: "[true,true]" } },
+        { title: "Allow time 11", time: 11, queue: [2, 11], desc: "After removing expired times, there is room to accept 11.", line: 4, state: { example: "k=2, window=10, times=[1,2,11]", target: "allowed decisions", time: 11, decision: "true", result: "[true,true,true]" } },
       ]
     : [
-        { title: context.title || "Recent Queue Counts", time: 1, queue: [1], desc: "Only time 1 is recent, so the count is 1.", line: 3, state: { time: 1, count: 1 } },
-        { title: "Add time 2", time: 2, queue: [1, 2], desc: "Times 1 and 2 are both within the window.", line: 3, state: { time: 2, count: 2 } },
-        { title: "Drop old times before 8", time: 8, queue: [8], desc: "At time 8, earlier times are outside the 5-unit window.", line: 2, state: { removed: "1 and 2", count: 1 } },
-        { title: "Add time 12", time: 12, queue: [8, 12], desc: "8 and 12 both fit in the current recent window.", line: 3, state: { time: 12, count: 2 } },
-        { title: "Return counts", time: 12, queue: [8, 12], desc: "The saved counts are [1, 2, 1, 2].", line: 4, state: { result: "[1,2,1,2]" } },
+        { title: context.title || "Recent Queue Counts", time: 1, queue: [1], desc: "Only time 1 is recent, so the count is 1.", line: 3, state: { example: "times=[1,2,8,12], window=5", target: "count after each time", time: 1, count: 1, result: "[1]" } },
+        { title: "Add time 2", time: 2, queue: [1, 2], desc: "Times 1 and 2 are both within the window.", line: 3, state: { example: "times=[1,2,8,12], window=5", target: "count after each time", time: 2, count: 2, result: "[1,2]" } },
+        { title: "Drop old times before 8", time: 8, queue: [8], desc: "At time 8, earlier times are outside the 5-unit window.", line: 2, state: { example: "times=[1,2,8,12], window=5", target: "count after each time", time: 8, removed: "1 and 2", count: 1, result: "[1,2,1]" } },
+        { title: "Add time 12", time: 12, queue: [8, 12], desc: "8 and 12 both fit in the current recent window.", line: 3, state: { example: "times=[1,2,8,12], window=5", target: "count after each time", time: 12, count: 2, result: "[1,2,1,2]" } },
+        { title: "Return counts", time: 12, queue: [8, 12], desc: "The saved counts are [1, 2, 1, 2].", line: 4, state: { example: "times=[1,2,8,12], window=5", target: "count after each time", result: "[1,2,1,2]" } },
       ];
   return phases.map((phase, index) => {
     const nodes: Node[] = [
@@ -5098,14 +5182,14 @@ export function generateQueueWindowSteps(context: GeneratorContext = {}): Step[]
 }
 
 export function generateTicketRoundQueueSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["queue = people with ticket counts", "serve the front person once", "if tickets remain, rejoin the back", "if tickets reach zero, save finish order", "return finish order"];
+  const code = ["start with people and ticket counts", "serve the front person once", "if tickets remain, rejoin the back", "if tickets reach zero, save finish order", "return finish order"];
   const phases = [
-    { title: context.title || "Help Session Finish Order", queue: ["Ana:1", "Bo:2", "Cy:1"], done: [] as string[], desc: "Each student starts in line with their remaining ticket count.", line: 1, state: { queue: "Ana:1, Bo:2, Cy:1" } },
-    { title: "Ana finishes", queue: ["Bo:2", "Cy:1"], done: ["Ana"], desc: "Ana uses her only ticket, so she leaves the queue and joins finish order.", line: 4, state: { finished: "Ana" } },
-    { title: "Bo still needs one", queue: ["Cy:1", "Bo:1"], done: ["Ana"], desc: "Bo uses one ticket but still has one left, so he returns to the back.", line: 3, state: { requeued: "Bo:1" } },
-    { title: "Cy finishes", queue: ["Bo:1"], done: ["Ana", "Cy"], desc: "Cy uses her only ticket and finishes before Bo.", line: 4, state: { finished: "Cy" } },
-    { title: "Bo finishes", queue: [] as string[], done: ["Ana", "Cy", "Bo"], desc: "Bo uses his last ticket and finishes last.", line: 4, state: { finished: "Bo" } },
-    { title: "Return finish order", queue: [] as string[], done: ["Ana", "Cy", "Bo"], desc: "The finish order is Ana, Cy, then Bo.", line: 5, state: { result: "[Ana, Cy, Bo]" } },
+    { title: context.title || "Help Session Finish Order", queue: ["Ana:1", "Bo:2", "Cy:1"], done: [] as string[], desc: "Each student starts in line with their remaining ticket count.", line: 1, state: { example: "Ana:1, Bo:2, Cy:1", target: "finish order", waiting: "Ana:1, Bo:2, Cy:1", finished_order: "empty" } },
+    { title: "Ana finishes", queue: ["Bo:2", "Cy:1"], done: ["Ana"], desc: "Ana uses her only ticket, so she leaves the queue and joins finish order.", line: 4, state: { example: "Ana:1, Bo:2, Cy:1", target: "finish order", action: "serve Ana", finished: "Ana", result: "[Ana]" } },
+    { title: "Bo still needs one", queue: ["Cy:1", "Bo:1"], done: ["Ana"], desc: "Bo uses one ticket but still has one left, so he returns to the back.", line: 3, state: { example: "Ana:1, Bo:2, Cy:1", target: "finish order", action: "serve Bo", requeued: "Bo:1", result: "[Ana]" } },
+    { title: "Cy finishes", queue: ["Bo:1"], done: ["Ana", "Cy"], desc: "Cy uses her only ticket and finishes before Bo.", line: 4, state: { example: "Ana:1, Bo:2, Cy:1", target: "finish order", action: "serve Cy", finished: "Cy", result: "[Ana, Cy]" } },
+    { title: "Bo finishes", queue: [] as string[], done: ["Ana", "Cy", "Bo"], desc: "Bo uses his last ticket and finishes last.", line: 4, state: { example: "Ana:1, Bo:2, Cy:1", target: "finish order", action: "serve Bo", finished: "Bo", result: "[Ana, Cy, Bo]" } },
+    { title: "Return finish order", queue: [] as string[], done: ["Ana", "Cy", "Bo"], desc: "The finish order is Ana, Cy, then Bo.", line: 5, state: { example: "Ana:1, Bo:2, Cy:1", target: "finish order", result: "[Ana, Cy, Bo]" } },
   ];
   return phases.map((phase, index) => {
     const queueNodes = phase.queue.length
@@ -5884,6 +5968,7 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
     family === "string-prefix-search"
   ) return generateStringScanSteps(context);
   if (family === "graph-islands") return generateGraphIslandsSteps(context);
+  if (family === "stack-brackets") return generateBalancedBracketSteps(context);
   if (family === "stack-min") return generateMinStackSteps(context);
   if (family === "stack-commands") return generateCommandStackSteps(context);
   if (family === "stack-adjacent-pairs") return generateAdjacentPairStackSteps(context);

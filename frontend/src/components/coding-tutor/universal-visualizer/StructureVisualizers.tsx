@@ -96,55 +96,128 @@ function isEdgeActive(edge: Edge, step: Step): boolean {
   return edge.state === "active" || edge.state === "path" || Boolean(step.highlights?.edgeIds?.includes(edgeId(edge)));
 }
 
+const STACK_QUEUE_STATE_EXCLUDED = new Set([
+  "answer",
+  "commands",
+  "example",
+  "expression",
+  "final_result",
+  "outputs",
+  "result",
+  "returned",
+  "rule",
+  "target",
+  "visual_family",
+]);
+
+function StackQueueStatePanel({ step, kind }: { step: Step; kind: "stack" | "queue" }) {
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example ?? state.commands ?? state.expression);
+  const target = formatArrayStateValue(state.target ?? (kind === "stack" ? "track the top and height" : "front leaves first"));
+  const resultSoFar = kind === "stack"
+    ? formatArrayStateValue(state.result ?? state.outputs ?? state.max_height ?? state.top)
+    : formatArrayStateValue(state.result ?? state.served ?? state.front ?? state.waiting);
+  const variables = Object.entries(state).filter(([key, value]) => !STACK_QUEUE_STATE_EXCLUDED.has(key) && typeof value !== "undefined" && value !== "");
+  return (
+    <aside className={`ucv-array-state-panel ucv-${kind}-state-panel`} aria-label={`${kind} trace memory`}>
+      {example ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">example</span>
+          <strong className="ucv-array-state-panel-value">{example}</strong>
+        </div>
+      ) : null}
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">target</span>
+        <strong className="ucv-array-state-panel-value">{target}</strong>
+      </div>
+      {variables.length ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.map(([key, value]) => (
+              <div className="ucv-array-state-panel-row" key={key}>
+                <span>{arrayStateLabel(key)}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {resultSoFar ? (
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
 export function StackVisualizer({ step }: { step: Step }) {
-  const nodes = sortedStackNodes(step.nodes);
+  const nodes = sortedStackNodes(step.nodes).filter((node) => {
+    const role = String(node.meta?.role || "");
+    return role === "stack-item" || role === "stack" || node.id.startsWith("stack-") || node.id === "empty-stack";
+  });
   const topId = nodes[nodes.length - 1]?.id;
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-stack-canvas">
-      <div className="ucv-stack-shell" aria-label="Stack visualizer">
-        <span className="ucv-stack-label ucv-stack-label--top">Top</span>
-        <div className="ucv-stack-track">
-          <AnimatePresence mode="popLayout">
-            {nodes.map((node, index) => (
-              <StatusBlock
-                key={node.id}
-                node={{ ...node, label: node.id === topId ? "top" : index === 0 ? "bottom" : "" }}
-                step={step}
-                className="ucv-stack-item"
-              />
-            ))}
-          </AnimatePresence>
+      <div className="ucv-stack-layout" aria-label="Stack visualizer">
+        <StackQueueStatePanel step={step} kind="stack" />
+        <div className="ucv-stack-shell">
+          <span className="ucv-stack-label ucv-stack-label--top">Top</span>
+          <div className="ucv-stack-track">
+            <AnimatePresence mode="popLayout">
+              {nodes.map((node, index) => (
+                <StatusBlock
+                  key={node.id}
+                  node={{ ...node, label: visibleLabel(node, node.id === topId ? "top" : index === 0 ? "bottom" : "") }}
+                  step={step}
+                  className="ucv-stack-item"
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+          <span className="ucv-stack-base">Bottom of stack</span>
         </div>
-        <span className="ucv-stack-base">Bottom of stack</span>
       </div>
     </Canvas>
   );
 }
 
 export function QueueVisualizer({ step }: { step: Step }) {
-  const nodes = sortedByX(step.nodes);
+  const nodes = sortedByX(step.nodes).filter((node) => (
+    node.id.startsWith("queue-")
+    || node.id.startsWith("item-")
+    || node.id.startsWith("served-")
+    || node.id.startsWith("done-")
+    || node.id === "empty-line"
+    || node.id === "queue-empty"
+  ));
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-queue-canvas">
-      <div className="ucv-queue-shell" aria-label="Queue visualizer">
-        <div className="ucv-queue-guide" aria-hidden="true">
-          <span>dequeue from front</span>
-          <span>enqueue at rear</span>
-        </div>
-        <div className="ucv-queue-track">
-          <span className="ucv-queue-exit" aria-hidden="true" />
-          <AnimatePresence mode="popLayout">
-            {nodes.map((node, index) => (
-              <div key={node.id} className="ucv-queue-item-wrap">
-                <StatusBlock
-                  node={{ ...node, label: index === 0 ? "front" : index === nodes.length - 1 ? "rear" : visibleLabel(node, String(index)) }}
-                  step={step}
-                  className="ucv-queue-item"
-                />
-                {index < nodes.length - 1 ? <span className="ucv-queue-order-mark" aria-hidden="true" /> : null}
-              </div>
-            ))}
-          </AnimatePresence>
-          <span className="ucv-queue-entry" aria-hidden="true" />
+      <div className="ucv-queue-layout" aria-label="Queue visualizer">
+        <StackQueueStatePanel step={step} kind="queue" />
+        <div className="ucv-queue-shell">
+          <div className="ucv-queue-guide" aria-hidden="true">
+            <span>dequeue from front</span>
+            <span>enqueue at rear</span>
+          </div>
+          <div className="ucv-queue-track">
+            <span className="ucv-queue-exit" aria-hidden="true" />
+            <AnimatePresence mode="popLayout">
+              {nodes.map((node, index) => (
+                <div key={node.id} className="ucv-queue-item-wrap">
+                  <StatusBlock
+                    node={{ ...node, label: visibleLabel(node, index === 0 ? "front" : index === nodes.length - 1 ? "rear" : String(index)) }}
+                    step={step}
+                    className="ucv-queue-item"
+                  />
+                  {index < nodes.length - 1 ? <span className="ucv-queue-order-mark" aria-hidden="true" /> : null}
+                </div>
+              ))}
+            </AnimatePresence>
+            <span className="ucv-queue-entry" aria-hidden="true" />
+          </div>
         </div>
       </div>
     </Canvas>

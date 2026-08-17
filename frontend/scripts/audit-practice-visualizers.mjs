@@ -181,6 +181,25 @@ const trueStringFamilies = {
   "medium-17": { family: "string-prefix-search", sample: "words=[code, card, car], prefix=ca", expected: "[card, car]" },
 };
 
+const trueStackQueueFamilies = {
+  "easy-37": { family: "stack-commands", expected: "2" },
+  "easy-38": { family: "queue-serve-count", expected: "[Ana, Bo]" },
+  "easy-45": { family: "stack-commands", expected: "tray" },
+  "easy-46": { family: "queue-serve-count", expected: "Cy" },
+  "easy-60": { family: "queue-line-commands", expected: "[Bo, Cy]" },
+  "easy-81": { family: "stack-commands", expected: "[open]" },
+  "easy-82": { family: "queue-line-commands", expected: "Bo" },
+  "hard-08": { family: "stack-expression", expected: "7" },
+  "hard-20": { family: "queue-window-count", expected: "[true,true,true]" },
+  "medium-02": { family: "stack-brackets", expected: "true" },
+  "medium-15": { family: "stack-min", expected: "[1,3]" },
+  "medium-23": { family: "queue-help-desk", expected: "[Ana,Bo,none]" },
+  "medium-34": { family: "stack-monotonic", expected: "[1,2,1,0]" },
+  "medium-35": { family: "queue-window-count", expected: "[1,2,1,2]" },
+  "medium-55": { family: "queue-ticket-rounds", expected: "[Ana,Cy,Bo]" },
+  "medium-71": { family: "stack-adjacent-pairs", expected: "ca" },
+};
+
 function visualizerFamilyText(problem) {
   return `${problem?.title || ""} ${problem?.topic || ""} ${problem?.prompt || ""} ${problem?.visualizer?.title || ""} ${problem?.visualizer?.caption || ""} ${problem?.visualizer?.concept || ""}`.toLowerCase();
 }
@@ -230,8 +249,8 @@ function detectVisualizerFamily(problem, concept) {
     if (/help session finish order|tickets/.test(text)) return "queue-ticket-rounds";
     if (/recent queue counts|rate limiter|window/.test(text)) return "queue-window-count";
     if (/serve first students|queue front after serves|servecount/.test(text)) return "queue-serve-count";
-    if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
     if (/help desk|ticket|support/.test(text)) return "queue-help-desk";
+    if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
     return "queue-fifo";
   }
   if (concept === "linked-list") return "linked-list-traverse";
@@ -380,9 +399,27 @@ function compactVisualInput(problem, concept, state = {}) {
   if (family === "set-first-missing") return "values=[1, 2, 0]";
   if (family === "string-run-compress") return "aaabbc";
   if (family === "graph-islands") return "grid=[[1,1,0],[0,0,1],[1,0,1]]";
-  if (family === "stack-min") return "commands=[push 3, push 1, push 2, min, pop, min]";
+  if (family === "stack-brackets") return "{[()]}";
+  if (family === "stack-min") return "commands=[push 3, push 1, min, pop, top]";
+  if (family === "stack-monotonic") return "temperatures=[70,72,71,75]";
+  if (family === "stack-adjacent-pairs") return "text=abbaca";
+  if (family === "stack-commands") {
+    if (/max plate|height/.test(title)) return "commands=[push, push, pop, push]";
+    if (/undo/.test(title)) return "actions=[open, type, undo]";
+    return "commands=[push tray, push cup, pop]";
+  }
   if (family === "recursion-nested-list") return "value=[1,[2,[3]]]";
   if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
+  if (family === "queue-serve-count") return "names=[Ana, Bo, Cy], serveCount=2";
+  if (family === "queue-line-commands") {
+    if (/front after/.test(title)) return "commands=[join Ana, join Bo, serve]";
+    return "commands=[join Ana, join Bo, serve, join Cy]";
+  }
+  if (family === "queue-window-count") {
+    if (/rate limiter/.test(title)) return "k=2, window=10, times=[1,2,11]";
+    return "times=[1,2,8,12], window=5";
+  }
+  if (family === "queue-ticket-rounds") return "names=[Ana, Bo, Cy], tickets=[1,2,1]";
   if (title.includes("vowel")) return "Code";
   if (title.includes("palindrome")) return "level";
   if (title.includes("reverse words")) return "red blue";
@@ -621,6 +658,10 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       if (sample !== requiredTuple.sample) {
         warnings.push(`${problem.id} ${problem.title}: Tuple sample is "${sample}", expected "${requiredTuple.sample}"`);
       }
+    }
+    const requiredStackQueue = trueStackQueueFamilies[problem.id];
+    if (requiredStackQueue && family !== requiredStackQueue.family) {
+      warnings.push(`${problem.id} ${problem.title}: Stack/Queue visualizer routes to "${family}", expected "${requiredStackQueue.family}"`);
     }
     const requiredString = trueStringFamilies[problem.id];
     if (requiredString) {
