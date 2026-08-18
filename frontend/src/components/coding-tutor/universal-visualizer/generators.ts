@@ -205,6 +205,15 @@ type VisualizerFamily =
   | "tuple-pair"
   | "tuple-score-at-index"
   | "tuple-swap"
+  | "tree-contains"
+  | "tree-height"
+  | "tree-lca"
+  | "tree-leaf-count"
+  | "tree-level-sums"
+  | "tree-node-count"
+  | "tree-path-sum-count"
+  | "tree-right-side-view"
+  | "tree-serialize"
   | "two-pointer-closest"
   | "two-pointer-count-ends"
   | "two-pointer-edge-pairs"
@@ -368,7 +377,18 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/alien dictionary/.test(text)) return "graph-alien-order";
     return "graph-traversal";
   }
-  if (concept === "binary-tree") return "graph-traversal";
+  if (concept === "binary-tree" || concept === "tree") {
+    if (/tree node count/.test(text)) return "tree-node-count";
+    if (/tree height levels/.test(text)) return "tree-height";
+    if (/tree leaf count/.test(text)) return "tree-leaf-count";
+    if (/tree contains value/.test(text)) return "tree-contains";
+    if (/serialize binary tree/.test(text)) return "tree-serialize";
+    if (/tree level sums/.test(text)) return "tree-level-sums";
+    if (/tree right side view/.test(text)) return "tree-right-side-view";
+    if (/lowest common ancestor|lca/.test(text)) return "tree-lca";
+    if (/tree path sum count/.test(text)) return "tree-path-sum-count";
+    return "graph-traversal";
+  }
   if (concept === "stack") {
     if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
     if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
@@ -549,6 +569,15 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
   if (family === "graph-word-ladder") return "hit -> hot -> dot -> dog";
   if (family === "graph-clone") return "node 1 connected to 2 and 3";
   if (family === "graph-alien-order") return "words=[ba, bc, ac]";
+  if (family === "tree-node-count") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-height") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-leaf-count") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-contains") return "tree=[5,3,8,-1,4], target=4";
+  if (family === "tree-serialize") return "tree=[1,2,3]";
+  if (family === "tree-level-sums") return "tree=[3,9,20,15,7]";
+  if (family === "tree-right-side-view") return "tree=[1,2,3,5,4]";
+  if (family === "tree-lca") return "tree=[3,5,1,6,2], a=6, b=2";
+  if (family === "tree-path-sum-count") return "tree=[5,4,8,11,13], target=20";
   if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
   if (family === "queue-serve-count") return "names=[Ana, Bo, Cy], serveCount=2";
   if (family === "queue-line-commands") {
@@ -3978,6 +4007,8 @@ export function generateSetIntersectionSteps(context: GeneratorContext = {}): St
 }
 
 export function generateTreeInsertSteps(context: GeneratorContext = {}): Step[] {
+  const family = detectVisualizerFamily("binary-tree", context);
+  if (family !== "graph-traversal") return generateTreePracticeSteps(context, family);
   const code = [
     "node = root",
     "if value < node.value: node = node.left",
@@ -4083,6 +4114,218 @@ export function generateTreeInsertSteps(context: GeneratorContext = {}): Step[] 
       state: { inserted: 24, root: 22 },
     }, 7),
   ];
+}
+
+function generateTreePracticeSteps(context: GeneratorContext, family: VisualizerFamily): Step[] {
+  type TreePhase = {
+    title: string;
+    desc: string;
+    active: string[];
+    visited?: string[];
+    path?: string[];
+    skipped?: string[];
+    edges?: string[];
+    pathEdges?: string[];
+    line: number;
+    state: Record<string, string | number | boolean>;
+  };
+  type TreeConfig = {
+    values: Array<string | number>;
+    example: string;
+    target: string;
+    code: string[];
+    phases: TreePhase[];
+  };
+  const countCode = ["start at the root", "visit one real node", "update the count if this node qualifies", "move to the left child", "move to the right child", "combine what the children found", "keep the saved result visible", "return the requested count"];
+  const levelCode = ["start with the root level", "read every node in this level", "combine this level's values", "store this level's result", "move to the next level", "repeat while levels remain", "keep the saved list visible", "return the list"];
+  const configs: Partial<Record<VisualizerFamily, TreeConfig>> = {
+    "tree-node-count": {
+      values: [1, 2, 3, -1, 4],
+      example: "tree=[1,2,3,-1,4]",
+      target: "count real nodes",
+      code: countCode,
+      phases: [
+        { title: context.title || "Tree Node Count", desc: "Start at the root. Missing slots do not count as nodes.", active: ["tree-0"], line: 1, state: { current: 1, count: 0 } },
+        { title: "Count root", desc: "Node 1 is real, so the count becomes 1.", active: ["tree-0"], visited: ["tree-0"], line: 3, state: { current: 1, count: 1 } },
+        { title: "Count left child", desc: "Node 2 is real, so it adds one.", active: ["tree-1"], visited: ["tree-0", "tree-1"], edges: ["tree-0-tree-1"], line: 4, state: { current: 2, count: 2 } },
+        { title: "Skip missing child", desc: "The missing left child under 2 adds nothing.", active: ["tree-1"], visited: ["tree-0", "tree-1"], line: 4, state: { skipped: "missing child", count: 2 } },
+        { title: "Count node 4", desc: "Node 4 is real, so it adds one.", active: ["tree-4"], visited: ["tree-0", "tree-1", "tree-4"], edges: ["tree-1-tree-4"], line: 5, state: { current: 4, count: 3 } },
+        { title: "Count right child", desc: "Node 3 is also real.", active: ["tree-2"], visited: ["tree-0", "tree-1", "tree-4", "tree-2"], edges: ["tree-0-tree-2"], line: 5, state: { current: 3, count: 4 } },
+        { title: "All nodes checked", desc: "The real nodes are 1, 2, 4, and 3.", active: ["tree-0"], visited: ["tree-0", "tree-1", "tree-4", "tree-2"], line: 7, state: { counted_nodes: "1, 2, 4, 3", result: 4 } },
+        { title: "Return 4", desc: "Return the saved node count.", active: ["tree-0"], visited: ["tree-0", "tree-1", "tree-4", "tree-2"], line: 8, state: { final_result: 4 } },
+      ],
+    },
+    "tree-height": {
+      values: [1, 2, 3, -1, 4],
+      example: "tree=[1,2,3,-1,4]",
+      target: "count height levels",
+      code: ["start at the root level", "height starts at zero", "finish one real level", "add one to height", "send children to the next level", "repeat until no level remains", "keep the deepest level visible", "return the height"],
+      phases: [
+        { title: context.title || "Tree Height Levels", desc: "Height is the number of levels that contain real nodes.", active: ["tree-0"], line: 1, state: { level: 1, height: 0 } },
+        { title: "Finish level 1", desc: "The root level exists.", active: ["tree-0"], visited: ["tree-0"], line: 4, state: { level: 1, height: 1 } },
+        { title: "Move to level 2", desc: "Nodes 2 and 3 are on the second level.", active: ["tree-1", "tree-2"], visited: ["tree-0"], edges: ["tree-0-tree-1", "tree-0-tree-2"], line: 5, state: { level: 2, nodes: "2, 3", height: 1 } },
+        { title: "Finish level 2", desc: "Because this level has real nodes, height becomes 2.", active: ["tree-1", "tree-2"], visited: ["tree-0", "tree-1", "tree-2"], line: 4, state: { level: 2, height: 2 } },
+        { title: "Move to level 3", desc: "Node 4 creates one deeper level.", active: ["tree-4"], visited: ["tree-0", "tree-1", "tree-2"], edges: ["tree-1-tree-4"], line: 5, state: { level: 3, nodes: "4", height: 2 } },
+        { title: "Finish level 3", desc: "The deepest real level is now counted.", active: ["tree-4"], visited: ["tree-0", "tree-1", "tree-2", "tree-4"], line: 6, state: { level: 3, height: 3 } },
+        { title: "Next level is empty", desc: "No real children remain below node 4.", active: ["tree-4"], visited: ["tree-0", "tree-1", "tree-2", "tree-4"], line: 7, state: { next_level: "empty", result: 3 } },
+        { title: "Return 3", desc: "Return the number of real levels.", active: ["tree-0"], visited: ["tree-0", "tree-1", "tree-2", "tree-4"], line: 8, state: { final_result: 3 } },
+      ],
+    },
+    "tree-leaf-count": {
+      values: [1, 2, 3, -1, 4],
+      example: "tree=[1,2,3,-1,4]",
+      target: "count nodes with no children",
+      code: countCode,
+      phases: [
+        { title: context.title || "Tree Leaf Count", desc: "A leaf is a real node with no real children.", active: ["tree-0"], line: 1, state: { current: 1, leaves: 0 } },
+        { title: "Root has children", desc: "Node 1 is not a leaf because it has children.", active: ["tree-0"], visited: ["tree-0"], edges: ["tree-0-tree-1", "tree-0-tree-2"], line: 3, state: { current: 1, decision: "not a leaf", leaves: 0 } },
+        { title: "Node 2 has child 4", desc: "Node 2 is not a leaf either.", active: ["tree-1"], visited: ["tree-0", "tree-1"], edges: ["tree-1-tree-4"], line: 4, state: { current: 2, decision: "not a leaf", leaves: 0 } },
+        { title: "Count node 4", desc: "Node 4 has no children, so it is a leaf.", active: ["tree-4"], visited: ["tree-0", "tree-1", "tree-4"], line: 3, state: { current: 4, leaves: 1 } },
+        { title: "Check node 3", desc: "Move to the other child of the root.", active: ["tree-2"], visited: ["tree-0", "tree-1", "tree-4"], edges: ["tree-0-tree-2"], line: 5, state: { current: 3, leaves: 1 } },
+        { title: "Count node 3", desc: "Node 3 has no children, so it is also a leaf.", active: ["tree-2"], visited: ["tree-0", "tree-1", "tree-4", "tree-2"], line: 3, state: { current: 3, leaves: 2 } },
+        { title: "Leaves found", desc: "The leaves are 4 and 3.", active: ["tree-4", "tree-2"], visited: ["tree-0", "tree-1", "tree-4", "tree-2"], line: 7, state: { leaf_nodes: "4, 3", result: 2 } },
+        { title: "Return 2", desc: "Return the leaf count.", active: ["tree-4", "tree-2"], visited: ["tree-0", "tree-1", "tree-4", "tree-2"], line: 8, state: { final_result: 2 } },
+      ],
+    },
+    "tree-contains": {
+      values: [5, 3, 8, -1, 4],
+      example: "tree=[5,3,8,-1,4], target=4",
+      target: "find whether 4 exists",
+      code: ["start at the root", "compare current node with target", "move to a child that could contain it", "skip missing branches", "mark found when values match", "remember visited nodes", "stop when found or empty", "return the boolean result"],
+      phases: [
+        { title: context.title || "Tree Contains Value", desc: "Look for target 4 starting at the root.", active: ["tree-0"], line: 1, state: { current: 5, target_value: 4, result: "not final" } },
+        { title: "5 is not 4", desc: "The root does not match, so keep searching.", active: ["tree-0"], visited: ["tree-0"], line: 2, state: { current: 5, decision: "keep searching" } },
+        { title: "Try node 3", desc: "Move to the left child.", active: ["tree-1"], visited: ["tree-0"], edges: ["tree-0-tree-1"], line: 3, state: { current: 3 } },
+        { title: "3 is not 4", desc: "Node 3 does not match.", active: ["tree-1"], visited: ["tree-0", "tree-1"], line: 2, state: { current: 3, decision: "keep searching" } },
+        { title: "Move to node 4", desc: "Node 4 is the next real child on this path.", active: ["tree-4"], visited: ["tree-0", "tree-1"], edges: ["tree-1-tree-4"], line: 3, state: { current: 4 } },
+        { title: "Found target", desc: "The current node matches the target.", active: ["tree-4"], path: ["tree-0", "tree-1", "tree-4"], pathEdges: ["tree-0-tree-1", "tree-1-tree-4"], line: 5, state: { current: 4, result: "true" } },
+        { title: "Skip other side", desc: "Once 4 is found, the other branch is not needed.", active: ["tree-4"], path: ["tree-0", "tree-1", "tree-4"], skipped: ["tree-2"], line: 7, state: { skipped: "right branch", result: "true" } },
+        { title: "Return true", desc: "Return the boolean result.", active: ["tree-4"], path: ["tree-0", "tree-1", "tree-4"], skipped: ["tree-2"], line: 8, state: { final_result: "true" } },
+      ],
+    },
+    "tree-serialize": {
+      values: [1, 2, 3],
+      example: "tree=[1,2,3]",
+      target: "write preorder with missing markers",
+      code: ["start at the root", "write the current node value", "serialize the left child", "write a marker for a missing child", "serialize the right child", "return to the parent after each child", "keep the output in order", "return the serialized text"],
+      phases: [
+        { title: context.title || "Serialize Binary Tree", desc: "Preorder writes a node before its children.", active: ["tree-0"], line: 1, state: { current: 1, output: "empty" } },
+        { title: "Write 1", desc: "The first token is the root value.", active: ["tree-0"], visited: ["tree-0"], line: 2, state: { current: 1, output: "1" } },
+        { title: "Write left child 2", desc: "Then serialize the left child.", active: ["tree-1"], visited: ["tree-0", "tree-1"], edges: ["tree-0-tree-1"], line: 3, state: { current: 2, output: "1,2" } },
+        { title: "Mark missing children", desc: "Node 2's missing children are written as markers.", active: ["tree-1"], visited: ["tree-0", "tree-1"], line: 4, state: { markers: "two #", output: "1,2,#,#" } },
+        { title: "Write right child 3", desc: "Return to root, then serialize the right child.", active: ["tree-2"], visited: ["tree-0", "tree-1", "tree-2"], edges: ["tree-0-tree-2"], line: 5, state: { current: 3, output: "1,2,#,#,3" } },
+        { title: "Mark final missing children", desc: "Node 3 also has missing children markers.", active: ["tree-2"], visited: ["tree-0", "tree-1", "tree-2"], line: 4, state: { markers: "two #", output: "1,2,#,#,3,#,#" } },
+        { title: "Shape is encoded", desc: "Values plus markers preserve both values and structure.", active: ["tree-0"], visited: ["tree-0", "tree-1", "tree-2"], line: 7, state: { result: "1,2,#,#,3,#,#" } },
+        { title: "Return text", desc: "Return the serialized text.", active: ["tree-0"], visited: ["tree-0", "tree-1", "tree-2"], line: 8, state: { final_result: "1,2,#,#,3,#,#" } },
+      ],
+    },
+    "tree-level-sums": {
+      values: [3, 9, 20, -1, -1, 15, 7],
+      example: "tree=[3,9,20,-1,-1,15,7]",
+      target: "sum each level",
+      code: levelCode,
+      phases: [
+        { title: context.title || "Tree Level Sums", desc: "Process one horizontal level at a time.", active: ["tree-0"], line: 1, state: { level: 0, result: "[]" } },
+        { title: "Store level 0", desc: "The root level sums to 3.", active: ["tree-0"], visited: ["tree-0"], line: 4, state: { level: 0, level_sum: 3, result: "[3]" } },
+        { title: "Move to level 1", desc: "Nodes 9 and 20 share level 1.", active: ["tree-1", "tree-2"], visited: ["tree-0"], edges: ["tree-0-tree-1", "tree-0-tree-2"], line: 5, state: { level: 1, nodes: "9, 20" } },
+        { title: "Add 9", desc: "Start the level sum with 9.", active: ["tree-1"], visited: ["tree-0", "tree-1"], line: 2, state: { level: 1, level_sum: 9 } },
+        { title: "Add 20", desc: "Add 20 to finish level 1.", active: ["tree-2"], visited: ["tree-0", "tree-1", "tree-2"], line: 3, state: { level: 1, level_sum: 29, result: "[3, 29]" } },
+        { title: "Move to level 2", desc: "Nodes 15 and 7 are below 20.", active: ["tree-5", "tree-6"], visited: ["tree-0", "tree-1", "tree-2"], edges: ["tree-2-tree-5", "tree-2-tree-6"], line: 5, state: { level: 2, nodes: "15, 7" } },
+        { title: "Store level 2", desc: "15 plus 7 gives 22.", active: ["tree-5", "tree-6"], visited: ["tree-0", "tree-1", "tree-2", "tree-5", "tree-6"], line: 7, state: { level_sum: 22, result: "[3, 29, 22]" } },
+        { title: "Return sums", desc: "Return the saved level sums.", active: ["tree-0"], visited: ["tree-0", "tree-1", "tree-2", "tree-5", "tree-6"], line: 8, state: { final_result: "[3, 29, 22]" } },
+      ],
+    },
+    "tree-right-side-view": {
+      values: [1, 2, 3, -1, 5, -1, 4],
+      example: "tree=[1,2,3,-1,5,-1,4]",
+      target: "visible nodes from the right",
+      code: ["start with the root level", "scan one level at a time", "remember the rightmost real node", "add that node to the view", "move to the next level", "dim nodes hidden from the right", "repeat until no levels remain", "return the visible list"],
+      phases: [
+        { title: context.title || "Tree Right Side View", desc: "Only the rightmost real node on each level is visible.", active: ["tree-0"], line: 1, state: { level: 0, view: "[]" } },
+        { title: "Root is visible", desc: "The root is the right-side view for level 0.", active: ["tree-0"], visited: ["tree-0"], line: 4, state: { visible: 1, view: "[1]" } },
+        { title: "Check level 1", desc: "Level 1 has nodes 2 and 3.", active: ["tree-1", "tree-2"], visited: ["tree-0"], line: 2, state: { level: 1, candidates: "2, 3" } },
+        { title: "Choose 3", desc: "Node 3 is farther right, so it is visible.", active: ["tree-2"], visited: ["tree-0", "tree-2"], skipped: ["tree-1"], line: 3, state: { visible: 3, hidden: 2, view: "[1, 3]" } },
+        { title: "Check level 2", desc: "Level 2 has nodes 5 and 4.", active: ["tree-4", "tree-6"], visited: ["tree-0", "tree-2"], line: 5, state: { level: 2, candidates: "5, 4" } },
+        { title: "Choose 4", desc: "Node 4 is visible from the right.", active: ["tree-6"], visited: ["tree-0", "tree-2", "tree-6"], skipped: ["tree-1", "tree-4"], line: 6, state: { visible: 4, hidden: 5, view: "[1, 3, 4]" } },
+        { title: "All levels scanned", desc: "The hidden nodes are dimmed; the view list is ready.", active: ["tree-0"], visited: ["tree-0", "tree-2", "tree-6"], skipped: ["tree-1", "tree-4"], line: 7, state: { result: "[1, 3, 4]" } },
+        { title: "Return view", desc: "Return the visible nodes from top to bottom.", active: ["tree-0"], visited: ["tree-0", "tree-2", "tree-6"], skipped: ["tree-1", "tree-4"], line: 8, state: { final_result: "[1, 3, 4]" } },
+      ],
+    },
+    "tree-lca": {
+      values: [3, 5, 1, 6, 2, 0, 8],
+      example: "tree=[3,5,1,6,2,0,8], a=6, b=2",
+      target: "lowest shared ancestor",
+      code: ["start at the root", "search for the first target", "remember that target path", "search for the second target", "remember that target path", "compare paths from the root", "keep the deepest shared node", "return that node value"],
+      phases: [
+        { title: context.title || "Lowest Common Ancestor Value", desc: "Find the deepest node that sits above both targets.", active: ["tree-0"], line: 1, state: { targets: "6 and 2", ancestor: "not final" } },
+        { title: "Path to 6", desc: "The first target path is 3 to 5 to 6.", active: ["tree-3"], path: ["tree-0", "tree-1", "tree-3"], pathEdges: ["tree-0-tree-1", "tree-1-tree-3"], line: 3, state: { path_to_6: "3 -> 5 -> 6" } },
+        { title: "Back to node 5", desc: "Node 5 is shared so far.", active: ["tree-1"], path: ["tree-0", "tree-1"], pathEdges: ["tree-0-tree-1"], line: 3, state: { shared_so_far: "3 -> 5" } },
+        { title: "Path to 2", desc: "The second target path is 3 to 5 to 2.", active: ["tree-4"], path: ["tree-0", "tree-1", "tree-4"], pathEdges: ["tree-0-tree-1", "tree-1-tree-4"], line: 5, state: { path_to_2: "3 -> 5 -> 2" } },
+        { title: "Compare paths", desc: "Both paths include 3 and 5.", active: ["tree-0", "tree-1"], path: ["tree-0", "tree-1"], pathEdges: ["tree-0-tree-1"], line: 6, state: { shared_nodes: "3, 5" } },
+        { title: "Choose deepest shared", desc: "5 is lower than 3 and still above both targets.", active: ["tree-1"], path: ["tree-1", "tree-3", "tree-4"], pathEdges: ["tree-1-tree-3", "tree-1-tree-4"], line: 7, state: { ancestor: 5 } },
+        { title: "Dim unrelated side", desc: "The right subtree is not part of either target path.", active: ["tree-1"], path: ["tree-1", "tree-3", "tree-4"], skipped: ["tree-2", "tree-5", "tree-6"], line: 7, state: { skipped: "right subtree", result: 5 } },
+        { title: "Return 5", desc: "Return the lowest shared ancestor value.", active: ["tree-1"], path: ["tree-1", "tree-3", "tree-4"], skipped: ["tree-2", "tree-5", "tree-6"], line: 8, state: { final_result: 5 } },
+      ],
+    },
+    "tree-path-sum-count": {
+      values: [5, 4, 8, 11, 13],
+      example: "tree=[5,4,8,11,13], target=20",
+      target: "count root-to-leaf paths that hit target",
+      code: ["start at the root", "carry the current path state", "move down one child", "update the path state", "check the leaf or target rule", "back up to try another branch", "save only matching paths", "return the saved result"],
+      phases: [
+        { title: context.title || "Tree Path Sum Count", desc: "Carry the running sum as the path moves downward.", active: ["tree-0"], line: 1, state: { current: 5, target_sum: 20, running_sum: 5, matches: 0 } },
+        { title: "Go to 4", desc: "Add node 4 to the current path.", active: ["tree-1"], visited: ["tree-0", "tree-1"], edges: ["tree-0-tree-1"], line: 3, state: { path: "5 -> 4", running_sum: 9, matches: 0 } },
+        { title: "Go to 11", desc: "Add node 11 to the same path.", active: ["tree-3"], visited: ["tree-0", "tree-1", "tree-3"], edges: ["tree-1-tree-3"], line: 4, state: { path: "5 -> 4 -> 11", running_sum: 20 } },
+        { title: "Leaf matches", desc: "This root-to-leaf path reaches the target sum.", active: ["tree-3"], path: ["tree-0", "tree-1", "tree-3"], pathEdges: ["tree-0-tree-1", "tree-1-tree-3"], line: 5, state: { matching_path: "5 -> 4 -> 11", matches: 1 } },
+        { title: "Back up", desc: "After counting that path, try the right side.", active: ["tree-2"], visited: ["tree-0", "tree-1", "tree-3", "tree-2"], edges: ["tree-0-tree-2"], line: 6, state: { path: "5 -> 8", running_sum: 13, matches: 1 } },
+        { title: "Try 13", desc: "The right branch path becomes 5 to 8 to 13.", active: ["tree-4"], visited: ["tree-0", "tree-1", "tree-3", "tree-2", "tree-4"], edges: ["tree-2-tree-4"], line: 4, state: { path: "5 -> 8 -> 13", running_sum: 26 } },
+        { title: "Do not count 26", desc: "This leaf does not match the target, so the count stays 1.", active: ["tree-4"], visited: ["tree-0", "tree-1", "tree-3", "tree-2"], skipped: ["tree-4"], line: 7, state: { skipped_sum: 26, matches: 1 } },
+        { title: "Return 1", desc: "Return how many root-to-leaf paths matched the target.", active: ["tree-3"], path: ["tree-0", "tree-1", "tree-3"], skipped: ["tree-4"], pathEdges: ["tree-0-tree-1", "tree-1-tree-3"], line: 8, state: { final_result: 1 } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["tree-node-count"]!;
+  const base = treeFromArray(config.values, 0);
+  return config.phases.map((phase, index) => {
+    const active = new Set(phase.active);
+    const visited = new Set(phase.visited || []);
+    const path = new Set(phase.path || []);
+    const skipped = new Set(phase.skipped || []);
+    const pathEdges = new Set(phase.pathEdges || []);
+    const nodes = base.nodes.map((node) => ({
+      ...node,
+      state: active.has(node.id)
+        ? "active" as const
+        : path.has(node.id)
+          ? "path" as const
+          : visited.has(node.id)
+            ? "visited" as const
+            : skipped.has(node.id)
+              ? "skipped" as const
+              : "default" as const,
+    }));
+    const baseEdges = base.edges.map((edge) => {
+      const id = edge.id || `${edge.from}-${edge.to}`;
+      return { ...edge, state: pathEdges.has(id) ? "path" as const : "default" as const };
+    });
+    const activeEdges = phase.edges || phase.pathEdges || [];
+    return step({
+      concept: "binary-tree",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: withEdgeState(baseEdges, activeEdges, phase.pathEdges?.length ? "path" : "active"),
+      highlights: { nodeIds: [...phase.active, ...(phase.path || [])], edgeIds: activeEdges, lineNumbers: [phase.line] },
+      code: config.code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(config.phases.map((item) => item.title), index),
+      state: {
+        example: config.example,
+        target: config.target,
+        ...phase.state,
+      },
+    }, index + 1);
+  });
 }
 
 export function generateHashFrequencySteps(context: GeneratorContext = {}): Step[] {
@@ -7401,6 +7644,7 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
   if (family === "tuple-score-at-index") return generateStudentScorePairSteps(context);
   if (family === "tuple-first-last") return generateFirstLastPairSteps(context);
   if (String(family).startsWith("graph-")) return generateGraphTraversalSteps(context);
+  if (String(family).startsWith("tree-")) return generateTreeInsertSteps(context);
   const authoredSteps = generateAuthoredVisualizerSteps(concept, context);
   if (authoredSteps) return authoredSteps;
 

@@ -2205,6 +2205,37 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
   font-size: clamp(0.82rem, 1vw, 0.98rem);
 }
 
+.ucv-tree-canvas--with-panel {
+  min-height: 430px;
+}
+
+.ucv-tree-canvas--with-panel .react-flow {
+  width: calc(100% - clamp(10.5rem, 22vw, 14rem));
+  margin-left: clamp(10.5rem, 22vw, 14rem);
+}
+
+.ucv-tree-state-panel {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: clamp(0.65rem, 1.6vw, 1rem);
+  width: clamp(10rem, 20vw, 13rem);
+  transform: translateY(-50%);
+  border-color: color-mix(in srgb, #a78bfa 48%, var(--ct-border, #c7d6ea));
+  background: linear-gradient(145deg,
+    color-mix(in srgb, #ede9fe 42%, var(--ct-panel, #fff)),
+    color-mix(in srgb, #dbeafe 30%, var(--ct-panel, #fff))
+  );
+  box-shadow: 0 18px 38px rgba(124, 58, 237, 0.14);
+}
+
+.ucv-tree-state-panel .ucv-array-state-panel-value,
+.ucv-tree-state-panel .ucv-array-state-panel-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .ucv-flow-node-card--input,
 .ucv-flow-node-card--branch {
   width: clamp(148px, 14vw, 188px);

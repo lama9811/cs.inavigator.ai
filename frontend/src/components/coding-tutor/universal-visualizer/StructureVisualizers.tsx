@@ -1386,7 +1386,44 @@ function NetworkScene({ step, rankdir, className = "", children }: { step: Step;
 }
 
 export function TreeVisualizer({ step }: { step: Step }) {
-  return <NetworkScene step={step} rankdir="TB" className="ucv-tree-canvas" />;
+  if (step.concept !== "binary-tree") return <NetworkScene step={step} rankdir="TB" className="ucv-tree-canvas" />;
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example ?? state.sample);
+  const target = formatArrayStateValue(state.target ?? state.goal ?? "follow the tree");
+  const resultText = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? "not final");
+  const hidden = new Set(["answer", "changed", "example", "expected", "final_result", "goal", "result", "sample", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
+  return (
+    <NetworkScene step={step} rankdir="TB" className="ucv-tree-canvas ucv-tree-canvas--with-panel">
+      <aside className="ucv-array-state-panel ucv-tree-state-panel" aria-label="Tree trace state">
+        {example ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">example</span>
+            <strong className="ucv-array-state-panel-value">{example}</strong>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">target</span>
+          <strong className="ucv-array-state-panel-value">{target}</strong>
+        </div>
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.slice(0, 5).map(([key, value]) => (
+              <div key={key} className="ucv-array-state-panel-row">
+                <span>{key.replace(/_/g, " ")}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultText}</strong>
+        </div>
+      </aside>
+    </NetworkScene>
+  );
 }
 
 export function GraphVisualizer({ step }: { step: Step }) {

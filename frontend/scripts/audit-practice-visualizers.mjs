@@ -170,6 +170,15 @@ const familyStepTargets = {
   "heap-priority": 7,
   "trie-prefix": 7,
   "union-find": 7,
+  "tree-contains": 8,
+  "tree-height": 8,
+  "tree-lca": 8,
+  "tree-leaf-count": 8,
+  "tree-level-sums": 8,
+  "tree-node-count": 8,
+  "tree-path-sum-count": 8,
+  "tree-right-side-view": 8,
+  "tree-serialize": 8,
   "interval-busy-minutes": 7,
   "interval-count-overlap": 7,
   "interval-gap": 7,
@@ -366,6 +375,18 @@ const trueGraphFamilies = {
   "medium-28": { family: "graph-campus-reachable", sample: "connections=[library-union, union-gym], start=library, target=gym", expected: "true" },
 };
 
+const trueTreeFamilies = {
+  "easy-48": { family: "tree-node-count", sample: "tree=[1,2,3,-1,4]", expected: "4" },
+  "easy-49": { family: "tree-height", sample: "tree=[1,2,3,-1,4]", expected: "3" },
+  "hard-16": { family: "tree-serialize", sample: "tree=[1,2,3]", expected: "1,2,#,#,3,#,#" },
+  "hard-24": { family: "tree-level-sums", sample: "tree=[3,9,20,-1,-1,15,7]", expected: "[3,29,22]" },
+  "hard-26": { family: "tree-right-side-view", sample: "tree=[1,2,3,-1,5,-1,4]", expected: "[1,3,4]" },
+  "hard-29": { family: "tree-lca", sample: "tree=[3,5,1,6,2,0,8], a=6, b=2", expected: "5" },
+  "hard-30": { family: "tree-path-sum-count", sample: "tree=[5,4,8,11,13], target=20", expected: "1" },
+  "medium-41": { family: "tree-leaf-count", sample: "tree=[1,2,3,-1,4]", expected: "2" },
+  "medium-42": { family: "tree-contains", sample: "tree=[5,3,8,-1,4], target=4", expected: "true" },
+};
+
 function visualizerFamilyText(problem) {
   return `${problem?.title || ""} ${problem?.topic || ""} ${problem?.prompt || ""} ${problem?.visualizer?.title || ""} ${problem?.visualizer?.caption || ""} ${problem?.visualizer?.concept || ""}`.toLowerCase();
 }
@@ -522,7 +543,18 @@ function detectVisualizerFamily(problem, concept) {
     if (/alien dictionary/.test(text)) return "graph-alien-order";
     return "graph-traversal";
   }
-  if (concept === "binary-tree") return "graph-traversal";
+  if (concept === "binary-tree" || concept === "tree") {
+    if (/tree node count/.test(text)) return "tree-node-count";
+    if (/tree height levels/.test(text)) return "tree-height";
+    if (/tree leaf count/.test(text)) return "tree-leaf-count";
+    if (/tree contains value/.test(text)) return "tree-contains";
+    if (/serialize binary tree/.test(text)) return "tree-serialize";
+    if (/tree level sums/.test(text)) return "tree-level-sums";
+    if (/tree right side view/.test(text)) return "tree-right-side-view";
+    if (/lowest common ancestor|lca/.test(text)) return "tree-lca";
+    if (/tree path sum count/.test(text)) return "tree-path-sum-count";
+    return "graph-traversal";
+  }
   if (concept === "stack") {
     if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
     if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
@@ -656,6 +688,7 @@ function compactVisualInput(problem, concept, state = {}) {
   if (trueRecursionFamilies[problem.id]) return trueRecursionFamilies[problem.id].sample;
   if (trueDynamicProgrammingFamilies[problem.id]) return trueDynamicProgrammingFamilies[problem.id].sample;
   if (trueGraphFamilies[problem.id]) return trueGraphFamilies[problem.id].sample;
+  if (trueTreeFamilies[problem.id]) return trueTreeFamilies[problem.id].sample;
   if (family === "set-first-missing") return "values=[1, 2, 0]";
   if (family === "string-run-compress") return "aaabbc";
   if (family === "graph-islands") return "grid=[[1,1,0],[0,0,1],[1,0,1]]";
@@ -698,6 +731,15 @@ function compactVisualInput(problem, concept, state = {}) {
   if (family === "graph-word-ladder") return "hit -> hot -> dot -> dog";
   if (family === "graph-clone") return "node 1 connected to 2 and 3";
   if (family === "graph-alien-order") return "words=[ba, bc, ac]";
+  if (family === "tree-node-count") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-height") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-leaf-count") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-contains") return "tree=[5,3,8,-1,4], target=4";
+  if (family === "tree-serialize") return "tree=[1,2,3]";
+  if (family === "tree-level-sums") return "tree=[3,9,20,-1,-1,15,7]";
+  if (family === "tree-right-side-view") return "tree=[1,2,3,-1,5,-1,4]";
+  if (family === "tree-lca") return "tree=[3,5,1,6,2,0,8], a=6, b=2";
+  if (family === "tree-path-sum-count") return "tree=[5,4,8,11,13], target=20";
   if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
   if (family === "queue-serve-count") return "names=[Ana, Bo, Cy], serveCount=2";
   if (family === "queue-line-commands") {
@@ -787,6 +829,7 @@ function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
   if (concept === "recursion") return true;
   if (concept === "dynamic-programming") return true;
   if (concept === "graph") return true;
+  if (concept === "binary-tree") return true;
   const target = targetStepCountFor(problem, concept);
   if (!rawSteps.length || rawSteps.length >= target) return false;
   if (rawSteps.length < Math.min(target, 6)) return true;
@@ -1059,6 +1102,18 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       }
       if (family === "graph-traversal") {
         warnings.push(`${problem.id} ${problem.title}: Graph visualizer still uses shared traversal fallback`);
+      }
+    }
+    const requiredTree = trueTreeFamilies[problem.id];
+    if (requiredTree) {
+      if (family !== requiredTree.family) {
+        warnings.push(`${problem.id} ${problem.title}: Tree visualizer routes to "${family}", expected "${requiredTree.family}"`);
+      }
+      if (sample !== requiredTree.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Tree sample is "${sample}", expected "${requiredTree.sample}"`);
+      }
+      if (family === "graph-traversal") {
+        warnings.push(`${problem.id} ${problem.title}: Tree visualizer still uses shared traversal fallback`);
       }
     }
     const requiredString = trueStringFamilies[problem.id];
