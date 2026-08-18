@@ -176,7 +176,17 @@ const familyStepTargets = {
   "heap-top-k-scores": 7,
   "heap-running-median": 7,
   "heap-priority": 7,
+  "trie-all-share-prefix": 7,
+  "trie-any-has-prefix": 7,
+  "trie-any-prefix": 7,
+  "trie-autocomplete-first": 7,
+  "trie-count-prefix-matches": 7,
+  "trie-first-word-prefix": 7,
+  "trie-longest-common-prefix": 7,
+  "trie-longest-prefix-word": 7,
   "trie-prefix": 7,
+  "trie-prefix-counts": 7,
+  "trie-prefix-match-count": 7,
   "union-find": 7,
   "tree-contains": 8,
   "tree-height": 8,
@@ -195,7 +205,16 @@ const familyStepTargets = {
   "interval-merge": 7,
   "interval-overlap": 7,
   "interval-schedule-valid": 7,
+  "bit-alternating": 7,
   "bit-count": 7,
+  "bit-count-small": 7,
+  "bit-different-count": 7,
+  "bit-lowest-bit": 7,
+  "bit-max-pair-xor": 7,
+  "bit-odd-last": 7,
+  "bit-power-two": 7,
+  "bit-turn-off-lowest": 7,
+  "bit-xor-all": 7,
   "conditional-flow": 6,
   "set-membership": 6,
   "set-first-missing": 8,
@@ -210,6 +229,13 @@ const familyStepTargets = {
   "tuple-swap": 6,
   "tuple-score-at-index": 5,
   "tuple-first-last": 4,
+  "linked-list-cycle": 7,
+  "linked-list-kth": 7,
+  "linked-list-length": 7,
+  "linked-list-merge-index": 7,
+  "linked-list-middle": 7,
+  "linked-list-reverse-values": 7,
+  "linked-list-tail": 7,
   "linked-list-traverse": 7,
   "string-run-compress": 7,
   "graph-islands": 8,
@@ -284,6 +310,30 @@ const trueStackQueueFamilies = {
   "medium-35": { family: "queue-window-count", expected: "[1,2,1,2]" },
   "medium-55": { family: "queue-ticket-rounds", expected: "[Ana,Cy,Bo]" },
   "medium-71": { family: "stack-adjacent-pairs", expected: "ca" },
+};
+
+const trueLinkedListFamilies = {
+  "easy-41": { family: "linked-list-traverse", sample: "values=[10,20,30], nextIndexes=[1,2,-1], head=0", expected: "[10,20,30]" },
+  "easy-50": { family: "linked-list-length", sample: "nextIndexes=[1,2,-1], head=0", expected: "3" },
+  "easy-80": { family: "linked-list-tail", sample: "values=[7,8,9], nextIndexes=[1,2,-1], head=0", expected: "9" },
+  "medium-32": { family: "linked-list-middle", sample: "values=[5,6,7,8], nextIndexes=[1,2,3,-1], head=0", expected: "7" },
+  "medium-33": { family: "linked-list-cycle", sample: "nextIndexes=[1,2,1], head=0", expected: "true" },
+  "medium-37": { family: "linked-list-reverse-values", sample: "values=[4,5,6], nextIndexes=[1,2,-1], head=0", expected: "[6,5,4]" },
+  "medium-70": { family: "linked-list-kth", sample: "values=[4,5,6], nextIndexes=[1,2,-1], head=0, k=2", expected: "6" },
+  "hard-31": { family: "linked-list-merge-index", sample: "nextIndexes=[2,2,3,-1], headA=0, headB=1", expected: "2" },
+};
+
+const trueBitFamilies = {
+  "easy-51": { family: "bit-count", sample: "n=13, bits=1101", expected: "3" },
+  "easy-52": { family: "bit-power-two", sample: "n=16, bits=10000", expected: "true" },
+  "easy-70": { family: "bit-odd-last", sample: "n=7, bits=111", expected: "true" },
+  "easy-71": { family: "bit-lowest-bit", sample: "n=6, bits=110", expected: "0" },
+  "easy-92": { family: "bit-turn-off-lowest", sample: "n=12, bits=1100", expected: "8" },
+  "medium-45": { family: "bit-different-count", sample: "a=10 bits=1010, b=7 bits=0111", expected: "3" },
+  "medium-64": { family: "bit-xor-all", sample: "nums=[4,1,4]", expected: "1" },
+  "medium-65": { family: "bit-alternating", sample: "n=10, bits=1010", expected: "true" },
+  "medium-66": { family: "bit-count-small", sample: "n=13, bits=1101", expected: "3" },
+  "hard-33": { family: "bit-max-pair-xor", sample: "nums=[3,10,5]", expected: "15" },
 };
 
 const trueHeapFamilies = {
@@ -404,6 +454,16 @@ const trueTreeFamilies = {
   "hard-30": { family: "tree-path-sum-count", sample: "tree=[5,4,8,11,13], target=20", expected: "1" },
   "medium-41": { family: "tree-leaf-count", sample: "tree=[1,2,3,-1,4]", expected: "2" },
   "medium-42": { family: "tree-contains", sample: "tree=[5,3,8,-1,4], target=4", expected: "true" },
+  "easy-66": { family: "trie-any-prefix", sample: "words=[cat, car, dog], prefix=ca", expected: "true" },
+  "easy-67": { family: "trie-count-prefix-matches", sample: "words=[sun, sum, cat], prefix=su", expected: "2" },
+  "easy-87": { family: "trie-all-share-prefix", sample: "words=[cat, car, camp], prefix=ca", expected: "true" },
+  "easy-88": { family: "trie-first-word-prefix", sample: "words=[dog, cat, car], prefix=ca", expected: "cat" },
+  "medium-31": { family: "trie-prefix-match-count", sample: "words=[code, coding, course], prefix=cod", expected: "2" },
+  "medium-47": { family: "trie-longest-common-prefix", sample: "words=[cab, car, cat]", expected: "ca" },
+  "medium-60": { family: "trie-autocomplete-first", sample: "words=[car, cat, cab, dog], prefix=ca, k=2", expected: "[cab, car]" },
+  "medium-61": { family: "trie-longest-prefix-word", sample: "words=[cart, car, care], prefix=car", expected: "care" },
+  "hard-09": { family: "trie-prefix-counts", sample: "insert cat, car, dog; count ca", expected: "2" },
+  "hard-22": { family: "trie-any-has-prefix", sample: "words=[cat, car, dog], prefix=ca", expected: "true" },
 };
 
 function visualizerFamilyText(problem) {
@@ -416,6 +476,7 @@ function isTupleSwapProblem(problem) {
 
 function detectVisualizerFamily(problem, concept) {
   const text = visualizerFamilyText(problem);
+  const isTrieConcept = concept === "trie" || concept === "tries" || /\btries?\b/.test(text);
   if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
   if (concept === "prefix-sum") {
     if (/running prefix totals/.test(text)) return "prefix-running-totals";
@@ -453,6 +514,19 @@ function detectVisualizerFamily(problem, concept) {
   if (/\binitials?\b/.test(text)) return "string-initials";
   if (/compress runs|run length|repeated adjacent|character plus count/.test(text)) return "string-run-compress";
   if (/normalize email list|normalize emails?|email list/.test(text)) return "string-normalize-emails";
+  if (isTrieConcept) {
+    if (/all words share prefix/.test(text)) return "trie-all-share-prefix";
+    if (/any word has prefix/.test(text)) return "trie-any-has-prefix";
+    if (/any word with prefix/.test(text)) return "trie-any-prefix";
+    if (/count prefix matches/.test(text)) return "trie-count-prefix-matches";
+    if (/prefix match count/.test(text)) return "trie-prefix-match-count";
+    if (/first word with prefix/.test(text)) return "trie-first-word-prefix";
+    if (/longest common prefix/.test(text)) return "trie-longest-common-prefix";
+    if (/first autocomplete matches/.test(text)) return "trie-autocomplete-first";
+    if (/longest prefix word/.test(text)) return "trie-longest-prefix-word";
+    if (/trie prefix counts/.test(text)) return "trie-prefix-counts";
+    return "trie-prefix";
+  }
   if (/prefix search|starts with|matching prefix/.test(text)) return "string-prefix-search";
   if (/count islands|island|land.*water|water.*land/.test(text)) return "graph-islands";
   if (/last digit/.test(text)) return "math-last-digit";
@@ -472,7 +546,16 @@ function detectVisualizerFamily(problem, concept) {
     if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
     return "queue-fifo";
   }
-  if (concept === "linked-list") return "linked-list-traverse";
+  if (concept === "linked-list") {
+    if (/merge index|merge point|share one nextindexes/.test(text)) return "linked-list-merge-index";
+    if (/has cycle|cycle/.test(text)) return "linked-list-cycle";
+    if (/reverse linked list values|reverse.*values/.test(text)) return "linked-list-reverse-values";
+    if (/middle value|middle/.test(text)) return "linked-list-middle";
+    if (/value after k links|k links/.test(text)) return "linked-list-kth";
+    if (/tail value|tail/.test(text)) return "linked-list-tail";
+    if (/linked list length|length/.test(text)) return "linked-list-length";
+    return "linked-list-traverse";
+  }
   if (concept === "binary-search") {
     if (/first score at least/.test(text)) return "binary-search-first-at-least";
     if (/first one index/.test(text)) return "binary-search-first-one";
@@ -540,7 +623,6 @@ function detectVisualizerFamily(problem, concept) {
     if (/running median/.test(text)) return "heap-running-median";
     return "heap-priority";
   }
-  if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
   if (concept === "dynamic-programming") {
     if (/climb small staircase|climb.*stair/.test(text)) return "dp-climb-stairs";
@@ -559,7 +641,18 @@ function detectVisualizerFamily(problem, concept) {
     if (/blocked stair ways/.test(text)) return "dp-blocked-stairs";
     return "dp-table";
   }
-  if (concept === "bit-manipulation") return "bit-count";
+  if (concept === "bit-manipulation") {
+    if (/maximum pair xor|pair xor/.test(text)) return "bit-max-pair-xor";
+    if (/different bit count|positions are different/.test(text)) return "bit-different-count";
+    if (/xor every number|xor of every/.test(text)) return "bit-xor-all";
+    if (/alternating bits|bits alternate/.test(text)) return "bit-alternating";
+    if (/turn off lowest set bit|turning off the lowest 1/.test(text)) return "bit-turn-off-lowest";
+    if (/odd from last bit|odd by checking the last bit/.test(text)) return "bit-odd-last";
+    if (/lowest bit value|lowest bit of/.test(text)) return "bit-lowest-bit";
+    if (/power of two/.test(text)) return "bit-power-two";
+    if (/count set bits small/.test(text)) return "bit-count-small";
+    return "bit-count";
+  }
   if (concept === "graph") {
     if (/neighbor count/.test(text)) return "graph-neighbor-count";
     if (/course prerequisite chain/.test(text)) return "graph-course-chain";
@@ -714,6 +807,8 @@ function compactVisualInput(problem, concept, state = {}) {
   if (trueMathFamilies[problem.id]) return trueMathFamilies[problem.id].sample;
   if (trueTupleFamilies[problem.id]) return trueTupleFamilies[problem.id].sample;
   if (trueStringFamilies[problem.id]) return trueStringFamilies[problem.id].sample;
+  if (trueLinkedListFamilies[problem.id]) return trueLinkedListFamilies[problem.id].sample;
+  if (trueBitFamilies[problem.id]) return trueBitFamilies[problem.id].sample;
   if (trueRecursionFamilies[problem.id]) return trueRecursionFamilies[problem.id].sample;
   if (trueDynamicProgrammingFamilies[problem.id]) return trueDynamicProgrammingFamilies[problem.id].sample;
   if (trueGraphFamilies[problem.id]) return trueGraphFamilies[problem.id].sample;
@@ -860,6 +955,7 @@ function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
   if (concept === "dynamic-programming") return true;
   if (concept === "graph") return true;
   if (concept === "binary-tree") return true;
+  if (concept === "trie") return true;
   const target = targetStepCountFor(problem, concept);
   if (!rawSteps.length || rawSteps.length >= target) return false;
   if (rawSteps.length < Math.min(target, 6)) return true;
@@ -1037,6 +1133,27 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     const requiredStackQueue = trueStackQueueFamilies[problem.id];
     if (requiredStackQueue && family !== requiredStackQueue.family) {
       warnings.push(`${problem.id} ${problem.title}: Stack/Queue visualizer routes to "${family}", expected "${requiredStackQueue.family}"`);
+    }
+    const requiredLinkedList = trueLinkedListFamilies[problem.id];
+    if (requiredLinkedList) {
+      if (family !== requiredLinkedList.family) {
+        warnings.push(`${problem.id} ${problem.title}: Linked List visualizer routes to "${family}", expected "${requiredLinkedList.family}"`);
+      }
+      if (sample !== requiredLinkedList.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Linked List sample is "${sample}", expected "${requiredLinkedList.sample}"`);
+      }
+    }
+    const requiredBit = trueBitFamilies[problem.id];
+    if (requiredBit) {
+      if (family !== requiredBit.family) {
+        warnings.push(`${problem.id} ${problem.title}: Bit visualizer routes to "${family}", expected "${requiredBit.family}"`);
+      }
+      if (sample !== requiredBit.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Bit sample is "${sample}", expected "${requiredBit.sample}"`);
+      }
+      if (family === "bit-count" && requiredBit.family !== "bit-count") {
+        warnings.push(`${problem.id} ${problem.title}: Bit visualizer still uses shared count fallback`);
+      }
     }
     const requiredBinarySearch = trueBinarySearchFamilies[problem.id];
     if (requiredBinarySearch) {

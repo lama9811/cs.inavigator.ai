@@ -111,6 +111,7 @@ export interface GeneratorContext {
   prompt?: string;
   exampleInput?: string;
   exampleOutput?: string;
+  examples?: Array<{ input?: string; output?: string }>;
   constraints?: string[];
   visualizer?: {
     concept?: string;

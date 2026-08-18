@@ -77,13 +77,15 @@ function conceptFromProblem(problem: any): ConceptType {
 }
 
 function contextFromProblem(problem: any): GeneratorContext {
-  const example = Array.isArray(problem?.examples) ? problem.examples[0] : null;
+  const examples = Array.isArray(problem?.examples) ? problem.examples : [];
+  const example = examples[0] || null;
   return {
     title: problem?.title,
     topic: problem?.topic,
     prompt: problem?.prompt,
     exampleInput: example?.input,
     exampleOutput: example?.output,
+    examples,
     constraints: Array.isArray(problem?.constraints) ? problem.constraints : [],
     visualizer: problem?.visualizer,
   };
@@ -114,14 +116,18 @@ function StateStrip({ step }: { step: Step }) {
   if (step.concept === "graph") return null;
   if (step.concept === "binary-tree") return null;
   if (step.concept === "heap") return null;
+  if (step.concept === "trie") return null;
   if (step.concept === "recursion") return null;
   if (step.concept === "stack") return null;
   if (step.concept === "queue") return null;
+  if (step.concept === "linked-list") return null;
+  if (step.concept === "bit-manipulation") return null;
   if (step.concept === "two-pointers") return null;
   if (step.concept === "sliding-window") return null;
   if (step.concept === "binary-search") return null;
   if (step.concept === "prefix-sum") return null;
   if (step.concept === "intervals") return null;
+  if (step.state?.visual_family === "string-prefix-search") return null;
   if (isStringVisualStep(step)) {
     const hasReturned = step.state?.returned === true;
     const finalResult = hasReturned
@@ -264,7 +270,20 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [activeCaseId, setActiveCaseId] = useState("");
-  const context = useMemo(() => contextFromProblem(activeProblem), [activeProblem]);
+  const [activeExampleIndex, setActiveExampleIndex] = useState(0);
+  const baseContext = useMemo(() => contextFromProblem(activeProblem), [activeProblem]);
+  const bitExampleOptions = useMemo(() => {
+    if (concept !== "bit-manipulation") return [];
+    return (baseContext.examples || [])
+      .map((item, index) => ({ id: String(index), label: `Example ${index + 1}`, input: item.input || "", output: item.output || "" }))
+      .filter((item) => item.input);
+  }, [baseContext.examples, concept]);
+  const selectedExample = bitExampleOptions[activeExampleIndex] || bitExampleOptions[0];
+  const context = useMemo(() => ({
+    ...baseContext,
+    exampleInput: selectedExample?.input || baseContext.exampleInput,
+    exampleOutput: selectedExample?.output || baseContext.exampleOutput,
+  }), [baseContext, selectedExample]);
   const useAuthored = concept === initialConcept;
   const allSteps = useMemo(() => generateStepsForConcept(concept, { ...context, useAuthored }), [concept, context, useAuthored]);
   const hasConditionalSteps = allSteps.some((item) => item.concept === "conditional");
@@ -289,13 +308,19 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
     setStepIndex(0);
     setPlaying(false);
     setActiveCaseId("");
+    setActiveExampleIndex(0);
   }, [initialConcept, activeProblem?.id]);
 
   useEffect(() => {
     setStepIndex(0);
     setPlaying(false);
     setActiveCaseId("");
+    setActiveExampleIndex(0);
   }, [concept]);
+
+  useEffect(() => {
+    if (activeExampleIndex >= bitExampleOptions.length) setActiveExampleIndex(0);
+  }, [activeExampleIndex, bitExampleOptions.length]);
 
   useEffect(() => {
     if (stepIndex >= steps.length) setStepIndex(Math.max(0, steps.length - 1));
@@ -326,6 +351,27 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
             setPlaying(false);
           }}
           aria-pressed={selectedCaseId === item.id}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
+  const exampleSwitcher = bitExampleOptions.length > 1 ? (
+    <div className="ucv-case-switcher ucv-example-switcher" role="group" aria-label="Bit manipulation examples">
+      {bitExampleOptions.map((item, index) => (
+        <button
+          key={item.id}
+          type="button"
+          className={`ucv-case-button ${activeExampleIndex === index ? "is-active" : ""}`}
+          onClick={() => {
+            setActiveExampleIndex(index);
+            setStepIndex(0);
+            setPlaying(false);
+          }}
+          aria-pressed={activeExampleIndex === index}
+          title={`${item.input} -> ${item.output}`}
         >
           {item.label}
         </button>
@@ -444,6 +490,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
       <div className="ucv-main">
         <div className="ucv-stage">
           {caseSwitcher}
+          {exampleSwitcher}
           <WorkflowRail step={step} />
           <VisualizerCanvas step={step} />
           {mode === "panel" ? controls : null}

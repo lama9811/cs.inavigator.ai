@@ -782,6 +782,13 @@
   flex: 0 0 auto;
 }
 
+.ucv-inline-gap {
+  display: inline-block;
+  width: clamp(2rem, 4vw, 3.6rem);
+  margin: 0 0.4rem;
+  flex: 0 0 auto;
+}
+
 .ucv-inline-arrow::after,
 .ucv-chain-arrow::after {
   content: "";
@@ -810,9 +817,60 @@
   justify-items: start;
 }
 
+.ucv-linked-canvas--with-panel {
+  min-height: 430px;
+}
+
+.ucv-linked-canvas--with-panel .ucv-linked-shell {
+  width: calc(100% - clamp(13.5rem, 25vw, 17rem));
+  margin-left: clamp(13.5rem, 25vw, 17rem);
+}
+
+.ucv-linked-state-panel {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: clamp(0.65rem, 1.6vw, 1rem);
+  width: clamp(12.75rem, 23vw, 16rem);
+  transform: translateY(-50%);
+}
+
+.ucv-linked-state-panel .ucv-array-state-panel-value,
+.ucv-linked-state-panel .ucv-array-state-panel-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .ucv-linked-row {
   justify-content: flex-start;
-  padding-left: clamp(1rem, 5vw, 4rem);
+  padding-left: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+.ucv-linked-jump-note {
+  display: inline-grid;
+  gap: 0.18rem;
+  max-width: min(360px, 100%);
+  margin-left: clamp(0.5rem, 2vw, 1.5rem);
+  padding: 0.7rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--ct-accent, #f97316) 58%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-accent, #f97316) 12%, var(--ct-panel, #0f2946));
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent);
+}
+
+.ucv-linked-jump-note span {
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ucv-linked-jump-note strong {
+  color: var(--ct-text, #f8fafc);
+  font-size: 1rem;
+  font-weight: 900;
 }
 
 .ucv-linked-node {
@@ -1202,6 +1260,28 @@ body.coding-dark .ucv-array-state-panel-section--result {
   gap: 1rem;
 }
 
+.ucv-bit-visual-layout {
+  display: grid;
+  grid-template-columns: minmax(11.5rem, 15rem) minmax(0, 1fr);
+  align-items: center;
+  justify-self: center;
+  gap: clamp(0.8rem, 2vw, 1.25rem);
+  width: min(900px, 100%);
+  padding-inline: clamp(0.35rem, 1.2vw, 0.85rem);
+  box-sizing: border-box;
+}
+
+.ucv-bit-state-panel {
+  align-self: center;
+}
+
+.ucv-bit-state-panel .ucv-array-state-panel-value,
+.ucv-bit-state-panel .ucv-array-state-panel-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .ucv-string-visual-layout {
   display: grid;
   grid-template-columns: minmax(9rem, 11.5rem) minmax(0, 1fr);
@@ -1222,6 +1302,87 @@ body.coding-dark .ucv-array-state-panel-section--result {
 
 .ucv-string-state-panel {
   align-self: center;
+}
+
+.ucv-prefix-search-canvas .ucv-string-visual-layout {
+  grid-template-columns: minmax(11.5rem, 15rem) minmax(0, 1fr);
+}
+
+.ucv-prefix-trie-shell {
+  position: relative;
+  width: min(560px, 100%);
+  height: clamp(310px, 38vw, 360px);
+  justify-self: center;
+}
+
+.ucv-prefix-trie-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ucv-prefix-trie-lines line {
+  stroke: color-mix(in srgb, var(--ct-border-strong, #94a3b8) 78%, var(--ct-primary, #082343));
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.72;
+}
+
+.ucv-prefix-trie-lines line.is-active {
+  stroke: var(--ct-accent, #f97316);
+  stroke-dasharray: 8 6;
+  animation: ucvHeapEdgeFlow 1.35s linear infinite;
+  opacity: 1;
+}
+
+.ucv-prefix-trie-node {
+  position: absolute;
+  left: calc((var(--trie-x) / 4) * (100% - 5.4rem));
+  top: calc((var(--trie-y) / 3) * (100% - 4.8rem));
+  display: grid;
+  width: 5.4rem;
+  min-height: 4.8rem;
+  place-items: center;
+  gap: 0.12rem;
+  border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 82%, var(--ct-primary, #082343));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-panel, #fff) 94%, var(--ct-soft, #eef6ff));
+  padding: 0.5rem 0.65rem;
+  text-align: center;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+  z-index: 2;
+}
+
+.ucv-prefix-trie-node span {
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.ucv-prefix-trie-node strong {
+  color: var(--ct-primary, #082343);
+  font-size: clamp(0.82rem, 1.2vw, 1rem);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.ucv-prefix-trie-node.is-active {
+  border-color: var(--ct-accent, #f97316);
+  background: color-mix(in srgb, var(--ct-accent, #f97316) 12%, var(--ct-panel, #fff));
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent), 0 18px 34px rgba(249, 115, 22, 0.18);
+}
+
+.ucv-prefix-trie-node.is-matched {
+  border-color: #22c55e;
+  background: color-mix(in srgb, #22c55e 14%, var(--ct-panel, #fff));
+}
+
+.ucv-prefix-trie-node.is-skipped {
+  filter: grayscale(0.78);
 }
 
 .ucv-string-source {
@@ -1467,7 +1628,7 @@ body.coding-dark .ucv-reverse-result-token {
 .ucv-bit-register {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.35rem;
   overflow-x: auto;
   padding: 1rem 0.25rem;
@@ -1475,8 +1636,8 @@ body.coding-dark .ucv-reverse-result-token {
 
 .ucv-bit-cell {
   display: grid;
-  min-width: 4.7rem;
-  min-height: 5.1rem;
+  min-width: clamp(3.75rem, 7vw, 4.7rem);
+  min-height: clamp(4.3rem, 7.5vw, 5.1rem);
   place-items: center;
   gap: 0.2rem;
   border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 84%, var(--ct-primary, #082343));
@@ -1500,7 +1661,7 @@ body.coding-dark .ucv-reverse-result-token {
 }
 
 .ucv-bit-cell strong {
-  font-size: 1.55rem;
+  font-size: clamp(1.2rem, 2.4vw, 1.55rem);
   line-height: 1;
 }
 
@@ -2155,8 +2316,66 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
 }
 
 .ucv-flow-node-card--trie {
-  width: 84px;
+  width: 104px;
   min-height: 84px;
+}
+
+.ucv-flow-node-card--trie.ucv-flow-node-card--trie-compact {
+  width: 92px;
+  min-height: 58px;
+  border-radius: 26px;
+  padding: 0.38rem 0.58rem;
+}
+
+.ucv-flow-node-card--trie.ucv-flow-node-card--trie-compact span {
+  font-size: 0.58rem;
+}
+
+.ucv-flow-node-card--trie.ucv-flow-node-card--trie-compact strong {
+  font-size: clamp(0.78rem, 1vw, 0.92rem);
+}
+
+.ucv-flow-node-card--trie.ucv-flow-node-card--terminal {
+  width: 88px;
+  min-height: 66px;
+}
+
+.ucv-flow-node-card--trie.ucv-flow-node-card--terminal.ucv-flow-node-card--trie-compact {
+  width: 82px;
+  min-height: 54px;
+}
+
+.ucv-flow-node-card--trie.ucv-flow-node-card--terminal span {
+  font-size: 0.58rem;
+}
+
+.ucv-flow-node-card--trie.ucv-flow-node-card--terminal strong {
+  font-size: clamp(0.82rem, 1.1vw, 0.96rem);
+}
+
+.ucv-trie-canvas--with-panel {
+  min-height: 620px;
+}
+
+.ucv-trie-canvas--with-panel .react-flow {
+  width: calc(100% - clamp(13.5rem, 25vw, 17rem));
+  margin-left: clamp(13.5rem, 25vw, 17rem);
+}
+
+.ucv-trie-state-panel {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: clamp(0.65rem, 1.6vw, 1rem);
+  width: clamp(12.75rem, 23vw, 16rem);
+  transform: translateY(-50%);
+}
+
+.ucv-trie-state-panel .ucv-array-state-panel-value,
+.ucv-trie-state-panel .ucv-array-state-panel-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .ucv-flow-node-card--graph,

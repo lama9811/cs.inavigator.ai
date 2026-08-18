@@ -99,7 +99,16 @@ type VisualizerFamily =
   | "binary-search-insert-position"
   | "binary-search-last-at-most"
   | "binary-search-median-two-lists"
+  | "bit-alternating"
   | "bit-count"
+  | "bit-count-small"
+  | "bit-different-count"
+  | "bit-lowest-bit"
+  | "bit-max-pair-xor"
+  | "bit-odd-last"
+  | "bit-power-two"
+  | "bit-turn-off-lowest"
+  | "bit-xor-all"
   | "conditional-flow"
   | "dp-blocked-stairs"
   | "dp-best-non-adjacent"
@@ -147,6 +156,13 @@ type VisualizerFamily =
   | "interval-meeting-rooms"
   | "interval-overlap"
   | "interval-schedule-valid"
+  | "linked-list-cycle"
+  | "linked-list-kth"
+  | "linked-list-length"
+  | "linked-list-merge-index"
+  | "linked-list-middle"
+  | "linked-list-reverse-values"
+  | "linked-list-tail"
   | "linked-list-traverse"
   | "math-count-digits"
   | "math-grade-points"
@@ -208,7 +224,17 @@ type VisualizerFamily =
   | "string-reverse-words"
   | "string-run-compress"
   | "string-scan"
+  | "trie-all-share-prefix"
+  | "trie-any-has-prefix"
+  | "trie-any-prefix"
+  | "trie-autocomplete-first"
+  | "trie-count-prefix-matches"
+  | "trie-first-word-prefix"
+  | "trie-longest-common-prefix"
+  | "trie-longest-prefix-word"
   | "trie-prefix"
+  | "trie-prefix-counts"
+  | "trie-prefix-match-count"
   | "tuple-first-last"
   | "tuple-pair"
   | "tuple-score-at-index"
@@ -239,6 +265,7 @@ function visualizerFamilyText(context: GeneratorContext = {}): string {
 
 export function detectVisualizerFamily(concept: string, context: GeneratorContext = {}): VisualizerFamily {
   const text = visualizerFamilyText(context);
+  const isTrieConcept = concept === "trie" || concept === "tries" || /\btries?\b/.test(text);
   if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
   if (concept === "prefix-sum") {
     if (/running prefix totals/.test(text)) return "prefix-running-totals";
@@ -276,6 +303,19 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   if (/\binitials?\b/.test(text)) return "string-initials";
   if (/compress runs|run length|repeated adjacent|character plus count/.test(text)) return "string-run-compress";
   if (/normalize email list|normalize emails?|email list/.test(text)) return "string-normalize-emails";
+  if (isTrieConcept) {
+    if (/all words share prefix/.test(text)) return "trie-all-share-prefix";
+    if (/any word has prefix/.test(text)) return "trie-any-has-prefix";
+    if (/any word with prefix/.test(text)) return "trie-any-prefix";
+    if (/count prefix matches/.test(text)) return "trie-count-prefix-matches";
+    if (/prefix match count/.test(text)) return "trie-prefix-match-count";
+    if (/first word with prefix/.test(text)) return "trie-first-word-prefix";
+    if (/longest common prefix/.test(text)) return "trie-longest-common-prefix";
+    if (/first autocomplete matches/.test(text)) return "trie-autocomplete-first";
+    if (/longest prefix word/.test(text)) return "trie-longest-prefix-word";
+    if (/trie prefix counts/.test(text)) return "trie-prefix-counts";
+    return "trie-prefix";
+  }
   if (/prefix search|starts with|matching prefix/.test(text)) return "string-prefix-search";
   if (/count islands|island|land.*water|water.*land/.test(text)) return "graph-islands";
   if (/last digit/.test(text)) return "math-last-digit";
@@ -295,7 +335,16 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
     return "queue-fifo";
   }
-  if (concept === "linked-list") return "linked-list-traverse";
+  if (concept === "linked-list") {
+    if (/merge index|merge point|share one nextindexes/.test(text)) return "linked-list-merge-index";
+    if (/has cycle|cycle/.test(text)) return "linked-list-cycle";
+    if (/reverse linked list values|reverse.*values/.test(text)) return "linked-list-reverse-values";
+    if (/middle value|middle/.test(text)) return "linked-list-middle";
+    if (/value after k links|k links/.test(text)) return "linked-list-kth";
+    if (/tail value|tail/.test(text)) return "linked-list-tail";
+    if (/linked list length|length/.test(text)) return "linked-list-length";
+    return "linked-list-traverse";
+  }
   if (concept === "binary-search") {
     if (/first score at least/.test(text)) return "binary-search-first-at-least";
     if (/first one index/.test(text)) return "binary-search-first-one";
@@ -363,7 +412,6 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/running median/.test(text)) return "heap-running-median";
     return "heap-priority";
   }
-  if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
   if (concept === "dynamic-programming") {
     if (/climb small staircase|climb.*stair/.test(text)) return "dp-climb-stairs";
@@ -382,7 +430,18 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/blocked stair ways/.test(text)) return "dp-blocked-stairs";
     return "dp-table";
   }
-  if (concept === "bit-manipulation") return "bit-count";
+  if (concept === "bit-manipulation") {
+    if (/maximum pair xor|pair xor/.test(text)) return "bit-max-pair-xor";
+    if (/different bit count|positions are different/.test(text)) return "bit-different-count";
+    if (/xor every number|xor of every/.test(text)) return "bit-xor-all";
+    if (/alternating bits|bits alternate/.test(text)) return "bit-alternating";
+    if (/turn off lowest set bit|turning off the lowest 1/.test(text)) return "bit-turn-off-lowest";
+    if (/odd from last bit|odd by checking the last bit/.test(text)) return "bit-odd-last";
+    if (/lowest bit value|lowest bit of/.test(text)) return "bit-lowest-bit";
+    if (/power of two/.test(text)) return "bit-power-two";
+    if (/count set bits small/.test(text)) return "bit-count-small";
+    return "bit-count";
+  }
   if (concept === "graph") {
     if (/neighbor count/.test(text)) return "graph-neighbor-count";
     if (/course prerequisite chain/.test(text)) return "graph-course-chain";
@@ -547,6 +606,16 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
   if (family === "heap-kth-largest-stream") return "k=3, stream=[4, 5, 8, 2]";
   if (family === "heap-top-k-scores") return "scores=[88, 91, 72, 91, 84], k=3";
   if (family === "heap-running-median") return "scores=[80, 90, 70, 100]";
+  if (family === "trie-any-prefix") return "words=[cat, car, dog], prefix=ca";
+  if (family === "trie-count-prefix-matches") return "words=[sun, sum, cat], prefix=su";
+  if (family === "trie-all-share-prefix") return "words=[cat, car, camp], prefix=ca";
+  if (family === "trie-first-word-prefix") return "words=[dog, cat, car], prefix=ca";
+  if (family === "trie-prefix-match-count") return "words=[code, coding, course], prefix=cod";
+  if (family === "trie-longest-common-prefix") return "words=[cab, car, cat]";
+  if (family === "trie-autocomplete-first") return "words=[car, cat, cab, dog], prefix=ca, k=2";
+  if (family === "trie-longest-prefix-word") return "words=[cart, car, care], prefix=car";
+  if (family === "trie-prefix-counts") return "insert cat, car, dog; count ca";
+  if (family === "trie-any-has-prefix") return "words=[cat, car, dog], prefix=ca";
   if (family === "string-count-vowels") return "Code";
   if (family === "string-reverse-words") return "red blue";
   if (family === "string-count-words") return "red blue";
@@ -795,6 +864,16 @@ function visualSampleExpected(context: GeneratorContext, concept: string, state:
     if (family === "hash-frequency") return "A appears twice";
     if (family === "hash-grouping") return "A group has 2";
     if (family === "hash-complement") return "indexes 0 and 1";
+    if (family === "trie-any-prefix") return "true";
+    if (family === "trie-count-prefix-matches") return "2";
+    if (family === "trie-all-share-prefix") return "true";
+    if (family === "trie-first-word-prefix") return "cat";
+    if (family === "trie-prefix-match-count") return "2";
+    if (family === "trie-longest-common-prefix") return "ca";
+    if (family === "trie-autocomplete-first") return "[cab, car]";
+    if (family === "trie-longest-prefix-word") return "care";
+    if (family === "trie-prefix-counts") return "2";
+    if (family === "trie-any-has-prefix") return "true";
     if (family === "string-count-vowels") return "2";
     if (family === "string-reverse-words") return "blue red";
     if (family === "string-count-words") return "2";
@@ -2517,6 +2596,8 @@ function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string,
   if (concept === "prefix-sum") return true;
   if (concept === "intervals") return true;
   if (concept === "heap") return true;
+  if (concept === "trie") return true;
+  if (concept === "linked-list") return true;
   if (rawSteps.length >= targetStepCount(concept)) return false;
   if (rawSteps.length < Math.min(targetStepCount(concept), 6)) return true;
   const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
@@ -5878,32 +5959,189 @@ export function generateTicketRoundQueueSteps(context: GeneratorContext = {}): S
 }
 
 export function generateLinkedListSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["current = head", "value = current.value", "next_node = current.next", "current = next_node"];
-  const nodes: Node[] = [
-    { id: "a", x: 220, y: 260, value: "A", type: "linked-node" },
-    { id: "b", x: 450, y: 260, value: "B", type: "linked-node" },
-    { id: "c", x: 680, y: 260, value: "C", type: "linked-node" },
-  ];
-  const edges: Edge[] = [{ from: "a", to: "b", type: "pointer" }, { from: "b", to: "c", type: "pointer" }];
-  const phases = [
-    { id: "a", title: context.title || "Linked list traversal", desc: "Start at the head node. This is the only reliable entry point.", edge: "" },
-    { id: "a", title: "Read current value", desc: "Read A before moving. The current pointer still sits on the head.", edge: "" },
-    { id: "b", title: "Follow next link", desc: "The next arrow from A moves current to B.", edge: "a-b" },
-    { id: "b", title: "Read B", desc: "At B, read the value and look for the next arrow before leaving.", edge: "a-b" },
-    { id: "c", title: "Move to C", desc: "The pointer follows B's next link, keeping the chain intact.", edge: "b-c" },
-    { id: "c", title: "Stop at null next", desc: "C has no next node, so traversal stops after using C's value.", edge: "b-c" },
-  ];
-  return phases.map((phase, index) => step({
-    concept: "linked-list",
-    title: phase.title,
-    description: phase.desc,
-    nodes: withNodeState(nodes, [phase.id], "active"),
-    edges: withEdgeState(edges, phase.edge ? [phase.edge] : [], "active"),
-    highlights: { nodeIds: [phase.id], edgeIds: phase.edge ? [phase.edge] : [], lineNumbers: [Math.min(index + 1, 4)] },
-    code,
-    activeLine: Math.min(index + 1, 4),
-    state: { current: phase.id.toUpperCase(), next: phase.id === "c" ? "null" : phase.id === "a" ? "B" : "C" },
-  }, index + 1));
+  const family = detectVisualizerFamily("linked-list", context);
+  type LinkedPhase = {
+    id: string;
+    title: string;
+    desc: string;
+    edge?: string;
+    visited?: string[];
+    inactive?: string[];
+    line: number;
+    state: Record<string, string | number | boolean>;
+  };
+  type LinkedConfig = {
+    values: Array<string | number>;
+    example: string;
+    target: string;
+    result: string;
+    code: string[];
+    phases: LinkedPhase[];
+  };
+  const edgeFor = (from: string, to: string) => `${from}-${to}`;
+  const baseCode = ["start at the head index", "look at the current node", "save what the prompt asks for", "follow the current next index", "check for the end marker", "return only the tracked result"];
+  const configs: Partial<Record<VisualizerFamily, LinkedConfig>> = {
+    "linked-list-traverse": {
+      values: [10, 20, 30],
+      example: "values=[10,20,30], nextIndexes=[1,2,-1], head=0",
+      target: "return values in link order",
+      result: "[10,20,30]",
+      code: baseCode,
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Follow Linked List Values", desc: "Start at the head index. A linked list must be followed by links, not by guessing indexes.", state: { current: 10, next: 20, result: "[]" } },
+        { id: "n0", line: 2, title: "Read 10", desc: "Read the current node value before moving away from it.", state: { current: 10, saved_value: 10, result: "[10]" } },
+        { id: "n1", edge: edgeFor("n0", "n1"), visited: ["n0"], line: 4, title: "Follow next to 20", desc: "The saved next link moves current from 10 to 20.", state: { current: 20, next: 30, result: "[10]" } },
+        { id: "n1", visited: ["n0"], line: 2, title: "Read 20", desc: "Use the value at the current node, then look at its next link.", state: { current: 20, saved_value: 20, result: "[10,20]" } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0", "n1"], line: 4, title: "Follow next to 30", desc: "The next link from 20 reaches the final node.", state: { current: 30, next: "null", result: "[10,20]" } },
+        { id: "n2", visited: ["n0", "n1"], line: 2, title: "Read 30", desc: "30 is still a real node, so it belongs in the output.", state: { current: 30, saved_value: 30, result: "[10,20,30]" } },
+        { id: "n2", visited: ["n0", "n1", "n2"], line: 6, title: "Return values", desc: "The next link is null, so traversal is complete.", state: { current: "null", final_result: "[10,20,30]" } },
+      ],
+    },
+    "linked-list-length": {
+      values: ["A", "B", "C"],
+      example: "nextIndexes=[1,2,-1], head=0",
+      target: "count real nodes",
+      result: "3",
+      code: ["start count at zero", "visit the current node", "increase count once", "move to next", "stop at null", "return count"],
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Linked List Length", desc: "Start at the head with count 0.", state: { current: "node 0", count: 0, result: "not final" } },
+        { id: "n0", line: 3, title: "Count node 0", desc: "The head is a real node, so it adds one.", state: { current: "node 0", count: 1 } },
+        { id: "n1", edge: edgeFor("n0", "n1"), visited: ["n0"], line: 4, title: "Move to node 1", desc: "Follow next instead of jumping by index.", state: { current: "node 1", count: 1 } },
+        { id: "n1", visited: ["n0"], line: 3, title: "Count node 1", desc: "Node 1 is real, so count becomes 2.", state: { current: "node 1", count: 2 } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0", "n1"], line: 4, title: "Move to node 2", desc: "The next link reaches the final node.", state: { current: "node 2", count: 2 } },
+        { id: "n2", visited: ["n0", "n1"], line: 3, title: "Count node 2", desc: "Node 2 is the third real node.", state: { current: "node 2", count: 3 } },
+        { id: "n2", visited: ["n0", "n1", "n2"], line: 6, title: "Return 3", desc: "The next link is null, so the final length is 3.", state: { current: "null", final_result: "3" } },
+      ],
+    },
+    "linked-list-tail": {
+      values: [7, 8, 9],
+      example: "values=[7,8,9], nextIndexes=[1,2,-1], head=0",
+      target: "return tail value",
+      result: "9",
+      code: ["start at the head index", "keep the current value as a candidate", "inspect the next index", "move while another node exists", "stop at the end marker", "return the tracked candidate"],
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Tail Value By Links", desc: "The tail is not known until a node has no next link.", state: { current: 7, candidate_tail: 7 } },
+        { id: "n0", line: 2, title: "7 is only a candidate", desc: "7 has a next link, so it cannot be the tail yet.", state: { current: 7, next: 8, candidate_tail: 7 } },
+        { id: "n1", edge: edgeFor("n0", "n1"), visited: ["n0"], line: 3, title: "Move to 8", desc: "Follow the next link to keep checking.", state: { current: 8, candidate_tail: 8 } },
+        { id: "n1", visited: ["n0"], line: 2, title: "8 also has next", desc: "8 points to 9, so keep moving.", state: { current: 8, next: 9, candidate_tail: 8 } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0", "n1"], line: 3, title: "Move to 9", desc: "The current node becomes 9.", state: { current: 9, candidate_tail: 9 } },
+        { id: "n2", visited: ["n0", "n1"], line: 4, title: "9 points to null", desc: "A null next link proves 9 is the tail.", state: { current: 9, next: "null", result: 9 } },
+        { id: "n2", visited: ["n0", "n1", "n2"], line: 5, title: "Return 9", desc: "Return the value from the last real node.", state: { final_result: "9" } },
+      ],
+    },
+    "linked-list-middle": {
+      values: [5, 6, 7, 8],
+      example: "values=[5,6,7,8], nextIndexes=[1,2,3,-1], head=0",
+      target: "return middle value",
+      result: "7",
+      code: ["place both markers at head", "advance the slower marker once", "advance the faster marker farther", "repeat while the faster marker can continue", "use the slower marker's final node", "return the requested value"],
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Linked List Middle Value", desc: "Both pointers start at the head.", state: { slow: 5, fast: 5, result: "not final" } },
+        { id: "n1", edge: edgeFor("n0", "n1"), visited: ["n0"], line: 2, title: "Slow moves to 6", desc: "Slow moves one link.", state: { slow: 6, fast: 5 } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0"], line: 3, title: "Fast moves to 7", desc: "Fast moves two links total, so it gets ahead.", state: { slow: 6, fast: 7 } },
+        { id: "n2", visited: ["n0", "n1"], line: 2, title: "Slow moves to 7", desc: "On the second round, slow advances one more node.", state: { slow: 7, fast: 7 } },
+        { id: "n3", edge: edgeFor("n2", "n3"), visited: ["n0", "n1", "n2"], line: 3, title: "Fast reaches end", desc: "Fast moves beyond the list, so slow is now at the middle choice.", state: { slow: 7, fast: "null" } },
+        { id: "n2", visited: ["n0", "n1"], inactive: ["n3"], line: 5, title: "Slow marks middle", desc: "When fast can no longer move, slow's value is the answer.", state: { middle: 7, result: 7 } },
+        { id: "n2", visited: ["n0", "n1", "n2"], inactive: ["n3"], line: 6, title: "Return 7", desc: "Return the value where slow stopped.", state: { final_result: "7" } },
+      ],
+    },
+    "linked-list-cycle": {
+      values: ["A", "B", "C"],
+      example: "nextIndexes=[1,2,1], head=0",
+      target: "detect repeated node",
+      result: "true",
+      code: ["start at the head index", "remember each index you visit", "follow the current next index", "watch for an index already seen", "return the boolean the prompt asks for"],
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Linked List Has Cycle", desc: "Start at the head with empty visited memory.", state: { current: "node 0", visited: "none", result: "not final" } },
+        { id: "n0", line: 2, title: "Remember node 0", desc: "Node 0 has now been seen once.", state: { current: "node 0", visited: "0" } },
+        { id: "n1", edge: edgeFor("n0", "n1"), visited: ["n0"], line: 3, title: "Move to node 1", desc: "Follow node 0's next link.", state: { current: "node 1", visited: "0" } },
+        { id: "n1", visited: ["n0"], line: 2, title: "Remember node 1", desc: "Node 1 is now in visited memory.", state: { current: "node 1", visited: "0, 1" } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0", "n1"], line: 3, title: "Move to node 2", desc: "Node 2 is reached by following links.", state: { current: "node 2", visited: "0, 1" } },
+        { id: "n1", edge: edgeFor("n2", "n1"), visited: ["n0", "n1", "n2"], line: 4, title: "Next returns to node 1", desc: "Node 2 points back to node 1, which was already visited.", state: { current: "node 1 again", repeated: "node 1", result: "true" } },
+        { id: "n1", visited: ["n0", "n1", "n2"], line: 5, title: "Return true", desc: "Reaching a seen node means traversal would loop forever.", state: { final_result: "true" } },
+      ],
+    },
+    "linked-list-reverse-values": {
+      values: [4, 5, 6],
+      example: "values=[4,5,6], nextIndexes=[1,2,-1], head=0",
+      target: "return values in reverse",
+      result: "[6,5,4]",
+      code: ["walk from head by links", "place each visited value before older ones", "follow the current next index", "stop at the end marker", "return the collected values"],
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Reverse Linked List Values", desc: "Start at the head value 4.", state: { current: 4, result: "[]" } },
+        { id: "n0", line: 2, title: "Put 4 at front", desc: "Saving at the front prepares reverse order.", state: { current: 4, result: "[4]" } },
+        { id: "n1", edge: edgeFor("n0", "n1"), visited: ["n0"], line: 3, title: "Move to 5", desc: "Follow next to the second node.", state: { current: 5, result: "[4]" } },
+        { id: "n1", visited: ["n0"], line: 2, title: "Put 5 before 4", desc: "The newest visited value goes to the front.", state: { current: 5, result: "[5,4]" } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0", "n1"], line: 3, title: "Move to 6", desc: "Follow the final next link.", state: { current: 6, result: "[5,4]" } },
+        { id: "n2", visited: ["n0", "n1"], line: 2, title: "Put 6 before 5", desc: "6 becomes the first value in the reversed result.", state: { current: 6, result: "[6,5,4]" } },
+        { id: "n2", visited: ["n0", "n1", "n2"], line: 5, title: "Return reversed values", desc: "Null next means the reversed output is complete.", state: { final_result: "[6,5,4]" } },
+      ],
+    },
+    "linked-list-kth": {
+      values: [4, 5, 6],
+      example: "values=[4,5,6], nextIndexes=[1,2,-1], head=0, k=2",
+      target: "value after 2 links",
+      result: "6",
+      code: ["start at the head index", "track how many links have been followed", "follow one next index at a time", "stop when the requested link count is reached", "handle an early end marker", "return the current value"],
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Value After K Links", desc: "Start at head before following any links.", state: { current: 4, links_followed: 0, k: 2 } },
+        { id: "n1", edge: edgeFor("n0", "n1"), visited: ["n0"], line: 3, title: "Follow first link", desc: "One link moves current from 4 to 5.", state: { current: 5, links_followed: 1, k: 2 } },
+        { id: "n1", visited: ["n0"], line: 2, title: "Need one more link", desc: "The count is 1, but k is 2.", state: { current: 5, links_followed: 1, remaining: 1 } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0", "n1"], line: 3, title: "Follow second link", desc: "The second link moves current to 6.", state: { current: 6, links_followed: 2, k: 2 } },
+        { id: "n2", visited: ["n0", "n1"], line: 4, title: "Stop after k links", desc: "The link count now equals k, so do not move again.", state: { current: 6, links_followed: 2 } },
+        { id: "n2", visited: ["n0", "n1"], line: 5, title: "Current value is 6", desc: "The requested node is the current node after exactly two links.", state: { result: 6 } },
+        { id: "n2", visited: ["n0", "n1", "n2"], line: 5, title: "Return 6", desc: "Return the current value, not the index.", state: { final_result: "6" } },
+      ],
+    },
+    "linked-list-merge-index": {
+      values: ["A0", "B1", "M2", "T3"],
+      example: "nextIndexes=[2,2,3,-1], headA=0, headB=1",
+      target: "first shared node index",
+      result: "2",
+      code: ["walk from the first head", "remember indexes on that path", "restart from the second head", "compare each second-path index with memory", "stop at the first shared index", "return the prompt's merge result"],
+      phases: [
+        { id: "n0", line: 1, title: context.title || "Linked List Merge Index", desc: "Start by walking list A from headA.", state: { current_list: "A", current_index: 0, seen_A: "none" } },
+        { id: "n0", line: 1, title: "Remember A index 0", desc: "Index 0 belongs to list A's path.", state: { current_list: "A", current_index: 0, seen_A: "0" } },
+        { id: "n2", edge: edgeFor("n0", "n2"), visited: ["n0"], line: 1, title: "A reaches index 2", desc: "Following A's next link reaches the shared node candidate.", state: { current_list: "A", current_index: 2, seen_A: "0, 2" } },
+        { id: "n3", edge: edgeFor("n2", "n3"), visited: ["n0", "n2"], line: 1, title: "Finish A path", desc: "A continues through index 3, then ends.", state: { current_list: "A", seen_A: "0, 2, 3" } },
+        { id: "n1", line: 2, title: "Restart at B head", desc: "Now walk list B and compare each index with A's memory.", state: { current_list: "B", current_index: 1, seen_A: "0, 2, 3" } },
+        { id: "n2", edge: edgeFor("n1", "n2"), visited: ["n0", "n1"], line: 4, title: "B reaches seen index 2", desc: "Index 2 was already on A's path, so this is the first merge point.", state: { current_list: "B", current_index: 2, result: 2 } },
+        { id: "n2", visited: ["n0", "n1", "n2"], inactive: ["n3"], line: 5, title: "Return index 2", desc: "Return the shared index, not the node value.", state: { final_result: "2" } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["linked-list-traverse"]!;
+  const nodes: Node[] = config.values.map((value, index) => ({
+    id: `n${index}`,
+    x: 180 + index * 190,
+    y: 260,
+    value,
+    type: "linked-node",
+  }));
+  const edgePairs = family === "linked-list-cycle"
+    ? [["n0", "n1"], ["n1", "n2"], ["n2", "n1"]]
+    : family === "linked-list-merge-index"
+      ? [["n0", "n2"], ["n1", "n2"], ["n2", "n3"]]
+      : nodes.slice(1).map((node, index) => [`n${index}`, node.id]);
+  const edges: Edge[] = edgePairs.map(([from, to]) => ({ id: edgeFor(from, to), from, to, type: "pointer" }));
+  return config.phases.map((phase, index) => {
+    let phaseNodes = withNodeState(nodes, phase.visited || [], "visited");
+    if (phase.inactive?.length) phaseNodes = withNodeState(phaseNodes, phase.inactive, "inactive");
+    phaseNodes = withNodeState(phaseNodes, [phase.id], "active");
+    const activeEdges = phase.edge ? [phase.edge] : [];
+    return step({
+      concept: "linked-list",
+      title: phase.title,
+      description: phase.desc,
+      nodes: phaseNodes,
+      edges: withEdgeState(edges, activeEdges, "active"),
+      highlights: { nodeIds: [phase.id], edgeIds: activeEdges, lineNumbers: [phase.line] },
+      code: config.code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(config.phases.map((item) => item.title), index),
+      state: { example: config.example, target: config.target, visual_family: family, result: index === config.phases.length - 1 ? config.result : "not final", ...phase.state },
+    }, index + 1);
+  });
 }
 
 export function generateBinarySearchSteps(context: GeneratorContext = {}): Step[] {
@@ -7278,24 +7516,258 @@ export function generateHeapSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateTrieSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["node = root", "char = word[index]", "if char not in node.children:", "node = node.children[char]", "node.is_word = True", "repeat for next word", "return prefix match"];
-  const nodes: Node[] = [
-    { id: "root", x: 450, y: 90, value: "root", type: "tree-node" },
-    { id: "c", x: 330, y: 210, value: "c", type: "tree-node" },
-    { id: "ca", x: 280, y: 330, value: "a", type: "tree-node" },
-    { id: "co", x: 420, y: 330, value: "o", type: "tree-node" },
+  const family = detectVisualizerFamily("trie", context);
+  type TriePhase = {
+    active: string;
+    visited?: string[];
+    inactive?: string[];
+    edge?: string;
+    edges?: string[];
+    line: number;
+    title: string;
+    description: string;
+    state: Record<string, string | number | boolean>;
+  };
+  type TrieConfig = {
+    words: string[];
+    example: string;
+    target: string;
+    result: string;
+    code: string[];
+    phases: TriePhase[];
+  };
+  const idForPrefix = (prefix: string) => prefix || "root";
+  const edgeFor = (prefix: string) => {
+    if (!prefix) return "";
+    const parent = prefix.slice(0, -1);
+    return `${idForPrefix(parent)}-${idForPrefix(prefix)}`;
+  };
+  const baseCode = [
+    "start at the trie root",
+    "read the next character",
+    "follow the matching branch",
+    "stop if the branch is missing",
+    "check the prefix node",
+    "use only words below that node",
+    "return the requested result",
   ];
-  const edges: Edge[] = [{ from: "root", to: "c", type: "parent-child" }, { from: "c", to: "ca", type: "parent-child" }, { from: "c", to: "co", type: "parent-child" }];
-  const phases = [
-    { active: "root", title: context.title || "Trie prefix path", desc: "Start at the root before reading any character.", edge: "" },
-    { active: "c", title: "Read c", desc: "The first character chooses the c branch.", edge: "root-c" },
-    { active: "ca", title: "Follow a", desc: "A word beginning with ca follows the a child.", edge: "c-ca" },
-    { active: "ca", title: "Mark one word ending", desc: "If ca is a complete word, this node stores that fact.", edge: "c-ca" },
-    { active: "co", title: "Reuse shared prefix", desc: "A word beginning with co reuses the existing c node, then branches to o.", edge: "c-co" },
-    { active: "c", title: "Search a prefix", desc: "A prefix lookup stops after the shared letters instead of needing a whole word.", edge: "root-c" },
-    { active: "co", title: "Finish lookup", desc: "The final node tells whether the whole prefix or word exists.", edge: "c-co" },
-  ];
-  return phases.map((phase, index) => step({ concept: "trie", title: phase.title, description: phase.desc, nodes: withNodeState(nodes, [phase.active], "active"), edges: withEdgeState(edges, phase.edge ? [phase.edge] : [], "active"), highlights: { nodeIds: [phase.active], edgeIds: phase.edge ? [phase.edge] : [], lineNumbers: [Math.min(index + 1, code.length)] }, code, activeLine: Math.min(index + 1, code.length), state: { character: phase.active === "root" ? "start" : phase.active.at(-1) || phase.active } }, index + 1));
+  const configs: Partial<Record<VisualizerFamily, TrieConfig>> = {
+    "trie-any-prefix": {
+      words: ["cat", "car", "dog"],
+      example: "words=[cat, car, dog], prefix=ca",
+      target: "does any word start with ca?",
+      result: "true",
+      code: baseCode,
+      phases: [
+        { active: "root", line: 1, title: context.title || "Any Word With Prefix", description: "Start at the root before checking the requested prefix.", state: { prefix: "ca", current: "root", result: "not final" } },
+        { active: "c", edge: edgeFor("c"), visited: ["root"], line: 2, title: "Read c", description: "The first prefix character chooses the c branch.", state: { character: "c", current: "c", result: "not final" } },
+        { active: "ca", edge: edgeFor("ca"), visited: ["root", "c"], line: 3, title: "Read a", description: "The a branch exists, so the prefix path is still alive.", state: { character: "a", current: "ca", result: "not final" } },
+        { active: "ca", visited: ["root", "c"], inactive: ["dog"], line: 5, title: "Prefix node is alive", description: "The lookup does not need to scan dog because dog is outside the ca branch.", state: { prefix_node: "ca", skipped_branch: "dog", result: "not final" } },
+        { active: "cat", edge: edgeFor("cat"), visited: ["root", "c", "ca"], inactive: ["dog"], line: 6, title: "Find cat below ca", description: "cat is a complete word below the prefix node.", state: { found_word: "cat", result: "true" } },
+        { active: "car", edge: edgeFor("car"), visited: ["cat"], inactive: ["dog"], line: 6, title: "Another match exists", description: "car also starts with ca, but the boolean answer is already true.", state: { extra_match: "car", result: "true" } },
+        { active: "ca", visited: ["cat", "car"], inactive: ["dog"], line: 7, title: "Return true", description: "Because at least one stored word starts with ca, the result is true.", state: { final_result: "true" } },
+      ],
+    },
+    "trie-count-prefix-matches": {
+      words: ["sun", "sum", "cat"],
+      example: "words=[sun, sum, cat], prefix=su",
+      target: "count words below su",
+      result: "2",
+      code: baseCode,
+      phases: [
+        { active: "root", line: 1, title: context.title || "Count Prefix Matches", description: "Start from the root and follow the prefix characters.", state: { prefix: "su", count: 0, result: "not final" } },
+        { active: "s", edge: edgeFor("s"), visited: ["root"], line: 2, title: "Follow s", description: "Only words under s can still match su.", state: { character: "s", count: 0 } },
+        { active: "su", edge: edgeFor("su"), visited: ["root", "s"], line: 3, title: "Follow u", description: "The prefix node is su, so counting starts here.", state: { current: "su", count: 0 } },
+        { active: "sun", edge: edgeFor("sun"), visited: ["su"], inactive: ["cat"], line: 6, title: "Count sun", description: "sun is a complete word below su, so it adds one.", state: { matched: "sun", count: 1 } },
+        { active: "sum", edge: edgeFor("sum"), visited: ["sun"], inactive: ["cat"], line: 6, title: "Count sum", description: "sum is also below su, so the count becomes two.", state: { matched: "sum", count: 2, result: "2" } },
+        { active: "cat", inactive: ["cat"], line: 6, title: "Leave cat out", description: "cat starts on a different branch, so it is not counted for su.", state: { skipped_branch: "cat", count: 2, result: "2" } },
+        { active: "su", visited: ["sun", "sum"], inactive: ["cat"], line: 7, title: "Return count", description: "cat is outside the su branch, so the final count stays 2.", state: { skipped_branch: "cat", final_result: "2" } },
+      ],
+    },
+    "trie-all-share-prefix": {
+      words: ["cat", "car", "camp"],
+      example: "words=[cat, car, camp], prefix=ca",
+      target: "does every word start with ca?",
+      result: "true",
+      code: ["start at the root", "test one word path at a time", "follow the prefix characters", "stop early if any word misses", "mark this word as passing", "repeat for each word", "return whether all passed"],
+      phases: [
+        { active: "ca", edge: edgeFor("ca"), visited: ["root", "c"], line: 1, title: context.title || "All Words Share Prefix", description: "The shared ca path is the rule every word must satisfy.", state: { prefix: "ca", passed: 0 } },
+        { active: "cat", edge: edgeFor("cat"), visited: ["ca"], line: 3, title: "cat follows ca", description: "The first word reaches the prefix node before it continues to t.", state: { current_word: "cat", prefix_ok: "yes", passed: 0 } },
+        { active: "cat", edge: edgeFor("cat"), visited: ["ca"], line: 2, title: "Check cat", description: "cat passes because its path begins c then a.", state: { current_word: "cat", passed: 1 } },
+        { active: "car", edge: edgeFor("car"), visited: ["cat"], line: 3, title: "car follows ca", description: "The second word reaches the same ca node before it branches to r.", state: { current_word: "car", prefix_ok: "yes", passed: 1 } },
+        { active: "car", edge: edgeFor("car"), visited: ["cat"], line: 5, title: "Check car", description: "car also stays under the ca prefix node.", state: { current_word: "car", passed: 2 } },
+        { active: "camp", edge: edgeFor("camp"), visited: ["cat", "car"], line: 6, title: "Check camp", description: "camp shares ca too, so no word has failed.", state: { current_word: "camp", passed: 3, result: "true" } },
+        { active: "ca", visited: ["cat", "car", "camp"], line: 7, title: "Return true", description: "Every listed word started with ca.", state: { final_result: "true" } },
+      ],
+    },
+    "trie-first-word-prefix": {
+      words: ["dog", "cat", "car"],
+      example: "words=[dog, cat, car], prefix=ca",
+      target: "return the first matching word",
+      result: "cat",
+      code: ["read words in list order", "walk the prefix path for the current word", "skip the word if the path misses", "stop at the first matching word", "return that word", "return none if nothing matched"],
+      phases: [
+        { active: "dog", edge: edgeFor("d"), line: 1, title: context.title || "First Word With Prefix", description: "List order matters here, so dog is checked first.", state: { index: 0, current_word: "dog", result: "not final" } },
+        { active: "d", edge: edgeFor("d"), visited: ["root"], line: 2, title: "dog starts with d", description: "The first character already disagrees with ca.", state: { index: 0, current_word: "dog", needed: "c", saw: "d" } },
+        { active: "dog", inactive: ["dog"], line: 3, title: "Skip dog", description: "dog does not start with ca, so it cannot be the first match.", state: { index: 0, skipped: "dog", result: "not final" } },
+        { active: "ca", edge: edgeFor("ca"), visited: ["c"], inactive: ["dog"], line: 2, title: "Check cat", description: "The next word follows c then a, so it matches the prefix.", state: { index: 1, current_word: "cat" } },
+        { active: "cat", edge: edgeFor("cat"), visited: ["ca"], inactive: ["dog"], line: 4, title: "Stop at cat", description: "cat is the first list-order word with the prefix.", state: { first_match: "cat", result: "cat" } },
+        { active: "car", inactive: ["dog", "car"], line: 4, title: "Do not replace with car", description: "car matches too, but it appears after cat in the original list.", state: { later_match: "car", kept: "cat", result: "cat" } },
+        { active: "cat", inactive: ["dog", "car"], line: 5, title: "Return cat", description: "car also matches, but it comes later and is not the first match.", state: { skipped_later: "car", final_result: "cat" } },
+      ],
+    },
+    "trie-prefix-match-count": {
+      words: ["code", "coding", "course"],
+      example: "words=[code, coding, course], prefix=cod",
+      target: "count words below cod",
+      result: "2",
+      code: baseCode,
+      phases: [
+        { active: "root", line: 1, title: context.title || "Prefix Match Count", description: "Start at the root before walking cod.", state: { prefix: "cod", count: 0 } },
+        { active: "c", edge: edgeFor("c"), visited: ["root"], line: 2, title: "Follow c", description: "All sample words begin with c.", state: { current: "c", count: 0 } },
+        { active: "co", edge: edgeFor("co"), visited: ["c"], line: 3, title: "Follow o", description: "The o branch is still shared.", state: { current: "co", count: 0 } },
+        { active: "cod", edge: edgeFor("cod"), visited: ["co"], line: 5, title: "Reach cod", description: "Now only words below cod should be counted.", state: { current: "cod", count: 0 } },
+        { active: "code", edge: edgeFor("code"), visited: ["cod"], inactive: ["cou"], line: 6, title: "Count code", description: "code is below cod, so it adds one match.", state: { matched: "code", count: 1 } },
+        { active: "coding", edge: edgeFor("coding"), visited: ["code"], inactive: ["cou"], line: 6, title: "Count coding", description: "coding is also below cod, so the count becomes two.", state: { matched: "coding", count: 2, result: "2" } },
+        { active: "cod", visited: ["code", "coding"], inactive: ["course"], line: 7, title: "Return 2", description: "course is under cou, not cod, so it is left out.", state: { skipped_branch: "course", final_result: "2" } },
+      ],
+    },
+    "trie-longest-common-prefix": {
+      words: ["cab", "car", "cat"],
+      example: "words=[cab, car, cat]",
+      target: "longest prefix shared by every word",
+      result: "ca",
+      code: ["start at the root", "move only while every word shares the next character", "add that character to the shared prefix", "stop when paths split or a word ends", "return the shared prefix"],
+      phases: [
+        { active: "root", line: 1, title: context.title || "Longest Common Prefix", description: "Begin at the shared trie root before accepting any character.", state: { shared_prefix: "", result: "not final" } },
+        { active: "c", edge: edgeFor("c"), visited: ["root"], line: 2, title: "All share c", description: "Every word follows the c branch, so c can join the shared prefix.", state: { shared_prefix: "c", result: "not final" } },
+        { active: "ca", edge: edgeFor("ca"), visited: ["root", "c"], line: 3, title: "Add a", description: "Every word also follows the a branch, so ca is shared.", state: { shared_prefix: "ca" } },
+        { active: "cab", edge: edgeFor("cab"), visited: ["root", "c", "ca"], line: 4, title: "Try b", description: "cab continues with b, but that character is only a candidate until every word agrees.", state: { candidate_next: "b", shared_prefix: "ca" } },
+        { active: "car", edge: edgeFor("car"), visited: ["root", "c", "ca"], inactive: ["cab"], line: 4, title: "car splits to r", description: "car uses r after ca, so b cannot be part of the shared prefix.", state: { split: "b vs r", shared_prefix: "ca" } },
+        { active: "cat", edge: edgeFor("cat"), visited: ["root", "c", "ca"], inactive: ["cab", "car"], line: 4, title: "cat splits to t", description: "cat uses t after ca, confirming the common part stops at ca.", state: { split: "b/r/t", shared_prefix: "ca" } },
+        { active: "ca", edges: [edgeFor("c"), edgeFor("ca")], visited: ["root", "c"], inactive: ["cab", "car", "cat"], line: 5, title: "Return ca", description: "The highlighted root-to-ca path is the longest path every word shares.", state: { final_result: "ca" } },
+      ],
+    },
+    "trie-autocomplete-first": {
+      words: ["cab", "car", "cat", "dog"],
+      example: "words=[car, cat, cab, dog], prefix=ca, k=2",
+      target: "first 2 sorted matches",
+      result: "[cab, car]",
+      code: ["walk to the prefix node", "explore matching words in sorted order", "save each complete word", "stop after k matches", "ignore words outside the prefix", "return the saved matches"],
+      phases: [
+        { active: "ca", edge: edgeFor("ca"), visited: ["root", "c"], line: 1, title: context.title || "First Autocomplete Matches", description: "Autocomplete first walks to the requested prefix node.", state: { prefix: "ca", k: 2, matches: "none" } },
+        { active: "cab", edge: edgeFor("cab"), visited: ["ca"], inactive: ["dog"], line: 2, title: "Explore sorted branch b", description: "The b child comes before r and t, so cab is the first sorted match.", state: { branch: "b", saved: "none", remaining_slots: 2 } },
+        { active: "cab", edge: edgeFor("cab"), visited: ["ca"], inactive: ["dog"], line: 2, title: "Take cab first", description: "Sorted autocomplete checks cab before car and cat.", state: { saved: "[cab]", remaining_slots: 1 } },
+        { active: "car", edge: edgeFor("car"), visited: ["cab"], inactive: ["dog"], line: 2, title: "Move to r branch", description: "After cab, sorted order moves to car.", state: { branch: "r", saved: "[cab]", remaining_slots: 1 } },
+        { active: "car", edge: edgeFor("car"), visited: ["cab"], inactive: ["dog"], line: 3, title: "Take car second", description: "car fills the second requested autocomplete slot.", state: { saved: "[cab, car]", remaining_slots: 0, result: "[cab, car]" } },
+        { active: "cat", inactive: ["cat", "dog"], line: 4, title: "Stop before cat", description: "cat also matches ca, but k is already full.", state: { held_back: "cat", result: "[cab, car]" } },
+        { active: "ca", visited: ["cab", "car"], inactive: ["cat", "dog"], line: 6, title: "Return matches", description: "Return the first two sorted words from the ca subtree.", state: { final_result: "[cab, car]" } },
+      ],
+    },
+    "trie-longest-prefix-word": {
+      words: ["cart", "car", "care"],
+      example: "words=[cart, car, care], prefix=car",
+      target: "longest word that starts with car",
+      result: "care",
+      code: ["walk to the prefix node", "scan complete words below it", "keep the longest match", "break ties alphabetically", "return the kept word"],
+      phases: [
+        { active: "root", line: 1, title: context.title || "Longest Prefix Word", description: "Start at the root before walking the requested prefix.", state: { prefix: "car", best: "none", current: "root" } },
+        { active: "c", edge: edgeFor("c"), visited: ["root"], line: 1, title: "Follow c", description: "The prefix path starts by taking the c branch.", state: { prefix_path: "c", best: "none" } },
+        { active: "ca", edge: edgeFor("ca"), visited: ["root", "c"], line: 1, title: "Follow a", description: "The lookup keeps walking the requested prefix.", state: { prefix_path: "ca", best: "none" } },
+        { active: "car", edge: edgeFor("car"), visited: ["root", "c", "ca"], line: 1, title: "Reach car", description: "car is both a complete word and the prefix node where longer candidates branch.", state: { prefix_path: "car", candidate: "car", best: "car" } },
+        { active: "cart", edge: edgeFor("cart"), visited: ["root", "c", "ca", "car"], line: 3, title: "Compare cart", description: "cart is below the car prefix and is longer than car.", state: { candidate: "cart", best: "cart" } },
+        { active: "care", edge: edgeFor("care"), visited: ["root", "c", "ca", "car"], inactive: ["cart"], line: 4, title: "Tie with care", description: "care ties cart's length, and alphabetical order keeps care.", state: { candidate: "care", previous_best: "cart", best: "care", result: "care" } },
+        { active: "care", edges: [edgeFor("c"), edgeFor("ca"), edgeFor("car"), edgeFor("care")], visited: ["root", "c", "ca", "car"], inactive: ["cart"], line: 5, title: "Return care", description: "The highlighted path shows the chosen word from root through the requested prefix.", state: { final_result: "care" } },
+      ],
+    },
+    "trie-prefix-counts": {
+      words: ["cat", "car", "dog"],
+      example: "insert cat, car, dog; count ca",
+      target: "return stored count for ca",
+      result: "2",
+      code: ["insert each word character by character", "increase the pass count on visited prefix nodes", "walk the query prefix", "read the count saved at that node", "return the count"],
+      phases: [
+        { active: "c", edge: edgeFor("c"), visited: ["root"], line: 1, title: context.title || "Trie Prefix Counts", description: "Inserting cat and car both passes through c.", state: { inserted: "cat, car", count_at_c: 2 } },
+        { active: "ca", edge: edgeFor("ca"), visited: ["c"], line: 2, title: "Store ca count", description: "Two inserted words pass through ca, so ca stores count 2.", state: { prefix: "ca", count_at_ca: 2 } },
+        { active: "cat", edge: edgeFor("cat"), visited: ["ca"], line: 2, title: "cat contributes once", description: "cat is one of the words counted at ca.", state: { contributing_word: "cat", count_at_ca: 2 } },
+        { active: "car", edge: edgeFor("car"), visited: ["ca"], line: 2, title: "car contributes once", description: "car is the second word counted at ca.", state: { contributing_word: "car", count_at_ca: 2 } },
+        { active: "d", edge: edgeFor("d"), inactive: ["d", "do", "dog"], line: 2, title: "Dog uses another branch", description: "dog updates the d path, not the ca count.", state: { skipped_branch: "dog", count_at_ca: 2 } },
+        { active: "ca", edge: edgeFor("ca"), visited: ["root", "c"], inactive: ["dog"], line: 3, title: "Query ca", description: "The query walks directly back to the ca node.", state: { query: "ca", count_at_ca: 2 } },
+        { active: "ca", visited: ["cat", "car"], inactive: ["dog"], line: 5, title: "Return 2", description: "The saved prefix count gives the answer without recounting all words.", state: { final_result: "2" } },
+      ],
+    },
+    "trie-any-has-prefix": {
+      words: ["cat", "car", "dog"],
+      example: "words=[cat, car, dog], prefix=ca",
+      target: "true if at least one word starts with ca",
+      result: "true",
+      code: baseCode,
+      phases: [
+        { active: "root", line: 1, title: context.title || "Any Word Has Prefix", description: "Start at the root and test whether ca has a live path.", state: { prefix: "ca", result: "not final" } },
+        { active: "c", edge: edgeFor("c"), visited: ["root"], line: 2, title: "Follow c", description: "The c branch exists, so a match is still possible.", state: { current: "c" } },
+        { active: "ca", edge: edgeFor("ca"), visited: ["c"], line: 3, title: "Follow a", description: "The ca node exists and has words below it.", state: { current: "ca", result: "true" } },
+        { active: "cat", edge: edgeFor("cat"), visited: ["ca"], inactive: ["dog"], line: 6, title: "See cat below ca", description: "cat proves the prefix has at least one stored word.", state: { matching_word: "cat", result: "true" } },
+        { active: "car", edge: edgeFor("car"), visited: ["cat"], inactive: ["dog"], line: 6, title: "car also matches", description: "car is another match, but one match was enough for the boolean.", state: { matching_branch: "cat, car", result: "true" } },
+        { active: "dog", inactive: ["dog"], line: 6, title: "Dog is outside", description: "dog starts on a different branch and does not affect the ca answer.", state: { skipped_branch: "dog", result: "true" } },
+        { active: "ca", inactive: ["dog"], line: 7, title: "Return true", description: "The prefix path exists with stored words beneath it.", state: { final_result: "true" } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["trie-any-prefix"]!;
+  const nodeMap = new Map<string, Node>();
+  const edges: Edge[] = [];
+  nodeMap.set("root", { id: "root", x: 0, y: 0, value: "root", type: "tree-node", label: "root" });
+  config.words.forEach((word) => {
+    let prefix = "";
+    word.split("").forEach((char, index) => {
+      const next = `${prefix}${char}`;
+      const id = idForPrefix(next);
+      if (!nodeMap.has(id)) {
+        nodeMap.set(id, {
+          id,
+          x: 0,
+          y: 0,
+          value: index === word.length - 1 ? word : char,
+          type: "tree-node",
+          label: index === word.length - 1 ? "word" : next,
+          meta: index === word.length - 1 ? { terminal: true } : undefined,
+        });
+      } else if (index === word.length - 1) {
+        nodeMap.set(id, { ...nodeMap.get(id)!, label: "word", value: word, meta: { ...(nodeMap.get(id)!.meta || {}), terminal: true } });
+      }
+      const parent = idForPrefix(prefix);
+      const edgeId = `${parent}-${id}`;
+      if (!edges.some((edge) => edge.id === edgeId)) {
+        edges.push({ id: edgeId, from: parent, to: id, type: "parent-child" });
+      }
+      prefix = next;
+    });
+  });
+  const parentsWithChildren = new Set(edges.map((edge) => edge.from));
+  const baseNodes = Array.from(nodeMap.values()).map((node) => {
+    if (node.meta?.terminal && parentsWithChildren.has(node.id)) {
+      return { ...node, label: "prefix word", meta: { ...node.meta, terminal: false } };
+    }
+    return node;
+  });
+  return config.phases.map((phase, index) => {
+    let nodes = withNodeState(baseNodes, phase.visited || [], "visited");
+    if (phase.inactive?.length) nodes = withNodeState(nodes, phase.inactive, "inactive");
+    if (phase.edges?.length) nodes = withNodeState(nodes, [...(phase.visited || []), phase.active], "path");
+    nodes = withNodeState(nodes, [phase.active], "active");
+    const activeEdgeIds = phase.edges || (phase.edge ? [phase.edge] : []);
+    return step({
+      concept: "trie",
+      title: phase.title,
+      description: phase.description,
+      nodes,
+      edges: withEdgeState(edges, activeEdgeIds, "active"),
+      highlights: { nodeIds: [phase.active], edgeIds: activeEdgeIds, lineNumbers: [phase.line] },
+      code: config.code,
+      activeLine: phase.line,
+      state: { example: config.example, target: config.target, visual_family: family, result: index === config.phases.length - 1 ? config.result : "not final", ...phase.state },
+    }, index + 1);
+  });
 }
 
 export function generateUnionFindSteps(context: GeneratorContext = {}): Step[] {
@@ -7598,12 +8070,219 @@ export function generateDynamicProgrammingSteps(context: GeneratorContext = {}):
 }
 
 export function generateBitSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["bits = binary(number)", "bit = bits[index]", "if bit == 1: result += 1", "index += 1", "repeat for next bit", "return result"];
-  const bits = [1, 0, 1, 1, 0, 1, 0];
-  let count = 0;
-  return bits.map((bit, index) => {
-    if (bit) count += 1;
-    return step({ concept: "bit-manipulation", title: context.title || "Bit manipulation", description: `Inspect bit ${bit}. A 1 changes the count or mask; a 0 usually does not.`, nodes: withNodeState(layoutArray(bits), [`item-${index}`], bit ? "active" : "comparing"), edges: [], highlights: { nodeIds: [`item-${index}`], lineNumbers: [Math.min(index + 1, 4)] }, code, activeLine: Math.min(index + 1, 4), state: { ones_seen: count } }, index + 1);
+  const family = detectVisualizerFamily("bit-manipulation", context);
+  type BitPhase = {
+    bits: string;
+    active: number;
+    title: string;
+    desc: string;
+    line: number;
+    state: Record<string, string | number | boolean>;
+    inactive?: number[];
+  };
+  type BitConfig = {
+    example: string;
+    target: string;
+    result: string;
+    code: string[];
+    phases: BitPhase[];
+  };
+  const bitCode = [
+    "write the number as bits",
+    "focus on the bit or pair being tested",
+    "update only the tracked state",
+    "move to the next needed bit",
+    "stop when the prompt rule is decided",
+    "return only the requested value",
+  ];
+  const powerTwoUsesSecondExample = /\bn\s*=\s*18\b/.test(String(context.exampleInput || ""));
+  const powerTwoBits = powerTwoUsesSecondExample ? "10010" : "10000";
+  const powerTwoNumber = powerTwoUsesSecondExample ? 18 : 16;
+  const powerTwoResult = powerTwoUsesSecondExample ? "false" : "true";
+  const configs: Partial<Record<VisualizerFamily, BitConfig>> = {
+    "bit-count": {
+      example: "n=13, bits=1101",
+      target: "count 1 bits",
+      result: "3",
+      code: bitCode,
+      phases: [
+        { bits: "1101", active: 0, line: 1, title: context.title || "Count Set Bits", desc: "Write 13 as bits so each flag can be inspected.", state: { number: 13, bits: "1101", count: 0 } },
+        { bits: "1101", active: 0, line: 2, title: "Inspect left 1", desc: "The first visible bit is on, so the count changes.", state: { current_bit: 1, count: 1 } },
+        { bits: "1101", active: 1, line: 2, title: "Inspect next 1", desc: "This bit is also on.", state: { current_bit: 1, count: 2 } },
+        { bits: "1101", active: 2, line: 2, title: "Inspect 0", desc: "A 0 is off, so the count stays the same.", state: { current_bit: 0, count: 2 } },
+        { bits: "1101", active: 3, line: 2, title: "Inspect last 1", desc: "The last bit is on.", state: { current_bit: 1, count: 3 } },
+        { bits: "1101", active: 3, line: 5, title: "All bits checked", desc: "Every visible bit has been read once.", state: { checked: "4 bits", count: 3 } },
+        { bits: "1101", active: 3, line: 6, title: "Return count", desc: "Return the tracked count of on bits.", state: { final_result: "3" } },
+      ],
+    },
+    "bit-count-small": {
+      example: "n=13, bits=1101",
+      target: "count 1 bits",
+      result: "3",
+      code: bitCode,
+      phases: [
+        { bits: "1101", active: 0, line: 1, title: context.title || "Count Set Bits Small", desc: "Use the same small number from the prompt.", state: { number: 13, bits: "1101", count: 0 } },
+        { bits: "1101", active: 0, line: 2, title: "First bit is on", desc: "An on bit increases the running count.", state: { current_bit: 1, count: 1 } },
+        { bits: "1101", active: 1, line: 2, title: "Second bit is on", desc: "The second on bit is counted separately.", state: { current_bit: 1, count: 2 } },
+        { bits: "1101", active: 2, line: 2, title: "Zero is skipped", desc: "An off bit does not change the count.", state: { current_bit: 0, count: 2 } },
+        { bits: "1101", active: 3, line: 2, title: "Last bit is on", desc: "The final bit adds one more.", state: { current_bit: 1, count: 3 } },
+        { bits: "1101", active: 3, line: 5, title: "No bits left", desc: "The scan has reached the end of the bit string.", state: { count: 3, checked: "done" } },
+        { bits: "1101", active: 3, line: 6, title: "Return count", desc: "Return the count, not the original number.", state: { final_result: "3" } },
+      ],
+    },
+    "bit-power-two": {
+      example: `n=${powerTwoNumber}, bits=${powerTwoBits}`,
+      target: "exactly one 1 bit",
+      result: powerTwoResult,
+      code: bitCode,
+      phases: powerTwoUsesSecondExample ? [
+        { bits: powerTwoBits, active: 0, line: 1, title: context.title || "Power Of Two Check", desc: "Write the positive number in binary.", state: { number: powerTwoNumber, ones_seen: 0, result: "not final" } },
+        { bits: powerTwoBits, active: 0, line: 2, title: "Find first on bit", desc: "The first bit is on, so remember that one has appeared.", state: { current_bit: 1, ones_seen: 1 } },
+        { bits: powerTwoBits, active: 1, line: 2, title: "Read an off bit", desc: "A 0 does not add another on bit.", state: { current_bit: 0, ones_seen: 1 } },
+        { bits: powerTwoBits, active: 2, line: 2, title: "Read another off bit", desc: "Still only one on bit so far.", state: { current_bit: 0, ones_seen: 1 } },
+        { bits: powerTwoBits, active: 3, line: 2, title: "Find second on bit", desc: "A second 1 means this is not exactly one on bit.", state: { current_bit: 1, ones_seen: 2, result: "false" } },
+        { bits: powerTwoBits, active: 4, line: 5, title: "Decision is false", desc: "The remaining bit cannot remove the second on bit already found.", state: { current_bit: 0, ones_seen: 2, result: "false" } },
+        { bits: powerTwoBits, active: 3, line: 6, title: "Return boolean", desc: "Return whether exactly one bit was on.", state: { final_result: "false" } },
+      ] : [
+        { bits: powerTwoBits, active: 0, line: 1, title: context.title || "Power Of Two Check", desc: "Write the positive number in binary.", state: { number: powerTwoNumber, ones_seen: 0, result: "not final" } },
+        { bits: powerTwoBits, active: 0, line: 2, title: "Find one on bit", desc: "The first bit is on, so remember that one has appeared.", state: { current_bit: 1, ones_seen: 1 } },
+        { bits: powerTwoBits, active: 1, line: 2, title: "Next bit is off", desc: "An off bit does not add another on bit.", state: { current_bit: 0, ones_seen: 1 } },
+        { bits: powerTwoBits, active: 2, line: 2, title: "Still only one", desc: "The scan keeps checking for a second on bit.", state: { current_bit: 0, ones_seen: 1 } },
+        { bits: powerTwoBits, active: 3, line: 2, title: "No extra 1 yet", desc: "Another off bit keeps the condition possible.", state: { current_bit: 0, ones_seen: 1 } },
+        { bits: powerTwoBits, active: 4, line: 5, title: "Check complete", desc: "The final bit is also off, so only one on bit was found.", state: { current_bit: 0, ones_seen: 1, result: "true" } },
+        { bits: powerTwoBits, active: 0, line: 6, title: "Return boolean", desc: "Return whether exactly one bit was on.", state: { final_result: "true" } },
+      ],
+    },
+    "bit-odd-last": {
+      example: "n=7, bits=111",
+      target: "use the last bit",
+      result: "true",
+      code: ["write the number as bits", "move attention to the last bit", "read whether the last bit is on", "return the boolean requested by the prompt"],
+      phases: [
+        { bits: "111", active: 0, line: 1, title: context.title || "Odd From Last Bit", desc: "Use a tiny odd number so the last bit is easy to see.", state: { number: 7, result: "not final" } },
+        { bits: "111", active: 2, line: 2, title: "Jump to last bit", desc: "Odd/even only depends on the rightmost bit.", state: { focus: "rightmost bit" } },
+        { bits: "111", active: 2, line: 3, title: "Last bit is 1", desc: "A rightmost 1 means the value is odd.", state: { last_bit: 1, result: "true" } },
+        { bits: "111", active: 2, line: 3, title: "No other bits needed", desc: "The higher bits do not change odd/even.", state: { ignored_bits: "left side", result: "true" }, inactive: [0, 1] },
+        { bits: "111", active: 2, line: 4, title: "Return boolean", desc: "Return the actual boolean value.", state: { final_result: "true" } },
+        { bits: "111", active: 2, line: 4, title: "Keep result stable", desc: "Nothing else needs to be scanned.", state: { final_result: "true" }, inactive: [0, 1] },
+        { bits: "111", active: 2, line: 4, title: "Done", desc: "The last-bit check is complete.", state: { final_result: "true" }, inactive: [0, 1] },
+      ],
+    },
+    "bit-lowest-bit": {
+      example: "n=6, bits=110",
+      target: "return lowest bit",
+      result: "0",
+      code: ["write the number as bits", "look at the rightmost place", "keep that bit value", "return 0 or 1"],
+      phases: [
+        { bits: "110", active: 0, line: 1, title: context.title || "Lowest Bit Value", desc: "Write 6 in binary.", state: { number: 6, result: "not final" } },
+        { bits: "110", active: 2, line: 2, title: "Focus rightmost", desc: "The lowest bit is the rightmost binary place.", state: { focus: "rightmost bit" } },
+        { bits: "110", active: 2, line: 3, title: "Read 0", desc: "The rightmost bit is off.", state: { lowest_bit: 0, result: 0 } },
+        { bits: "110", active: 0, line: 3, title: "Higher bits ignored", desc: "The other bits are not the lowest bit.", state: { lowest_bit: 0 }, inactive: [0, 1] },
+        { bits: "110", active: 2, line: 4, title: "Return 0", desc: "Return the bit value itself.", state: { final_result: "0" } },
+        { bits: "110", active: 2, line: 4, title: "Check shape", desc: "The prompt wants 0 or 1.", state: { final_result: "0" } },
+        { bits: "110", active: 2, line: 4, title: "Done", desc: "The lowest-bit read is complete.", state: { final_result: "0" } },
+      ],
+    },
+    "bit-turn-off-lowest": {
+      example: "n=12, bits=1100",
+      target: "turn off lowest 1",
+      result: "8",
+      code: ["write the number as bits", "find the lowest on bit", "turn only that bit off", "keep higher bits as they are", "return the new value"],
+      phases: [
+        { bits: "1100", active: 3, line: 1, title: context.title || "Turn Off Lowest Set Bit", desc: "Start at the low end of 12's bits.", state: { number: 12, bits: "1100", result: "not final" } },
+        { bits: "1100", active: 3, line: 2, title: "Lowest bit is 0", desc: "A 0 is already off, so keep looking left.", state: { current_bit: 0 } },
+        { bits: "1100", active: 2, line: 2, title: "Next bit is 0", desc: "This bit is also off.", state: { current_bit: 0 } },
+        { bits: "1100", active: 1, line: 2, title: "Find lowest 1", desc: "This is the first on bit reached from the low end.", state: { lowest_one: "4 place" } },
+        { bits: "1000", active: 1, line: 3, title: "Turn it off", desc: "Only that on bit changes to 0.", state: { changed_bit: "4 place", new_bits: "1000" } },
+        { bits: "1000", active: 0, line: 4, title: "Higher 1 stays", desc: "The higher on bit remains in place.", state: { new_bits: "1000", result: 8 } },
+        { bits: "1000", active: 0, line: 5, title: "Return new value", desc: "The new bit pattern represents 8.", state: { final_result: "8" } },
+      ],
+    },
+    "bit-different-count": {
+      example: "a=10 bits=1010, b=7 bits=0111",
+      target: "count different positions",
+      result: "3",
+      code: ["line up both bit strings", "compare one position", "track whether bits differ", "move to the next position", "return the difference count"],
+      phases: [
+        { bits: "1010", active: 0, line: 1, title: context.title || "Different Bit Count", desc: "Line up the visible bits for both codes.", state: { a: "1010", b: "0111", differences: 0 } },
+        { bits: "1010", active: 0, line: 2, title: "Compare first place", desc: "1 and 0 differ, so the count changes.", state: { pair: "1 vs 0", differences: 1 } },
+        { bits: "0010", active: 1, line: 2, title: "Compare second place", desc: "0 and 1 differ too.", state: { pair: "0 vs 1", differences: 2 } },
+        { bits: "0000", active: 2, line: 2, title: "Compare third place", desc: "1 and 1 match, so the count stays.", state: { pair: "1 vs 1", differences: 2 } },
+        { bits: "0001", active: 3, line: 2, title: "Compare last place", desc: "0 and 1 differ.", state: { pair: "0 vs 1", differences: 3 } },
+        { bits: "1010", active: 3, line: 4, title: "All positions compared", desc: "Every aligned position has been checked.", state: { differences: 3 } },
+        { bits: "1010", active: 3, line: 5, title: "Return count", desc: "Return how many positions were different.", state: { final_result: "3" } },
+      ],
+    },
+    "bit-xor-all": {
+      example: "nums=[4,1,4]",
+      target: "xor every number",
+      result: "1",
+      code: ["start with an empty xor state", "combine one number at a time", "matching bits cancel in xor", "keep the running bit pattern", "return the final pattern as a value"],
+      phases: [
+        { bits: "000", active: 2, line: 1, title: context.title || "Xor Every Number", desc: "Start with no bits turned on in the running XOR.", state: { incoming: "none", running_xor: "000", result: "not final" } },
+        { bits: "100", active: 0, line: 2, title: "Combine 4", desc: "The running pattern now matches 4.", state: { incoming: 4, running_xor: "100" } },
+        { bits: "101", active: 2, line: 2, title: "Combine 1", desc: "The low bit toggles on.", state: { incoming: 1, running_xor: "101" } },
+        { bits: "101", active: 0, line: 3, title: "Read another 4", desc: "The next number has the same high bit as the running state.", state: { incoming: 4, running_xor: "101" } },
+        { bits: "001", active: 0, line: 3, title: "Matching high bit cancels", desc: "XOR turns matching on bits off.", state: { incoming: 4, running_xor: "001" } },
+        { bits: "001", active: 2, line: 4, title: "Final pattern left", desc: "Only the low bit remains on.", state: { running_xor: "001", result: 1 } },
+        { bits: "001", active: 2, line: 5, title: "Return value", desc: "Return the value represented by the final pattern.", state: { final_result: "1" } },
+      ],
+    },
+    "bit-alternating": {
+      example: "n=10, bits=1010",
+      target: "bits alternate",
+      result: "true",
+      code: ["write the number as bits", "compare neighboring bits", "track whether the pattern still alternates", "move to the next neighbor pair", "return the boolean requested"],
+      phases: [
+        { bits: "1010", active: 0, line: 1, title: context.title || "Alternating Bits", desc: "Write the bit pattern for 10.", state: { number: 10, pattern_ok: "not decided" } },
+        { bits: "1010", active: 0, line: 2, title: "Compare 1 and 0", desc: "The first neighboring pair is different.", state: { pair: "1 then 0", pattern_ok: "yes so far" } },
+        { bits: "1010", active: 1, line: 2, title: "Compare 0 and 1", desc: "The next pair is different too.", state: { pair: "0 then 1", pattern_ok: "yes so far" } },
+        { bits: "1010", active: 2, line: 2, title: "Compare 1 and 0", desc: "The final neighboring pair also alternates.", state: { pair: "1 then 0", pattern_ok: "yes so far" } },
+        { bits: "1010", active: 3, line: 4, title: "No same neighbors", desc: "No adjacent equal bits were found.", state: { pattern_ok: "true", result: "true" } },
+        { bits: "1010", active: 3, line: 5, title: "Return boolean", desc: "Return the boolean value for the pattern.", state: { final_result: "true" } },
+        { bits: "1010", active: 3, line: 5, title: "Done", desc: "The alternating check is complete.", state: { final_result: "true" } },
+      ],
+    },
+    "bit-max-pair-xor": {
+      example: "nums=[3,10,5]",
+      target: "largest pair xor",
+      result: "15",
+      code: ["write compact bit patterns", "choose one candidate pair", "compare their differing bits", "keep the strongest pair seen", "try another pair", "return the largest value found"],
+      phases: [
+        { bits: "0011", active: 0, line: 1, title: context.title || "Maximum Pair XOR", desc: "Use a shorter sample so pair comparisons fit on screen.", state: { pair: "none", best: "not final" } },
+        { bits: "1001", active: 0, line: 2, title: "Compare 3 with 10", desc: "Different positions turn on in the pair result.", state: { pair: "3 xor 10", candidate_bits: "1001", candidate: 9, best: 9 } },
+        { bits: "0110", active: 1, line: 2, title: "Compare 3 with 5", desc: "This candidate is smaller than the best so far.", state: { pair: "3 xor 5", candidate_bits: "0110", candidate: 6, best: 9 } },
+        { bits: "1111", active: 0, line: 2, title: "Compare 10 with 5", desc: "This pair turns on more high-value places.", state: { pair: "10 xor 5", candidate_bits: "1111", candidate: 15, best: 15 } },
+        { bits: "1111", active: 0, line: 4, title: "Keep strongest pair", desc: "The best visible candidate is saved.", state: { best_pair: "10 and 5", best: 15 } },
+        { bits: "1111", active: 0, line: 5, title: "No larger pair left", desc: "All pairs in the compact sample have been checked.", state: { best: 15, result: 15 } },
+        { bits: "1111", active: 0, line: 6, title: "Return largest xor", desc: "Return the largest pair value found for the sample.", state: { final_result: "15" } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["bit-count"]!;
+  return config.phases.map((phase, index) => {
+    const nodes = layoutArray(phase.bits.split("")).map((node, bitIndex) => ({
+      ...node,
+      state: phase.inactive?.includes(bitIndex)
+        ? "inactive" as const
+        : bitIndex === phase.active
+          ? "active" as const
+          : bitIndex < phase.active
+            ? "visited" as const
+            : "default" as const,
+    }));
+    return step({
+      concept: "bit-manipulation",
+      title: phase.title,
+      description: phase.desc,
+      nodes,
+      edges: [],
+      highlights: { nodeIds: [`item-${phase.active}`], lineNumbers: [phase.line] },
+      code: config.code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(config.phases.map((item) => item.title), index),
+      state: { example: config.example, target: config.target, visual_family: family, result: index === config.phases.length - 1 ? config.result : "not final", ...phase.state },
+    }, index + 1);
   });
 }
 

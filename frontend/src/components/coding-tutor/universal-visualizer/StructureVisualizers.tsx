@@ -227,6 +227,21 @@ export function QueueVisualizer({ step }: { step: Step }) {
 export function LinkedListVisualizer({ step }: { step: Step }) {
   const nodes = sortedByX(step.nodes);
   const realNodes = nodes.filter((node) => String(node.value).toLowerCase() !== "null");
+  const nodeOrder = new Map(realNodes.map((node, index) => [node.id, index]));
+  const activeJumpEdge = step.edges.find((edge) => {
+    if (!isEdgeActive(edge, step)) return false;
+    const fromIndex = nodeOrder.get(edge.from);
+    const toIndex = nodeOrder.get(edge.to);
+    return typeof fromIndex === "number" && typeof toIndex === "number" && toIndex !== fromIndex + 1;
+  });
+  const jumpFrom = activeJumpEdge ? realNodes[nodeOrder.get(activeJumpEdge.from) || 0]?.value : "";
+  const jumpTo = activeJumpEdge ? realNodes[nodeOrder.get(activeJumpEdge.to) || 0]?.value : "";
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example ?? state.sample);
+  const target = formatArrayStateValue(state.target ?? state.goal ?? "follow next links");
+  const resultText = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? "not final");
+  const hidden = new Set(["answer", "changed", "example", "expected", "final_result", "goal", "result", "sample", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
   const nullNode = nodes.find((node) => String(node.value).toLowerCase() === "null") || {
     id: "null",
     value: "null",
@@ -237,21 +252,66 @@ export function LinkedListVisualizer({ step }: { step: Step }) {
     label: "next",
   };
   return (
-    <Canvas concept={step.concept} className="ucv-structure-canvas ucv-linked-canvas">
+    <Canvas concept={step.concept} className="ucv-structure-canvas ucv-linked-canvas ucv-linked-canvas--with-panel">
+      <aside className="ucv-array-state-panel ucv-linked-state-panel" aria-label="Linked list trace state">
+        {example ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">example</span>
+            <strong className="ucv-array-state-panel-value">{example}</strong>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">target</span>
+          <strong className="ucv-array-state-panel-value">{target}</strong>
+        </div>
+        {variables.length ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">variables</span>
+            <div className="ucv-array-state-panel-list">
+              {variables.slice(0, 5).map(([key, value]) => (
+                <div key={key} className="ucv-array-state-panel-row">
+                  <span>{key.replace(/_/g, " ")}</span>
+                  <strong>{formatArrayStateValue(value)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultText}</strong>
+        </div>
+      </aside>
       <div className="ucv-linked-shell" aria-label="Linked list visualizer">
         <span className="ucv-head-label">head</span>
         <div className="ucv-linked-row">
-          {realNodes.map((node, index) => (
-            <div className="ucv-linked-item" key={node.id}>
-              <StatusBlock node={{ ...node, label: "" }} step={step} className="ucv-linked-node" split />
-              <span
-                className={`ucv-inline-arrow ${isEdgeActive(edgeBetween(step.edges, node.id, realNodes[index + 1]?.id || "null") || { from: node.id, to: "null", type: "pointer" }, step) ? "is-active" : ""}`}
-                aria-hidden="true"
-              />
-            </div>
-          ))}
+          {realNodes.map((node, index) => {
+            const nextNode = realNodes[index + 1];
+            const straightEdge = nextNode ? edgeBetween(step.edges, node.id, nextNode.id) : undefined;
+            const hasOutgoingEdge = step.edges.some((edge) => edge.from === node.id);
+            const showNullLink = !nextNode && !hasOutgoingEdge;
+            return (
+              <div className="ucv-linked-item" key={node.id}>
+                <StatusBlock node={{ ...node, label: "" }} step={step} className="ucv-linked-node" split />
+                {straightEdge || showNullLink ? (
+                  <span
+                    className={`ucv-inline-arrow ${straightEdge && isEdgeActive(straightEdge, step) ? "is-active" : ""}`}
+                    aria-hidden="true"
+                  />
+                ) : nextNode ? (
+                  <span className="ucv-inline-gap" aria-hidden="true" />
+                ) : null}
+              </div>
+            );
+          })}
           <StatusBlock node={nullNode} step={step} className="ucv-null-node" />
         </div>
+        {activeJumpEdge ? (
+          <div className="ucv-linked-jump-note">
+            <span>active next link</span>
+            <strong>{formatArrayStateValue(jumpFrom)} to {formatArrayStateValue(jumpTo)}</strong>
+          </div>
+        ) : null}
       </div>
     </Canvas>
   );
@@ -424,6 +484,66 @@ function ReverseWordsVisualizer({
   );
 }
 
+function PrefixSearchTrieVisualizer({ step }: { step: Step }) {
+  const phaseText = `${step.title} ${step.description}`.toLowerCase();
+  const checkingCode = phaseText.includes("code");
+  const checkingCard = phaseText.includes("card");
+  const checkingCar = phaseText.includes("car");
+  const keepingCard = phaseText.includes("keep card");
+  const keepingCar = phaseText.includes("keep car");
+  const returning = phaseText.includes("return");
+  const caActive = checkingCard || checkingCar || keepingCard || keepingCar || returning;
+  const coActive = checkingCode;
+  const cardKept = keepingCard || checkingCar || keepingCar || returning;
+  const carKept = keepingCar || returning;
+  const nodes = [
+    { id: "root", label: "root", value: "start", x: 2, y: 0, active: !caActive && !coActive },
+    { id: "c", label: "char", value: "c", x: 2, y: 1, active: caActive || coActive },
+    { id: "ca", label: "prefix", value: "ca", x: 1, y: 2, active: caActive },
+    { id: "co", label: "branch", value: "co", x: 3, y: 2, active: coActive, skipped: checkingCode || returning },
+    { id: "card", label: "word", value: "card", x: 0, y: 3, active: checkingCard || keepingCard, matched: cardKept },
+    { id: "car", label: "word", value: "car", x: 2, y: 3, active: checkingCar || keepingCar, matched: carKept },
+    { id: "code", label: "word", value: "code", x: 4, y: 3, active: checkingCode, skipped: checkingCode || returning },
+  ];
+  const activeEdges = new Set<string>();
+  if (caActive || coActive) activeEdges.add("root-c");
+  if (caActive) activeEdges.add("c-ca");
+  if (coActive) activeEdges.add("c-co");
+  if (checkingCard || keepingCard) activeEdges.add("ca-card");
+  if (checkingCar || keepingCar) activeEdges.add("ca-car");
+  if (checkingCode) activeEdges.add("co-code");
+  return (
+    <div className="ucv-prefix-trie-shell" aria-label="Prefix trie visualizer">
+      <svg className="ucv-prefix-trie-lines" viewBox="0 0 560 340" aria-hidden="true">
+        {[
+          ["root-c", 280, 56, 280, 126],
+          ["c-ca", 280, 148, 184, 218],
+          ["c-co", 280, 148, 376, 218],
+          ["ca-card", 184, 240, 88, 310],
+          ["ca-car", 184, 240, 280, 310],
+          ["co-code", 376, 240, 472, 310],
+        ].map(([id, x1, y1, x2, y2]) => (
+          <line key={id} x1={x1} y1={y1} x2={x2} y2={y2} className={activeEdges.has(String(id)) ? "is-active" : ""} />
+        ))}
+      </svg>
+      {nodes.map((node) => (
+        <motion.div
+          key={node.id}
+          layout
+          className={`ucv-prefix-trie-node ${node.active ? "is-active" : ""} ${node.matched ? "is-matched" : ""} ${node.skipped ? "is-skipped" : ""}`}
+          style={{ "--trie-x": node.x, "--trie-y": node.y } as CSSProperties}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: node.skipped ? 0.45 : 1, scale: node.active ? 1.05 : 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 24 }}
+        >
+          <span>{node.label}</span>
+          <strong>{node.value}</strong>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 function StringScanVisualizer({ step }: { step: Step }) {
   const example = stepExample(step);
   const charNodes = sortedByX(step.nodes).filter((node) => node.id.startsWith("char-") || node.meta?.role === "string-cell");
@@ -438,13 +558,16 @@ function StringScanVisualizer({ step }: { step: Step }) {
   const activeIndex = Math.min(Math.max(activeCharIndex < 0 ? activeNodeIndex(step, visibleTokens.length) : activeCharIndex, 0), Math.max(visibleTokens.length - 1, 0));
   const resultNode = step.nodes.find((node) => node.id === "string-result" || node.meta?.role === "result");
   const isReverseWords = step.state?.visual_family === "string-reverse-words";
+  const isPrefixSearch = step.state?.visual_family === "string-prefix-search";
   return (
-    <Canvas concept={step.concept} className="ucv-structure-canvas ucv-string-canvas">
+    <Canvas concept={step.concept} className={`ucv-structure-canvas ucv-string-canvas${isPrefixSearch ? " ucv-prefix-search-canvas" : ""}`}>
       <div className="ucv-string-visual-layout" aria-label="String scan visualizer">
         <StringStatePanel step={step} example={example || visibleTokens.join(useWords ? " " : "")} resultNode={resultNode} />
         <div className="ucv-string-main-region">
           {isReverseWords ? (
             <ReverseWordsVisualizer step={step} visibleTokens={visibleTokens} activeIndex={activeIndex} />
+          ) : isPrefixSearch ? (
+            <PrefixSearchTrieVisualizer step={step} />
           ) : (
             <>
               <div className={`ucv-string-ribbon${useWords ? " ucv-string-ribbon--words" : ""}`} style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
@@ -481,26 +604,64 @@ function BitVisualizer({ step }: { step: Step }) {
   const visibleBits = bits.length ? bits.slice(0, 12) : ["1", "0", "1", "1"];
   const activeIndex = activeNodeIndex(step, visibleBits.length);
   const places = visibleBits.map((_, index) => 2 ** (visibleBits.length - index - 1));
+  const state = step.state || {};
+  const hidden = new Set(["answer", "example", "expected", "final_result", "result", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
+  const example = formatArrayStateValue(state.example);
+  const target = formatArrayStateValue(state.target ?? "inspect the bit pattern");
+  const resultText = formatArrayStateValue(state.result ?? state.final_result ?? "not final");
+  const activeBit = visibleBits[activeIndex] ?? "0";
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-bit-canvas">
-      <div className="ucv-bit-shell" aria-label="Bit manipulation visualizer">
-        <div className="ucv-bit-register">
-          {visibleBits.map((bit, index) => (
-            <motion.div
-              key={`bit-${index}`}
-              layout
-              className={`ucv-bit-cell ${index === activeIndex ? "is-active" : ""} ${bit === "1" ? "has-one" : ""}`}
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            >
-              <span>{places[index]}</span>
-              <strong>{bit}</strong>
-            </motion.div>
-          ))}
-        </div>
-        <div className="ucv-bit-caption">
-          <span>{visibleBits[activeIndex] === "1" ? "1 changes the count or mask" : "0 usually leaves the count alone"}</span>
+      <div className="ucv-bit-visual-layout" aria-label="Bit manipulation visualizer">
+        <aside className="ucv-array-state-panel ucv-bit-state-panel" aria-label="Bit manipulation trace memory">
+          {example ? (
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">example</span>
+              <strong className="ucv-array-state-panel-value">{example}</strong>
+            </div>
+          ) : null}
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">target</span>
+            <strong className="ucv-array-state-panel-value">{target}</strong>
+          </div>
+          {variables.length ? (
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">variables</span>
+              <div className="ucv-array-state-panel-list">
+                {variables.slice(0, 5).map(([key, value]) => (
+                  <div key={key} className="ucv-array-state-panel-row">
+                    <span>{arrayStateLabel(key)}</span>
+                    <strong>{formatArrayStateValue(value)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+            <span className="ucv-array-state-panel-label">result so far</span>
+            <strong className="ucv-array-state-panel-value">{resultText}</strong>
+          </div>
+        </aside>
+        <div className="ucv-bit-shell">
+          <div className="ucv-bit-register">
+            {visibleBits.map((bit, index) => (
+              <motion.div
+                key={`bit-${index}`}
+                layout
+                className={`ucv-bit-cell ${index === activeIndex ? "is-active" : ""} ${bit === "1" ? "has-one" : ""}`}
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: step.nodes[index]?.state === "inactive" ? 0.34 : 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              >
+                <span>{places[index]}</span>
+                <strong>{bit}</strong>
+              </motion.div>
+            ))}
+          </div>
+          <div className="ucv-bit-caption">
+            <span>{formatArrayStateValue(state.caption ?? `active bit ${activeBit}`)}</span>
+          </div>
         </div>
       </div>
     </Canvas>
@@ -1249,12 +1410,36 @@ export function ArrayVisualizer({ step }: { step: Step }) {
 
 type PositionedNode = VisualNode & { fx: number; fy: number };
 
-function layoutWithDagre(nodes: VisualNode[], edges: Edge[], rankdir: "TB" | "LR", nodeWidth = 132, nodeHeight = 86): PositionedNode[] {
+type DagreLayoutOptions = {
+  nodeWidth?: number;
+  nodeHeight?: number;
+  nodesep?: number;
+  ranksep?: number;
+  marginx?: number;
+  marginy?: number;
+};
+
+function layoutWithDagre(
+  nodes: VisualNode[],
+  edges: Edge[],
+  rankdir: "TB" | "LR",
+  {
+    nodeWidth = 132,
+    nodeHeight = 86,
+    nodesep = 56,
+    ranksep = 92,
+    marginx = 40,
+    marginy = 40,
+  }: DagreLayoutOptions = {},
+): PositionedNode[] {
   if (!nodes.length) return [];
   const graph = new dagre.graphlib.Graph();
   graph.setDefaultEdgeLabel(() => ({}));
-  graph.setGraph({ rankdir, nodesep: 56, ranksep: 92, marginx: 40, marginy: 40 });
-  nodes.forEach((node) => graph.setNode(node.id, { width: nodeWidth, height: nodeHeight }));
+  graph.setGraph({ rankdir, nodesep, ranksep, marginx, marginy });
+  nodes.forEach((node) => {
+    const isTrieEnd = Boolean(node.meta?.terminal) || String(node.label || "").toLowerCase().startsWith("end ");
+    graph.setNode(node.id, { width: isTrieEnd ? nodeWidth * 0.78 : nodeWidth, height: isTrieEnd ? nodeHeight * 0.72 : nodeHeight });
+  });
   edges.forEach((edge) => {
     if (nodes.some((node) => node.id === edge.from) && nodes.some((node) => node.id === edge.to)) {
       graph.setEdge(edge.from, edge.to);
@@ -1276,6 +1461,67 @@ function layoutWithDagre(nodes: VisualNode[], edges: Edge[], rankdir: "TB" | "LR
   });
 }
 
+function layoutTriePrefixTree(nodes: VisualNode[], edges: Edge[], compact = false): PositionedNode[] {
+  if (!nodes.length) return [];
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const childrenById = new Map<string, string[]>();
+  const childIds = new Set<string>();
+  edges.forEach((edge) => {
+    if (!nodeById.has(edge.from) || !nodeById.has(edge.to)) return;
+    childIds.add(edge.to);
+    const children = childrenById.get(edge.from) || [];
+    children.push(edge.to);
+    childrenById.set(edge.from, children);
+  });
+  childrenById.forEach((children) => {
+    children.sort((left, right) => {
+      const leftNode = nodeById.get(left);
+      const rightNode = nodeById.get(right);
+      return String(leftNode?.value ?? left).localeCompare(String(rightNode?.value ?? right));
+    });
+  });
+  const rootId = nodeById.has("root") ? "root" : nodes.find((node) => !childIds.has(node.id))?.id || nodes[0].id;
+  const depthById = new Map<string, number>([[rootId, 0]]);
+  const xById = new Map<string, number>();
+  let leafIndex = 0;
+  const leafGap = compact ? 190 : 172;
+  const rankGap = compact ? 88 : 124;
+
+  const assign = (id: string, depth: number): number => {
+    depthById.set(id, depth);
+    const children = childrenById.get(id) || [];
+    if (!children.length) {
+      const x = leafIndex * leafGap;
+      leafIndex += 1;
+      xById.set(id, x);
+      return x;
+    }
+    const childXs = children.map((childId) => assign(childId, depth + 1));
+    const x = (Math.min(...childXs) + Math.max(...childXs)) / 2;
+    xById.set(id, x);
+    return x;
+  };
+
+  assign(rootId, 0);
+  nodes.forEach((node) => {
+    if (!xById.has(node.id)) {
+      xById.set(node.id, leafIndex * leafGap);
+      depthById.set(node.id, 0);
+      leafIndex += 1;
+    }
+  });
+
+  const minX = Math.min(...Array.from(xById.values()));
+  const maxX = Math.max(...Array.from(xById.values()));
+  const offsetX = Math.max(90, (CANVAS_WIDTH - (maxX - minX)) / 2);
+  const offsetY = compact ? 52 : 72;
+  return nodes.map((node) => ({
+    ...node,
+    fx: offsetX + (xById.get(node.id) || 0) - minX,
+    fy: offsetY + (depthById.get(node.id) || 0) * rankGap,
+  }));
+}
+
 type FlowCardData = {
   node: VisualNode;
   step: Step;
@@ -1290,10 +1536,14 @@ function FlowNodeCard({ data }: { data: FlowCardData }) {
   const { node, step, variant = "" } = data;
   const status = nodeStatus(node, step);
   const muted = node.state === "inactive" || node.state === "skipped";
+  const modifiers = [
+    node.meta?.terminal ? "ucv-flow-node-card--terminal" : "",
+    step.state?.visual_family === "trie-longest-common-prefix" ? "ucv-flow-node-card--trie-compact" : "",
+  ].filter(Boolean).join(" ");
   return (
     <motion.div
       layout
-      className={`ucv-flow-node-card ucv-flow-node-card--${status} ${variant}`}
+      className={`ucv-flow-node-card ucv-flow-node-card--${status} ${variant} ${modifiers}`}
       initial={{ opacity: 0, scale: 0.86 }}
       animate={{ opacity: muted ? 0.62 : 1, scale: status === "active" || status === "highlighted" ? 1.05 : 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 24 }}
@@ -1318,6 +1568,17 @@ function HeapSlotNode({ data }: { data: HeapSlotData }) {
 }
 
 const nodeTypes = { visualNode: FlowNodeCard, heapSlot: HeapSlotNode };
+
+function flowCardSize(node: VisualNode, step: Step): { width: number; height: number } {
+  const compactTrie = step.concept === "trie" && step.state?.visual_family === "trie-longest-common-prefix";
+  if (compactTrie) {
+    return node.meta?.terminal ? { width: 82, height: 54 } : { width: 92, height: 58 };
+  }
+  if (step.concept === "trie") {
+    return node.meta?.terminal ? { width: 88, height: 66 } : { width: 104, height: 84 };
+  }
+  return { width: 132, height: 86 };
+}
 
 function flowEdgeFromStep(edge: Edge, step: Step, rankdir: "TB" | "LR"): FlowEdge {
   const active = isEdgeActive(edge, step);
@@ -1379,18 +1640,36 @@ function FlowScene({
   );
 }
 
-function NetworkScene({ step, rankdir, className = "", children }: { step: Step; rankdir: "TB" | "LR"; className?: string; children?: ReactNode }) {
-  const positioned = useMemo(() => layoutWithDagre(step.nodes, step.edges, rankdir), [step.nodes, step.edges, rankdir]);
-  const flowNodes = positioned.map((node) => ({
-    id: node.id,
-    type: "visualNode",
-    position: { x: node.fx - 66, y: node.fy - 43 },
-    data: {
-      node,
-      step,
-      variant: `ucv-flow-node-card--${step.concept}`,
-    },
-  }));
+function NetworkScene({
+  step,
+  rankdir,
+  className = "",
+  children,
+  layoutOptions,
+}: {
+  step: Step;
+  rankdir: "TB" | "LR";
+  className?: string;
+  children?: ReactNode;
+  layoutOptions?: DagreLayoutOptions;
+}) {
+  const positioned = useMemo(
+    () => (step.concept === "trie" && rankdir === "TB" ? layoutTriePrefixTree(step.nodes, step.edges, step.state?.visual_family === "trie-longest-common-prefix") : layoutWithDagre(step.nodes, step.edges, rankdir, layoutOptions)),
+    [step.nodes, step.edges, rankdir, layoutOptions, step.concept, step.state?.visual_family],
+  );
+  const flowNodes = positioned.map((node) => {
+    const size = flowCardSize(node, step);
+    return {
+      id: node.id,
+      type: "visualNode",
+      position: { x: node.fx - size.width / 2, y: node.fy - size.height / 2 },
+      data: {
+        node,
+        step,
+        variant: `ucv-flow-node-card--${step.concept}`,
+      },
+    };
+  });
   const visibleNodeIds = new Set(step.nodes.map((node) => node.id));
   const flowEdges = step.edges
     .filter((edge) => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to))
@@ -1499,8 +1778,54 @@ function HeapVisualizer({ step }: { step: Step }) {
   );
 }
 
+function TrieVisualizer({ step }: { step: Step }) {
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example ?? "words=[cat, car]");
+  const target = formatArrayStateValue(state.target ?? "walk the prefix path");
+  const resultText = formatArrayStateValue(state.result ?? state.final_result ?? "not final");
+  const hidden = new Set(["answer", "changed", "example", "expected", "final_result", "goal", "result", "sample", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
+  return (
+    <NetworkScene
+      step={step}
+      rankdir="TB"
+      className="ucv-tree-canvas ucv-tree-canvas--with-panel ucv-trie-canvas--with-panel"
+      layoutOptions={{ nodeWidth: 112, nodeHeight: 92, nodesep: 138, ranksep: 146, marginx: 96, marginy: 58 }}
+    >
+      <aside className="ucv-array-state-panel ucv-trie-state-panel" aria-label="Trie trace state">
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">example</span>
+          <strong className="ucv-array-state-panel-value">{example}</strong>
+        </div>
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">target</span>
+          <strong className="ucv-array-state-panel-value">{target}</strong>
+        </div>
+        {variables.length ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">variables</span>
+            <div className="ucv-array-state-panel-list">
+              {variables.slice(0, 5).map(([key, value]) => (
+                <div key={key} className="ucv-array-state-panel-row">
+                  <span>{key.replace(/_/g, " ")}</span>
+                  <strong>{formatArrayStateValue(value)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultText}</strong>
+        </div>
+      </aside>
+    </NetworkScene>
+  );
+}
+
 export function TreeVisualizer({ step }: { step: Step }) {
   if (step.concept === "heap") return <HeapVisualizer step={step} />;
+  if (step.concept === "trie") return <TrieVisualizer step={step} />;
   if (step.concept !== "binary-tree") return <NetworkScene step={step} rankdir="TB" className="ucv-tree-canvas" />;
   const state = step.state || {};
   const example = formatArrayStateValue(state.example ?? state.sample);
