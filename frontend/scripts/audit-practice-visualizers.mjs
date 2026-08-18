@@ -141,7 +141,14 @@ const familyStepTargets = {
   "heap-priority": 7,
   "trie-prefix": 7,
   "union-find": 7,
+  "interval-busy-minutes": 7,
+  "interval-count-overlap": 7,
+  "interval-gap": 7,
+  "interval-insert": 7,
+  "interval-meeting-rooms": 7,
   "interval-merge": 7,
+  "interval-overlap": 7,
+  "interval-schedule-valid": 7,
   "bit-count": 7,
   "conditional-flow": 6,
   "set-membership": 6,
@@ -279,6 +286,17 @@ const truePrefixSumFamilies = {
   "hard-32": { family: "prefix-subarray-longest", sample: "nums=[1,-1,5,-2,3], k=3", expected: "4" },
 };
 
+const trueIntervalFamilies = {
+  "easy-77": { family: "interval-overlap", sample: "a=[1,4], b=[3,6]", expected: "true" },
+  "easy-78": { family: "interval-gap", sample: "a=[1,3], b=[6,8]", expected: "3" },
+  "medium-12": { family: "interval-schedule-valid", sample: "intervals=[[9,10],[10,11],[10,12]]", expected: "false" },
+  "medium-26": { family: "interval-merge", sample: "intervals=[[1,3],[2,6],[8,10]]", expected: "[[1,6],[8,10]]" },
+  "medium-48": { family: "interval-count-overlap", sample: "intervals=[[9,11],[10,12],[13,15]], time=10", expected: "2" },
+  "medium-68": { family: "interval-insert", sample: "intervals=[[1,3],[6,8]], newInterval=[2,7]", expected: "[[1,8]]" },
+  "hard-13": { family: "interval-meeting-rooms", sample: "intervals=[[0,30],[5,10],[15,20]]", expected: "2" },
+  "hard-34": { family: "interval-busy-minutes", sample: "intervals=[[9,12],[11,13],[14,16]]", expected: "6" },
+};
+
 function visualizerFamilyText(problem) {
   return `${problem?.title || ""} ${problem?.topic || ""} ${problem?.prompt || ""} ${problem?.visualizer?.title || ""} ${problem?.visualizer?.caption || ""} ${problem?.visualizer?.concept || ""}`.toLowerCase();
 }
@@ -381,7 +399,17 @@ function detectVisualizerFamily(problem, concept) {
   }
   if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
   if (concept === "matrix") return "matrix-traverse";
-  if (concept === "intervals") return "interval-merge";
+  if (concept === "intervals") {
+    if (/two intervals overlap/.test(text)) return "interval-overlap";
+    if (/gap between ranges/.test(text)) return "interval-gap";
+    if (/valid study schedule/.test(text)) return "interval-schedule-valid";
+    if (/merge overlapping intervals/.test(text)) return "interval-merge";
+    if (/count overlapping intervals/.test(text)) return "interval-count-overlap";
+    if (/insert one interval/.test(text)) return "interval-insert";
+    if (/minimum meeting rooms/.test(text)) return "interval-meeting-rooms";
+    if (/total busy minutes/.test(text)) return "interval-busy-minutes";
+    return "interval-merge";
+  }
   if (concept === "heap") return "heap-priority";
   if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
@@ -546,6 +574,7 @@ function compactVisualInput(problem, concept, state = {}) {
   if (trueTwoPointerFamilies[problem.id]) return trueTwoPointerFamilies[problem.id].sample;
   if (trueSlidingWindowFamilies[problem.id]) return trueSlidingWindowFamilies[problem.id].sample;
   if (truePrefixSumFamilies[problem.id]) return truePrefixSumFamilies[problem.id].sample;
+  if (trueIntervalFamilies[problem.id]) return trueIntervalFamilies[problem.id].sample;
   if (title.includes("vowel")) return "Code";
   if (title.includes("palindrome")) return "level";
   if (title.includes("reverse words")) return "red blue";
@@ -615,6 +644,7 @@ function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
   if (concept === "two-pointers") return true;
   if (concept === "sliding-window") return true;
   if (concept === "prefix-sum") return true;
+  if (concept === "intervals") return true;
   const target = targetStepCountFor(problem, concept);
   if (!rawSteps.length || rawSteps.length >= target) return false;
   if (rawSteps.length < Math.min(target, 6)) return true;
@@ -839,6 +869,18 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       }
       if (family === "prefix-range") {
         warnings.push(`${problem.id} ${problem.title}: Prefix Sum visualizer still uses shared generic family`);
+      }
+    }
+    const requiredInterval = trueIntervalFamilies[problem.id];
+    if (requiredInterval) {
+      if (family !== requiredInterval.family) {
+        warnings.push(`${problem.id} ${problem.title}: Interval visualizer routes to "${family}", expected "${requiredInterval.family}"`);
+      }
+      if (sample !== requiredInterval.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Interval sample is "${sample}", expected "${requiredInterval.sample}"`);
+      }
+      if (family === "interval-merge" && requiredInterval.family !== "interval-merge") {
+        warnings.push(`${problem.id} ${problem.title}: Interval visualizer still uses shared merge fallback`);
       }
     }
     const requiredString = trueStringFamilies[problem.id];

@@ -117,6 +117,7 @@ function StateStrip({ step }: { step: Step }) {
   if (step.concept === "sliding-window") return null;
   if (step.concept === "binary-search") return null;
   if (step.concept === "prefix-sum") return null;
+  if (step.concept === "intervals") return null;
   if (isStringVisualStep(step)) {
     const hasReturned = step.state?.returned === true;
     const finalResult = hasReturned

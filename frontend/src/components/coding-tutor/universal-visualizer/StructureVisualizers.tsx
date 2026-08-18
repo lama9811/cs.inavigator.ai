@@ -1630,29 +1630,90 @@ export function DPTableVisualizer({ step }: { step: Step }) {
 }
 
 export function IntervalVisualizer({ step }: { step: Step }) {
-  const intervals = [...step.nodes].sort((a, b) => a.y - b.y || a.x - b.x);
+  const intervals = [...step.nodes]
+    .filter((node) => node.meta?.role === "interval-bar")
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example);
+  const target = formatArrayStateValue(state.target ?? "compare interval endpoints");
+  const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.final_result);
+  const hidden = new Set(["answer", "example", "final_result", "result", "returned", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
+  const starts = intervals.map((node) => Number(node.meta?.start)).filter(Number.isFinite);
+  const ends = intervals.map((node) => Number(node.meta?.end)).filter(Number.isFinite);
+  const minTick = Number.isFinite(Number(state.axis_start)) ? Number(state.axis_start) : Math.min(...starts, 0);
+  const maxTick = Number.isFinite(Number(state.axis_end)) ? Number(state.axis_end) : Math.max(...ends, minTick + 1);
+  const span = Math.max(1, maxTick - minTick);
+  const tickCount = Math.min(7, span + 1);
+  const ticks = Array.from({ length: tickCount }, (_, index) => Math.round(minTick + (span * index) / Math.max(1, tickCount - 1)));
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-interval-canvas">
-      <div className="ucv-interval-axis" aria-hidden="true" />
-      <div className="ucv-interval-list">
-        {intervals.map((node) => {
-          const width = typeof node.meta?.width === "number" ? Number(node.meta.width) : 160;
-          const left = Math.max(0, Math.min(72, ((node.x - width / 2) / CANVAS_WIDTH) * 100));
-          return (
-            <motion.div
-              key={node.id}
-              layout
-              className={`ucv-interval-bar ucv-interval-bar--${nodeStatus(node, step)}`}
-              style={{ width: `${Math.min(82, (width / CANVAS_WIDTH) * 100)}%`, marginLeft: `${left}%` }}
-              initial={{ opacity: 0, scaleX: 0.7 }}
-              animate={{ opacity: 1, scaleX: 1 }}
-              transition={{ type: "spring", stiffness: 240, damping: 25 }}
-            >
-              <span>{node.label}</span>
-              <strong>{node.value}</strong>
-            </motion.div>
-          );
-        })}
+      <div className="ucv-interval-layout" aria-label="Interval visualizer">
+        <aside className="ucv-array-state-panel ucv-interval-state-panel" aria-label="Interval trace memory">
+          {example ? (
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">example</span>
+              <strong className="ucv-array-state-panel-value">{example}</strong>
+            </div>
+          ) : null}
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">target</span>
+            <strong className="ucv-array-state-panel-value">{target}</strong>
+          </div>
+          {variables.length ? (
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">variables</span>
+              <div className="ucv-array-state-panel-list">
+                {variables.map(([key, value]) => (
+                  <div className="ucv-array-state-panel-row" key={key}>
+                    <span>{arrayStateLabel(key)}</span>
+                    <strong>{formatArrayStateValue(value)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {resultSoFar ? (
+            <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+              <span className="ucv-array-state-panel-label">result so far</span>
+              <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+            </div>
+          ) : null}
+        </aside>
+        <div className="ucv-interval-stage">
+          <div className="ucv-interval-ticks" aria-hidden="true">
+            {ticks.map((tick) => (
+              <span key={`${tick}-${minTick}-${maxTick}`}>{tick}</span>
+            ))}
+          </div>
+          <div className="ucv-interval-axis" aria-hidden="true" />
+          <div className="ucv-interval-list">
+            {intervals.map((node) => {
+              const start = Number(node.meta?.start);
+              const end = Number(node.meta?.end);
+              const left = Number.isFinite(start) ? ((start - minTick) / span) * 100 : 0;
+              const width = Number.isFinite(start) && Number.isFinite(end) ? ((end - start) / span) * 100 : 28;
+              return (
+                <motion.div
+                  key={node.id}
+                  layout
+                  className={`ucv-interval-bar ucv-interval-bar--${nodeStatus(node, step)}`}
+                  style={{ width: `${Math.max(12, Math.min(92, width))}%`, marginLeft: `${Math.max(0, Math.min(88, left))}%` }}
+                  initial={{ opacity: 0, scaleX: 0.7 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
+                  transition={{ type: "spring", stiffness: 240, damping: 25 }}
+                >
+                  <span>{node.label}</span>
+                  <strong>{node.value}</strong>
+                </motion.div>
+              );
+            })}
+          </div>
+          <div className="ucv-interval-note">
+            <span>{formatArrayStateValue(state.action ?? "current rule")}</span>
+            <strong>{formatArrayStateValue(state.decision ?? state.check ?? state.result ?? "compare start and end points")}</strong>
+          </div>
+        </div>
       </div>
     </Canvas>
   );

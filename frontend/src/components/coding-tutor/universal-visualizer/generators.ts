@@ -110,6 +110,13 @@ type VisualizerFamily =
   | "hash-lookup"
   | "heap-priority"
   | "interval-merge"
+  | "interval-busy-minutes"
+  | "interval-count-overlap"
+  | "interval-gap"
+  | "interval-insert"
+  | "interval-meeting-rooms"
+  | "interval-overlap"
+  | "interval-schedule-valid"
   | "linked-list-traverse"
   | "math-count-digits"
   | "math-grade-points"
@@ -278,7 +285,17 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   }
   if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
   if (concept === "matrix") return "matrix-traverse";
-  if (concept === "intervals") return "interval-merge";
+  if (concept === "intervals") {
+    if (/two intervals overlap/.test(text)) return "interval-overlap";
+    if (/gap between ranges/.test(text)) return "interval-gap";
+    if (/valid study schedule/.test(text)) return "interval-schedule-valid";
+    if (/merge overlapping intervals/.test(text)) return "interval-merge";
+    if (/count overlapping intervals/.test(text)) return "interval-count-overlap";
+    if (/insert one interval/.test(text)) return "interval-insert";
+    if (/minimum meeting rooms/.test(text)) return "interval-meeting-rooms";
+    if (/total busy minutes/.test(text)) return "interval-busy-minutes";
+    return "interval-merge";
+  }
   if (concept === "heap") return "heap-priority";
   if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
@@ -515,6 +532,14 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
       if (title.includes("subarray sum count")) return "nums=[1,2,1,2], target=3";
       return "values=[2, 4, 1]";
     case "intervals":
+      if (title.includes("two intervals overlap")) return "a=[1,4], b=[3,6]";
+      if (title.includes("gap between ranges")) return "a=[1,3], b=[6,8]";
+      if (title.includes("valid study schedule")) return "intervals=[[9,10],[10,11],[10,12]]";
+      if (title.includes("merge overlapping intervals")) return "intervals=[[1,3],[2,6],[8,10]]";
+      if (title.includes("count overlapping intervals")) return "intervals=[[9,11],[10,12],[13,15]], time=10";
+      if (title.includes("insert one interval")) return "intervals=[[1,3],[6,8]], newInterval=[2,7]";
+      if (title.includes("minimum meeting rooms")) return "intervals=[[0,30],[5,10],[15,20]]";
+      if (title.includes("total busy minutes")) return "intervals=[[9,12],[11,13],[14,16]]";
       return "intervals=[[1,3],[2,5]]";
     case "heap":
       return "values=[30, 40, 50]";
@@ -2339,6 +2364,7 @@ function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string,
   if (concept === "two-pointers") return true;
   if (concept === "sliding-window") return true;
   if (concept === "prefix-sum") return true;
+  if (concept === "intervals") return true;
   if (rawSteps.length >= targetStepCount(concept)) return false;
   if (rawSteps.length < Math.min(targetStepCount(concept), 6)) return true;
   const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
@@ -6329,48 +6355,131 @@ export function generatePrefixSumSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateIntervalsSteps(context: GeneratorContext = {}): Step[] {
-  const code = [
-    "intervals.sort()",
-    "previous = intervals[0]",
-    "next = intervals[index]",
-    "if next.start < previous.end: return false",
-    "previous = next",
-    "return true",
-  ];
-  const intervalNodes = (activeIds: string[], overlapIds: string[] = [], result = "not decided"): Node[] => [
-    { id: "timeline", x: 455, y: 100, value: "9     10     11     12", type: "logic-node", label: "time line", state: "default", meta: { role: "memory" } },
-    { id: "a", x: 275, y: 220, value: "9-10", type: "array-cell", label: "A", state: activeIds.includes("a") ? "active" : "visited", meta: { role: "interval" } },
-    { id: "b", x: 445, y: 300, value: "10-11", type: "array-cell", label: "B", state: overlapIds.includes("b") ? "comparing" : activeIds.includes("b") ? "active" : "default", meta: { role: "interval" } },
-    { id: "c", x: 470, y: 390, value: "10-12", type: "array-cell", label: "C", state: overlapIds.includes("c") ? "comparing" : activeIds.includes("c") ? "active" : "default", meta: { role: "interval" } },
-    { id: "decision", x: 705, y: 300, value: result, type: "logic-node", label: "overlap check", state: result === "false" ? "matched" : activeIds.includes("decision") ? "active" : "default", meta: { role: "result" } },
-  ];
-  const phases = [
-    { active: ["a", "b", "c"], overlap: [], title: context.title || "Sort time ranges", desc: "Use a compact schedule: A 9-10, B 10-11, C 10-12.", line: 1, result: "not decided", state: { sorted: "A, B, C" } },
-    { active: ["a"], overlap: [], title: "Keep A as previous", desc: "A becomes the saved range to compare against the next class.", line: 2, result: "not decided", state: { previous: "A 9-10" } },
-    { active: ["a", "b"], overlap: [], title: "Compare A with B", desc: "B starts at 10 and A ends at 10, so they touch but do not overlap.", line: 4, result: "no overlap", state: { check: "10 < 10 is false" } },
-    { active: ["b"], overlap: [], title: "Carry B forward", desc: "Since B is safe with A, B becomes the previous range.", line: 5, result: "not decided", state: { previous: "B 10-11" } },
-    { active: ["b", "c"], overlap: ["b", "c"], title: "Compare B with C", desc: "C starts at 10 before B ends at 11, so these two classes overlap.", line: 4, result: "overlap found", state: { check: "10 < 11 is true" } },
-    { active: ["decision"], overlap: ["b", "c"], title: "Stop on conflict", desc: "One overlap is enough to make the study schedule invalid.", line: 4, result: "false", state: { conflict: "B overlaps C" } },
-    { active: ["decision"], overlap: ["b", "c"], title: "Return false", desc: "Return false because the schedule has a time conflict.", line: 4, result: "false", state: { result: "false" } },
-  ];
-  return phases.map((phase, index) => {
-    const nodes = intervalNodes(phase.active, phase.overlap, phase.result);
-    const edges: Edge[] = phase.active.includes("decision") || phase.overlap.length
-      ? [{ id: "conflict-result", from: "c", to: "decision", type: "pointer", state: "active" }]
-      : [];
+  const family = detectVisualizerFamily("intervals", context);
+  type IntervalItem = { id: string; label: string; start: number; end: number };
+  type IntervalPhase = { active: string[]; compare?: string[]; visited?: string[]; title: string; desc: string; line: number; state: Record<string, string | number | boolean> };
+  const make = (items: IntervalItem[], phases: IntervalPhase[], code: string[], axisStart: number, axisEnd: number) => phases.map((phase, index) => {
+    const nodes: Node[] = items.map((item, itemIndex) => ({
+      id: item.id,
+      x: 160 + itemIndex * 100,
+      y: 180 + itemIndex * 70,
+      value: `${item.start}-${item.end}`,
+      type: "array-cell",
+      label: item.label,
+      state: phase.compare?.includes(item.id) ? "comparing" : phase.active.includes(item.id) ? "active" : phase.visited?.includes(item.id) ? "visited" : "default",
+      meta: { role: "interval-bar", start: item.start, end: item.end },
+    }));
     return step({
       concept: "intervals",
       title: phase.title,
       description: phase.desc,
       nodes,
-      edges,
-      highlights: { nodeIds: [...phase.active, ...phase.overlap, ...(phase.result === "false" ? ["decision"] : [])], edgeIds: edges.map((edge) => edge.id || ""), lineNumbers: [phase.line] },
+      edges: [],
+      highlights: { nodeIds: [...phase.active, ...(phase.compare || [])], lineNumbers: [phase.line] },
       code,
       activeLine: phase.line,
       workflow: workflowFromLabels(phases.map((item) => item.title), index),
-      state: phase.state,
+      state: { axis_start: axisStart, axis_end: axisEnd, ...phase.state },
     }, index + 1);
   });
+  const title = context.title || "Intervals";
+
+  if (family === "interval-overlap") {
+    const example = "a=[1,4], b=[3,6]";
+    const target = "return true if closed intervals overlap";
+    const code = ["read the two intervals", "find the later start", "find the earlier end", "if later start <= earlier end, they overlap", "save the boolean result", "return true or false", "finish"];
+    return make([{ id: "a", label: "a", start: 1, end: 4 }, { id: "b", label: "b", start: 3, end: 6 }], [
+      { active: ["a", "b"], title, desc: "Use the actual sample: a covers 1-4 and b covers 3-6.", line: 1, state: { example, target, action: "read both ranges", result: "not decided" } },
+      { active: ["a"], compare: ["b"], title: "Later start is 3", desc: "The overlap can only begin at the later start.", line: 2, state: { example, target, later_start: 3 } },
+      { active: ["a"], compare: ["b"], title: "Earlier end is 4", desc: "The overlap must end by the earlier end.", line: 3, state: { example, target, earlier_end: 4 } },
+      { active: ["a", "b"], compare: ["a", "b"], title: "Shared section exists", desc: "Since 3 <= 4, both ranges cover part of the same timeline.", line: 4, state: { example, target, check: "3 <= 4", decision: "overlap from 3 to 4" } },
+      { active: ["a", "b"], compare: ["a", "b"], title: "Save true", desc: "Closed intervals that cross or touch count as overlapping.", line: 5, state: { example, target, result: "true" } },
+      { active: ["a", "b"], title: "Return true", desc: "Return the boolean value, not the word as text.", line: 6, state: { example, target, result: "true" } },
+      { active: ["a", "b"], visited: ["a", "b"], title: "Trace complete", desc: "The compact example matches the practice prompt output.", line: 7, state: { example, target, final_result: "true" } },
+    ], code, 1, 6);
+  }
+
+  if (family === "interval-gap") {
+    const example = "a=[1,3], b=[6,8]";
+    const target = "return the gap between ranges";
+    const code = ["read both ranges", "put the earlier range first", "read the earlier end", "read the later start", "subtract earlier end from later start", "save the gap", "return the gap"];
+    return make([{ id: "a", label: "a", start: 1, end: 3 }, { id: "b", label: "b", start: 6, end: 8 }], [
+      { active: ["a", "b"], title, desc: "Two separated bars make the empty gap visible.", line: 1, state: { example, target, result: "not decided" } },
+      { active: ["a"], visited: ["b"], title: "a comes first", desc: "a starts at 1, so use its end as the left edge of the gap.", line: 2, state: { example, target, first_range: "a" } },
+      { active: ["a"], title: "Read end 3", desc: "The first range ends at 3.", line: 3, state: { example, target, earlier_end: 3 } },
+      { active: ["b"], title: "Read start 6", desc: "The next range starts at 6.", line: 4, state: { example, target, later_start: 6 } },
+      { active: ["a", "b"], compare: ["a", "b"], title: "Measure gap", desc: "6 - 3 gives the space between the bars.", line: 5, state: { example, target, calculation: "6 - 3", decision: "gap is 3" } },
+      { active: ["a", "b"], title: "Save 3", desc: "The gap value is ready to return.", line: 6, state: { example, target, result: 3 } },
+      { active: ["a", "b"], visited: ["a", "b"], title: "Return 3", desc: "Return the numeric gap.", line: 7, state: { example, target, final_result: 3 } },
+    ], code, 1, 8);
+  }
+
+  if (family === "interval-schedule-valid") {
+    const example = "intervals=[[9,10],[10,11],[10,12]]";
+    const target = "return false if any classes overlap";
+    const code = ["sort by start time", "keep the previous class", "compare the next class", "a conflict happens when next start < previous end", "carry safe class forward", "stop on the first conflict", "return the boolean result"];
+    return make([{ id: "a", label: "A", start: 9, end: 10 }, { id: "b", label: "B", start: 10, end: 11 }, { id: "c", label: "C", start: 10, end: 12 }], [
+      { active: ["a", "b", "c"], title, desc: "Sort the classes by start time before comparing neighbors.", line: 1, state: { example, target, sorted: "A, B, C", result: "not decided" } },
+      { active: ["a"], title: "Keep A", desc: "A is the previous class for the first comparison.", line: 2, state: { example, target, previous: "A 9-10" } },
+      { active: ["a"], compare: ["b"], title: "A and B are safe", desc: "B starts at 10 exactly when A ends, so there is no conflict.", line: 4, state: { example, target, check: "10 < 10 is false", decision: "safe" } },
+      { active: ["b"], visited: ["a"], title: "Carry B forward", desc: "B becomes the previous class.", line: 5, state: { example, target, previous: "B 10-11" } },
+      { active: ["b"], compare: ["c"], title: "B and C conflict", desc: "C starts at 10 before B ends at 11.", line: 4, state: { example, target, check: "10 < 11 is true", decision: "conflict" } },
+      { active: ["b", "c"], compare: ["b", "c"], title: "Save false", desc: "One conflict is enough to reject the schedule.", line: 6, state: { example, target, conflict: "B overlaps C", result: "false" } },
+      { active: ["b", "c"], visited: ["a"], title: "Return false", desc: "Return the boolean result.", line: 7, state: { example, target, final_result: "false" } },
+    ], code, 9, 12);
+  }
+
+  if (family === "interval-count-overlap") {
+    const example = "intervals=[[9,11],[10,12],[13,15]], time=10";
+    const target = "count intervals containing time 10";
+    const code = ["read target time", "check one interval", "start must be <= time", "time must be <= end", "count the interval when both are true", "skip misses", "return the count"];
+    return make([{ id: "a", label: "A", start: 9, end: 11 }, { id: "b", label: "B", start: 10, end: 12 }, { id: "c", label: "C", start: 13, end: 15 }], [
+      { active: ["a"], title, desc: "Count intervals that include the target time 10.", line: 1, state: { example, target, time: 10, count: 0 } },
+      { active: ["a"], compare: ["a"], title: "A contains 10", desc: "9 <= 10 and 10 <= 11, so A counts.", line: 5, state: { example, target, check: "9 <= 10 <= 11", count: 1 } },
+      { active: ["b"], title: "Move to B", desc: "Check the next interval against the same target time.", line: 2, state: { example, target, time: 10, count: 1 } },
+      { active: ["b"], compare: ["b"], title: "B contains 10", desc: "10 sits on B's left endpoint, and closed intervals include endpoints.", line: 5, state: { example, target, check: "10 <= 10 <= 12", count: 2 } },
+      { active: ["c"], title: "Move to C", desc: "Keep the count while scanning the last interval.", line: 2, state: { example, target, count: 2 } },
+      { active: ["c"], title: "C misses 10", desc: "C starts at 13, after the target time.", line: 6, state: { example, target, check: "13 <= 10 is false", count: 2 } },
+      { active: ["a", "b"], visited: ["c"], title: "Return 2", desc: "Two intervals contain the target time.", line: 7, state: { example, target, final_result: 2 } },
+    ], code, 9, 15);
+  }
+
+  if (family === "interval-meeting-rooms") {
+    const example = "intervals=[[0,30],[5,10],[15,20]]";
+    const target = "return minimum rooms needed";
+    const code = ["sort starts and ends", "start the next meeting", "need a new room if it starts before earliest end", "reuse a room after a meeting ends", "update max rooms", "continue through meetings", "return max rooms"];
+    return make([{ id: "a", label: "A", start: 0, end: 30 }, { id: "b", label: "B", start: 5, end: 10 }, { id: "c", label: "C", start: 15, end: 20 }], [
+      { active: ["a"], title, desc: "A begins first and uses one room.", line: 2, state: { example, target, rooms_now: 1, max_rooms: 1 } },
+      { active: ["a"], compare: ["b"], title: "B overlaps A", desc: "B starts at 5 before A ends at 30, so it needs another room.", line: 3, state: { example, target, check: "5 < 30", rooms_now: 2 } },
+      { active: ["b"], title: "Max becomes 2", desc: "Two simultaneous meetings is the highest seen so far.", line: 5, state: { example, target, rooms_now: 2, max_rooms: 2 } },
+      { active: ["b"], visited: ["b"], title: "B ends", desc: "B ends at 10 before C starts, freeing one room.", line: 4, state: { example, target, freed_room: "B ended at 10", rooms_now: 1 } },
+      { active: ["a"], compare: ["c"], title: "C overlaps A", desc: "C starts at 15 while A is still running.", line: 3, state: { example, target, check: "15 < 30", rooms_now: 2 } },
+      { active: ["c"], title: "Max stays 2", desc: "C reuses the room B freed, so the maximum does not grow.", line: 6, state: { example, target, rooms_now: 2, max_rooms: 2 } },
+      { active: ["a", "b", "c"], visited: ["a", "b", "c"], title: "Return 2", desc: "At most two meetings overlap at once.", line: 7, state: { example, target, final_result: 2 } },
+    ], code, 0, 30);
+  }
+
+  const insert = family === "interval-insert";
+  const busy = family === "interval-busy-minutes";
+  const example = busy ? "intervals=[[9,12],[11,13],[14,16]]" : insert ? "intervals=[[1,3],[6,8]], newInterval=[2,7]" : "intervals=[[1,3],[2,6],[8,10]]";
+  const target = busy ? "return total covered minutes" : insert ? "return intervals after inserting and merging" : "return merged intervals";
+  const items = busy
+    ? [{ id: "a", label: "A", start: 9, end: 12 }, { id: "b", label: "B", start: 11, end: 13 }, { id: "c", label: "C", start: 14, end: 16 }]
+    : insert
+      ? [{ id: "a", label: "A", start: 1, end: 3 }, { id: "new", label: "new", start: 2, end: 7 }, { id: "b", label: "B", start: 6, end: 8 }]
+      : [{ id: "a", label: "A", start: 1, end: 3 }, { id: "b", label: "B", start: 2, end: 6 }, { id: "c", label: "C", start: 8, end: 10 }];
+  const code = busy
+    ? ["sort intervals", "start the current busy block", "merge overlapping busy time", "close separate blocks", "add block lengths", "return total busy minutes", "finish"]
+    : ["sort intervals", "start the current merged range", "compare next start with current end", "merge overlapping ranges", "store separate ranges", "return merged ranges", "finish"];
+  return make(items, [
+    { active: items.map((item) => item.id), title: context.title || (busy ? "Total Busy Minutes" : insert ? "Insert One Interval" : "Merge Overlapping Intervals"), desc: "Put the ranges on one timeline so overlap and gaps are visible.", line: 1, state: { example, target, sorted: items.map((item) => item.label).join(", "), result: "not decided" } },
+    { active: ["a"], title: "Start current block", desc: "The first interval becomes the saved block.", line: 2, state: { example, target, current: `${items[0].start}-${items[0].end}` } },
+    { active: ["a"], compare: [insert ? "new" : "b"], title: "Next range overlaps", desc: "The next range starts before the saved block ends, so extend the block.", line: 3, state: { example, target, decision: "merge", check: insert ? "2 <= 3" : busy ? "11 <= 12" : "2 <= 3" } },
+    { active: ["a", insert ? "new" : "b"], compare: ["a", insert ? "new" : "b"], title: "Extend block", desc: busy ? "A and B become one busy block from 9-13." : insert ? "A plus the inserted interval becomes 1-7." : "A and B merge into 1-6.", line: 4, state: { example, target, current: busy ? "9-13" : insert ? "1-7" : "1-6" } },
+    { active: [insert ? "b" : "c"], title: busy ? "Close first block" : insert ? "Merge B too" : "Store separate C", desc: busy ? "C starts after 13, so close 9-13 before starting 14-16." : insert ? "B starts before 1-7 ends, so the block extends again." : "C starts after 1-6 ends, so it stays separate.", line: 5, state: { example, target, current: busy ? "14-16" : insert ? "1-8" : "8-10", result: busy ? "4 minutes so far" : insert ? "[[1,8]]" : "[[1,6]]" } },
+    { active: [insert ? "b" : "c"], visited: ["a", insert ? "new" : "b"], title: busy ? "Add final block" : "Save final list", desc: busy ? "4 minutes plus 2 minutes gives 6 total busy minutes." : insert ? "All ranges collapse into one interval." : "The separate range is appended to the answer.", line: 6, state: { example, target, result: busy ? 6 : insert ? "[[1,8]]" : "[[1,6],[8,10]]" } },
+    { active: items.map((item) => item.id), visited: items.map((item) => item.id), title: busy ? "Return 6" : "Return result", desc: busy ? "Return the total covered length after merging overlap." : "Return only the merged interval list.", line: 7, state: { example, target, final_result: busy ? 6 : insert ? "[[1,8]]" : "[[1,6],[8,10]]" } },
+  ], code, busy ? 9 : 1, busy ? 16 : 10);
 }
 
 export function generateHeapSteps(context: GeneratorContext = {}): Step[] {

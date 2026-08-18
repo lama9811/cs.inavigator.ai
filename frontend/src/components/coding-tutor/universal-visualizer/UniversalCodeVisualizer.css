@@ -2576,8 +2576,41 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
   justify-items: stretch;
 }
 
+.ucv-interval-layout {
+  display: grid;
+  grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  width: min(940px, 100%);
+  padding-inline: clamp(0.25rem, 1vw, 0.75rem);
+  box-sizing: border-box;
+}
+
+.ucv-interval-state-panel {
+  min-width: 11rem;
+}
+
+.ucv-interval-stage {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.ucv-interval-ticks {
+  display: grid;
+  grid-template-columns: repeat(var(--ucv-interval-ticks, 7), minmax(0, 1fr));
+  width: min(640px, 100%);
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.ucv-interval-ticks span {
+  text-align: center;
+}
+
 .ucv-interval-axis {
-  width: min(780px, 100%);
+  width: min(640px, 100%);
   height: 4px;
   border-radius: 999px;
   background: linear-gradient(90deg, #22c55e, var(--ct-accent, #f97316), #2563eb);
@@ -2585,18 +2618,42 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
 
 .ucv-interval-list {
   display: grid;
-  width: min(780px, 100%);
-  gap: 0.7rem;
+  width: min(640px, 100%);
+  gap: 0.58rem;
 }
 
 .ucv-interval-bar {
   display: grid;
-  min-width: 110px;
-  min-height: 54px;
+  min-width: 88px;
+  min-height: 50px;
   align-items: center;
-  border-radius: 999px;
-  padding: 0.35rem 1rem;
+  border-radius: 12px;
+  padding: 0.32rem 0.7rem;
   transform-origin: left center;
+}
+
+.ucv-interval-note {
+  display: grid;
+  gap: 0.18rem;
+  width: min(640px, 100%);
+  border: 1px solid color-mix(in srgb, #22c55e 32%, var(--ct-border, #d7e1ef));
+  border-radius: 14px;
+  background: color-mix(in srgb, #22c55e 8%, var(--ct-panel, #fff));
+  padding: 0.75rem 0.9rem;
+}
+
+.ucv-interval-note span {
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ucv-interval-note strong {
+  color: var(--ct-primary, #082343);
+  font-size: clamp(0.82rem, 1vw, 0.98rem);
+  line-height: 1.25;
 }
 
 .ucv-condition-canvas {
