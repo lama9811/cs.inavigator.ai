@@ -1282,6 +1282,10 @@ type FlowCardData = {
   variant?: string;
 };
 
+type HeapSlotData = {
+  label: string;
+};
+
 function FlowNodeCard({ data }: { data: FlowCardData }) {
   const { node, step, variant = "" } = data;
   const status = nodeStatus(node, step);
@@ -1304,7 +1308,16 @@ function FlowNodeCard({ data }: { data: FlowCardData }) {
   );
 }
 
-const nodeTypes = { visualNode: FlowNodeCard };
+function HeapSlotNode({ data }: { data: HeapSlotData }) {
+  return (
+    <div className="ucv-heap-slot-node" aria-hidden="true" data-slot={data.label}>
+      <Handle className="ucv-flow-handle" type="target" position={Position.Top} id="top-target" />
+      <Handle className="ucv-flow-handle" type="source" position={Position.Bottom} id="bottom-source" />
+    </div>
+  );
+}
+
+const nodeTypes = { visualNode: FlowNodeCard, heapSlot: HeapSlotNode };
 
 function flowEdgeFromStep(edge: Edge, step: Step, rankdir: "TB" | "LR"): FlowEdge {
   const active = isEdgeActive(edge, step);
@@ -1333,7 +1346,7 @@ function FlowScene({
   children,
 }: {
   step: Step;
-  nodes: FlowNode<FlowCardData>[];
+  nodes: FlowNode<FlowCardData | HeapSlotData>[];
   edges: FlowEdge[];
   className?: string;
   children?: ReactNode;
@@ -1385,7 +1398,109 @@ function NetworkScene({ step, rankdir, className = "", children }: { step: Step;
   return <FlowScene step={step} nodes={flowNodes} edges={flowEdges} className={`ucv-network-canvas ${className}`}>{children}</FlowScene>;
 }
 
+function HeapVisualizer({ step }: { step: Step }) {
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example ?? state.sample);
+  const target = formatArrayStateValue(state.target ?? state.goal ?? "use heap priority");
+  const resultText = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? "not final");
+  const hidden = new Set(["answer", "changed", "example", "expected", "final_result", "goal", "result", "sample", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
+  const actionText = formatArrayStateValue(
+    state.decision
+    ?? state.compared
+    ?? state.removed
+    ?? state.selected
+    ?? state.saved
+    ?? state.median
+    ?? state.root
+    ?? state.rule
+    ?? "follow the active heap rule",
+  );
+  const indexedNodes = [...step.nodes].sort((a, b) => Number(a.meta?.heapIndex ?? 0) - Number(b.meta?.heapIndex ?? 0));
+  const movingSwap = /swap/i.test(`${step.title} ${state.action ?? ""}`);
+  const activeHeapSlots = new Set(
+    step.nodes
+      .filter((node) => node.state === "active" || node.state === "comparing")
+      .map((node) => Number(node.meta?.heapIndex ?? -1))
+      .filter((heapIndex) => heapIndex >= 0),
+  );
+  const slotNodes = indexedNodes.map((node) => ({
+    id: `heap-slot-${node.meta?.heapIndex ?? node.id}`,
+    type: "heapSlot",
+    position: { x: node.x - 66, y: node.y - 43 },
+    data: { label: String(node.meta?.heapIndex ?? node.id) },
+    selectable: false,
+    draggable: false,
+  }));
+  const flowNodes = step.nodes.map((node) => ({
+    id: node.id,
+    type: "visualNode",
+    position: { x: node.x - 66, y: node.y - 43 },
+    data: {
+      node,
+      step,
+      variant: "ucv-flow-node-card--heap",
+    },
+  }));
+  const visibleSlots = new Set(indexedNodes.map((node) => Number(node.meta?.heapIndex ?? -1)));
+  const flowEdges = indexedNodes
+    .map((node) => Number(node.meta?.heapIndex ?? -1))
+    .filter((heapIndex) => heapIndex > 0 && visibleSlots.has(Math.floor((heapIndex - 1) / 2)))
+    .map((heapIndex) => {
+      const parentIndex = Math.floor((heapIndex - 1) / 2);
+      const active = !movingSwap && (activeHeapSlots.has(heapIndex) || activeHeapSlots.has(parentIndex));
+      return {
+        id: `heap-slot-${parentIndex}-heap-slot-${heapIndex}`,
+        source: `heap-slot-${parentIndex}`,
+        target: `heap-slot-${heapIndex}`,
+        type: "smoothstep",
+        animated: active,
+        className: `ucv-flow-edge ucv-heap-slot-edge ${active ? "is-active" : ""}`,
+        sourceHandle: "bottom-source",
+        targetHandle: "top-target",
+      };
+    });
+  return (
+    <FlowScene step={step} nodes={[...slotNodes, ...flowNodes]} edges={flowEdges} className="ucv-network-canvas ucv-tree-canvas ucv-tree-canvas--with-panel ucv-heap-canvas--with-panel">
+      <aside className="ucv-array-state-panel ucv-heap-state-panel" aria-label="Heap trace state">
+        {example ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">example</span>
+            <strong className="ucv-array-state-panel-value">{example}</strong>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">target</span>
+          <strong className="ucv-array-state-panel-value">{target}</strong>
+        </div>
+        {variables.length ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">variables</span>
+            <div className="ucv-array-state-panel-list">
+              {variables.slice(0, 5).map(([key, value]) => (
+                <div key={key} className="ucv-array-state-panel-row">
+                  <span>{key.replace(/_/g, " ")}</span>
+                  <strong>{formatArrayStateValue(value)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultText}</strong>
+        </div>
+      </aside>
+      <div className="ucv-heap-action-card">
+        <span>current heap move</span>
+        <strong>{actionText}</strong>
+      </div>
+    </FlowScene>
+  );
+}
+
 export function TreeVisualizer({ step }: { step: Step }) {
+  if (step.concept === "heap") return <HeapVisualizer step={step} />;
   if (step.concept !== "binary-tree") return <NetworkScene step={step} rankdir="TB" className="ucv-tree-canvas" />;
   const state = step.state || {};
   const example = formatArrayStateValue(state.example ?? state.sample);

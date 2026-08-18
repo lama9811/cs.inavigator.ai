@@ -167,6 +167,14 @@ const familyStepTargets = {
   "recursion-power": 9,
   "recursion-reverse-text": 9,
   "recursion-stack": 9,
+  "heap-highest-priority-name": 8,
+  "heap-top-three": 8,
+  "heap-smallest-two": 7,
+  "heap-top-priority-assignments": 7,
+  "heap-lowest-priority-assignment": 7,
+  "heap-kth-largest-stream": 7,
+  "heap-top-k-scores": 7,
+  "heap-running-median": 7,
   "heap-priority": 7,
   "trie-prefix": 7,
   "union-find": 7,
@@ -276,6 +284,17 @@ const trueStackQueueFamilies = {
   "medium-35": { family: "queue-window-count", expected: "[1,2,1,2]" },
   "medium-55": { family: "queue-ticket-rounds", expected: "[Ana,Cy,Bo]" },
   "medium-71": { family: "stack-adjacent-pairs", expected: "ca" },
+};
+
+const trueHeapFamilies = {
+  "easy-72": { family: "heap-highest-priority-name", sample: "names=[Ada, Bo, Cy], priorities=[4, 9, 9]", expected: "Bo" },
+  "easy-73": { family: "heap-top-three", sample: "scores=[5, 9, 7, 2]", expected: "[9,7,5]" },
+  "easy-74": { family: "heap-smallest-two", sample: "scores=[8, 3, 5]", expected: "[3,5]" },
+  "medium-29": { family: "heap-top-priority-assignments", sample: "names=[lab, quiz, project], priorities=[2, 5, 5], k=2", expected: "[project,quiz]" },
+  "medium-49": { family: "heap-lowest-priority-assignment", sample: "names=[lab, quiz, essay], priorities=[3, 1, 1]", expected: "essay" },
+  "hard-11": { family: "heap-kth-largest-stream", sample: "k=3, stream=[4, 5, 8, 2]", expected: "[null,null,4,4]" },
+  "hard-21": { family: "heap-top-k-scores", sample: "scores=[88, 91, 72, 91, 84], k=3", expected: "[91,91,88]" },
+  "hard-28": { family: "heap-running-median", sample: "scores=[80, 90, 70, 100]", expected: "[80,80,80,80]" },
 };
 
 const trueTwoPointerFamilies = {
@@ -510,7 +529,17 @@ function detectVisualizerFamily(problem, concept) {
     if (/total busy minutes/.test(text)) return "interval-busy-minutes";
     return "interval-merge";
   }
-  if (concept === "heap") return "heap-priority";
+  if (concept === "heap") {
+    if (/highest priority name/.test(text)) return "heap-highest-priority-name";
+    if (/top three scores/.test(text)) return "heap-top-three";
+    if (/smallest two scores/.test(text)) return "heap-smallest-two";
+    if (/top priority assignments/.test(text)) return "heap-top-priority-assignments";
+    if (/lowest priority assignment/.test(text)) return "heap-lowest-priority-assignment";
+    if (/kth largest stream/.test(text)) return "heap-kth-largest-stream";
+    if (/top k scores/.test(text)) return "heap-top-k-scores";
+    if (/running median/.test(text)) return "heap-running-median";
+    return "heap-priority";
+  }
   if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
   if (concept === "dynamic-programming") {
@@ -778,6 +807,7 @@ function compactVisualInput(problem, concept, state = {}) {
   if (concept === "matrix") return "grid=[[1,2],[3,4]]";
   if (concept === "prefix-sum") return "values=[2, 4, 1]";
   if (concept === "intervals") return "intervals=[[1,3],[2,5]]";
+  if (trueHeapFamilies[problem.id]?.sample) return trueHeapFamilies[problem.id].sample;
   if (concept === "heap") return "values=[30, 40, 50]";
   if (concept === "trie") return "words=[cat, car]";
   if (concept === "union-find") return "pairs=[A-B, B-C]";
@@ -1090,6 +1120,18 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       }
       if (family === "dp-table") {
         warnings.push(`${problem.id} ${problem.title}: Dynamic Programming visualizer still uses shared table fallback`);
+      }
+    }
+    const requiredHeap = trueHeapFamilies[problem.id];
+    if (requiredHeap) {
+      if (family !== requiredHeap.family) {
+        warnings.push(`${problem.id} ${problem.title}: Heap visualizer routes to "${family}", expected "${requiredHeap.family}"`);
+      }
+      if (sample !== requiredHeap.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Heap sample is "${sample}", expected "${requiredHeap.sample}"`);
+      }
+      if (family === "heap-priority") {
+        warnings.push(`${problem.id} ${problem.title}: Heap visualizer still uses shared priority fallback`);
       }
     }
     const requiredGraph = trueGraphFamilies[problem.id];

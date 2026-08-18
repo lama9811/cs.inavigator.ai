@@ -2236,6 +2236,104 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
   white-space: normal;
 }
 
+.ucv-heap-state-panel {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: clamp(0.65rem, 1.6vw, 1rem);
+  width: clamp(10rem, 20vw, 13rem);
+  transform: translateY(-50%);
+  border-color: color-mix(in srgb, #f59e0b 48%, var(--ct-border, #c7d6ea));
+  background: linear-gradient(145deg,
+    color-mix(in srgb, #fef3c7 34%, var(--ct-panel, #fff)),
+    color-mix(in srgb, #dbeafe 32%, var(--ct-panel, #fff))
+  );
+  box-shadow: 0 18px 38px rgba(245, 158, 11, 0.14);
+}
+
+.ucv-heap-state-panel .ucv-array-state-panel-value,
+.ucv-heap-state-panel .ucv-array-state-panel-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.ucv-heap-canvas--with-panel .ucv-flow-node-card--heap strong {
+  max-width: 100%;
+  font-size: clamp(0.78rem, 0.98vw, 0.94rem);
+  line-height: 1.14;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.ucv-heap-slot-node {
+  width: 132px;
+  min-height: 86px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.ucv-heap-canvas--with-panel .react-flow__node-heapSlot {
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ucv-heap-canvas--with-panel .react-flow__node-visualNode {
+  z-index: 2;
+}
+
+.ucv-heap-canvas--with-panel .react-flow__edge.ucv-heap-slot-edge .react-flow__edge-path {
+  stroke: color-mix(in srgb, var(--ct-border-strong, #94a3b8) 82%, var(--ct-primary, #082343));
+  stroke-width: 4.5px;
+}
+
+.ucv-heap-canvas--with-panel .react-flow__edge.ucv-heap-slot-edge.is-active .react-flow__edge-path {
+  stroke: var(--ct-accent, #f97316);
+}
+
+.ucv-heap-canvas--with-panel .react-flow__node {
+  transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ucv-heap-canvas--with-panel .react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 7 5;
+  animation: ucvHeapEdgeFlow 1.35s linear infinite;
+}
+
+@keyframes ucvHeapEdgeFlow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.ucv-heap-action-card {
+  position: absolute;
+  right: clamp(0.25rem, 1vw, 0.8rem);
+  bottom: clamp(0.25rem, 1vw, 0.8rem);
+  display: grid;
+  max-width: min(22rem, 58%);
+  gap: 0.25rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid color-mix(in srgb, #38bdf8 46%, var(--ct-border, #c7d6ea));
+  border-radius: 14px;
+  background: color-mix(in srgb, #0ea5e9 12%, var(--ct-panel, #fff));
+  box-shadow: 0 16px 32px rgba(14, 165, 233, 0.12);
+}
+
+.ucv-heap-action-card span {
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.ucv-heap-action-card strong {
+  color: var(--ct-text, #082343);
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
 .ucv-flow-node-card--input,
 .ucv-flow-node-card--branch {
   width: clamp(148px, 14vw, 188px);

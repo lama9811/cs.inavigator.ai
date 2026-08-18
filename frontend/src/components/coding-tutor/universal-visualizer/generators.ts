@@ -130,7 +130,15 @@ type VisualizerFamily =
   | "hash-frequency"
   | "hash-grouping"
   | "hash-lookup"
+  | "heap-highest-priority-name"
   | "heap-priority"
+  | "heap-running-median"
+  | "heap-smallest-two"
+  | "heap-top-k-scores"
+  | "heap-top-priority-assignments"
+  | "heap-top-three"
+  | "heap-kth-largest-stream"
+  | "heap-lowest-priority-assignment"
   | "interval-merge"
   | "interval-busy-minutes"
   | "interval-count-overlap"
@@ -344,7 +352,17 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/total busy minutes/.test(text)) return "interval-busy-minutes";
     return "interval-merge";
   }
-  if (concept === "heap") return "heap-priority";
+  if (concept === "heap") {
+    if (/highest priority name/.test(text)) return "heap-highest-priority-name";
+    if (/top three scores/.test(text)) return "heap-top-three";
+    if (/smallest two scores/.test(text)) return "heap-smallest-two";
+    if (/top priority assignments/.test(text)) return "heap-top-priority-assignments";
+    if (/lowest priority assignment/.test(text)) return "heap-lowest-priority-assignment";
+    if (/kth largest stream/.test(text)) return "heap-kth-largest-stream";
+    if (/top k scores/.test(text)) return "heap-top-k-scores";
+    if (/running median/.test(text)) return "heap-running-median";
+    return "heap-priority";
+  }
   if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
   if (concept === "dynamic-programming") {
@@ -521,6 +539,14 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
   if (family === "graph-islands") return "grid=[[1,1,0],[0,0,1],[1,0,1]]";
   if (family === "hash-frequency" || family === "hash-grouping") return "items=[A, B, A]";
   if (family === "hash-complement") return "nums=[2, 7], target=9";
+  if (family === "heap-highest-priority-name") return "names=[Ada, Bo, Cy], priorities=[4, 9, 9]";
+  if (family === "heap-top-three") return "scores=[5, 9, 7, 2]";
+  if (family === "heap-smallest-two") return "scores=[8, 3, 5]";
+  if (family === "heap-top-priority-assignments") return "names=[lab, quiz, project], priorities=[2, 5, 5], k=2";
+  if (family === "heap-lowest-priority-assignment") return "names=[lab, quiz, essay], priorities=[3, 1, 1]";
+  if (family === "heap-kth-largest-stream") return "k=3, stream=[4, 5, 8, 2]";
+  if (family === "heap-top-k-scores") return "scores=[88, 91, 72, 91, 84], k=3";
+  if (family === "heap-running-median") return "scores=[80, 90, 70, 100]";
   if (family === "string-count-vowels") return "Code";
   if (family === "string-reverse-words") return "red blue";
   if (family === "string-count-words") return "red blue";
@@ -2490,6 +2516,7 @@ function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string,
   if (concept === "sliding-window") return true;
   if (concept === "prefix-sum") return true;
   if (concept === "intervals") return true;
+  if (concept === "heap") return true;
   if (rawSteps.length >= targetStepCount(concept)) return false;
   if (rawSteps.length < Math.min(targetStepCount(concept), 6)) return true;
   const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
@@ -7070,20 +7097,184 @@ export function generateIntervalsSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateHeapSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["add the value at the next open spot", "find its parent", "compare child priority with parent priority", "swap upward when the child outranks the parent", "keep checking from the new position", "repeat until the heap rule holds", "return the top value"];
-  const values = [50, 40, 30, 10, 25, 20];
-  const before = treeFromArray(values.slice(0, 5), 0);
-  const inserted = treeFromArray(values, 5);
-  const after = treeFromArray(values, 0);
-  return [
-    step({ concept: "heap", title: context.title || "Heap", description: "A heap keeps the priority item easy to reach at the top.", nodes: before.nodes, edges: before.edges, highlights: { lineNumbers: [1] }, code, activeLine: 1, state: { top: 40 } }, 1),
-    step({ concept: "heap", title: "Add at the open spot", description: "The new value first lands in the next open tree position.", nodes: withNodeState(inserted.nodes, ["tree-5"], "active"), edges: inserted.edges, highlights: { nodeIds: ["tree-5"], lineNumbers: [1] }, code, activeLine: 1, state: { inserted: 50 } }, 2),
-    step({ concept: "heap", title: "Compare with parent", description: "The new value checks whether it has higher priority than its parent.", nodes: withNodeState(inserted.nodes, ["tree-2", "tree-5"], "comparing"), edges: inserted.edges, highlights: { nodeIds: ["tree-2", "tree-5"], lineNumbers: [2] }, code, activeLine: 2, state: { parent: 30, child: 50 } }, 3),
-    step({ concept: "heap", title: "Bubble up", description: "A higher-priority value moves upward by swapping with parents.", nodes: withNodeState(after.nodes, ["tree-0", "tree-2"], "active"), edges: after.edges, highlights: { nodeIds: ["tree-0", "tree-2"], lineNumbers: [3] }, code, activeLine: 3, state: { top: 50 } }, 4),
-    step({ concept: "heap", title: "Check again", description: "After each swap, the item checks its new parent. This is what makes bubbling repeat safely.", nodes: withNodeState(after.nodes, ["tree-0"], "comparing"), edges: after.edges, highlights: { nodeIds: ["tree-0"], lineNumbers: [5, 6] }, code, activeLine: 6, state: { top: 50 } }, 5),
-    step({ concept: "heap", title: "Check the top", description: "After bubbling, the highest-priority item is easy to read at the root.", nodes: withNodeState(after.nodes, ["tree-0"], "active"), edges: after.edges, highlights: { nodeIds: ["tree-0"], lineNumbers: [7] }, code, activeLine: 7, state: { top: 50 } }, 6),
-    step({ concept: "heap", title: "Finish with heap order", description: "Every parent now keeps priority over its children, so later operations can trust the heap.", nodes: withNodeState(after.nodes, ["tree-0"], "visited"), edges: after.edges, highlights: { nodeIds: ["tree-0"], lineNumbers: [7] }, code, activeLine: 7, state: { invariant: "parent priority >= child priority" } }, 7),
-  ];
+  const family = detectVisualizerFamily("heap", context);
+  type HeapPhase = {
+    values: Array<string | number>;
+    ids?: string[];
+    active: number[];
+    visited?: number[];
+    comparing?: number[];
+    discarded?: number[];
+    line: number;
+    title: string;
+    description: string;
+    state: Record<string, string | number | boolean>;
+  };
+  type HeapConfig = {
+    example: string;
+    target: string;
+    code: string[];
+    phases: HeapPhase[];
+  };
+  function heapTreeFromArray(phase: HeapPhase): { nodes: Node[]; edges: Edge[] } {
+    const visual = treeFromArray(phase.values, phase.active[0] ?? 0, "tree-node");
+    const remapped = visual.nodes.map((node) => {
+      const index = Number(node.id.replace("tree-", ""));
+      return { ...node, id: phase.ids?.[index] || node.id, meta: { ...node.meta, heapIndex: index } };
+    });
+    const idAt = (treeId: string) => {
+      const index = Number(treeId.replace("tree-", ""));
+      return phase.ids?.[index] || treeId;
+    };
+    return {
+      nodes: remapped,
+      edges: visual.edges.map((edge) => ({
+        ...edge,
+        id: `${idAt(edge.from)}-${idAt(edge.to)}`,
+        from: idAt(edge.from),
+        to: idAt(edge.to),
+      })),
+    };
+  }
+  const phaseIds = (phase: HeapPhase, indexes: number[] = []) => indexes.map((item) => phase.ids?.[item] || `tree-${item}`);
+  const configs: Partial<Record<VisualizerFamily, HeapConfig>> = {
+    "heap-highest-priority-name": {
+      example: "names=[Ada, Bo, Cy], priorities=[4, 9, 9]",
+      target: "return highest priority name",
+      code: ["pair each name with its priority", "insert the next item as a child", "compare child with parent", "swap the better item upward", "use alphabetical order to break ties", "read the root candidate", "return the chosen name", "finish"],
+      phases: [
+        { values: ["Ada:4"], ids: ["ada"], active: [0], line: 1, title: context.title || "Highest Priority Name", description: "Ada is the first paired item, so Ada starts at the root.", state: { candidate: "Ada:4", rule: "higher priority wins", result: "not final" } },
+        { values: ["Ada:4", "Bo:9"], ids: ["ada", "bo"], active: [1], line: 2, title: "Insert Bo", description: "A new heap item enters at the next open child position.", state: { incoming: "Bo:9", top: "Ada:4", result: "not final" } },
+        { values: ["Ada:4", "Bo:9"], ids: ["ada", "bo"], active: [1], comparing: [0, 1], line: 3, title: "Compare with parent", description: "Bo has priority 9, which outranks Ada's 4.", state: { compared: "Bo beats Ada", action: "swap needed" } },
+        { values: ["Bo:9", "Ada:4"], ids: ["bo", "ada"], active: [0], visited: [1], line: 4, title: "Swap Bo up", description: "Bo moves into the root slot and Ada moves down to Bo's old child slot.", state: { top: "Bo:9", action: "Bo swaps with Ada" } },
+        { values: ["Bo:9", "Ada:4", "Cy:9"], ids: ["bo", "ada", "cy"], active: [2], comparing: [0, 2], line: 5, title: "Tie with Cy", description: "Cy also has priority 9, so the tie rule compares names.", state: { compared: "Bo vs Cy", tie_rule: "alphabetically first" } },
+        { values: ["Bo:9", "Ada:4", "Cy:9"], ids: ["bo", "ada", "cy"], active: [0], visited: [2], line: 5, title: "Bo stays on top", description: "Bo comes before Cy alphabetically, so there is no swap.", state: { top: "Bo:9", decision: "keep Bo" } },
+        { values: ["Bo:9", "Ada:4", "Cy:9"], ids: ["bo", "ada", "cy"], active: [0], line: 6, title: "Read root", description: "After the heap rule has been applied, the root is the answer candidate.", state: { top: "Bo:9", result: "Bo" } },
+        { values: ["Bo:9", "Ada:4", "Cy:9"], ids: ["bo", "ada", "cy"], active: [0], visited: [0, 1, 2], line: 7, title: "Return Bo", description: "Return the name stored at the highest-priority root.", state: { final_result: "Bo", rule: "priority, then name" } },
+      ],
+    },
+    "heap-top-three": {
+      example: "scores=[5, 9, 7, 2]",
+      target: "return top three scores",
+      code: ["build a max-priority heap", "read the largest root", "remove the root into the result", "move the next best value upward", "repeat until three scores are saved", "stop when enough values are saved", "return scores in removal order", "finish"],
+      phases: [
+        { values: [9, 5, 7, 2], ids: ["score9", "score5", "score7", "score2"], active: [0], line: 1, title: context.title || "Top Three Scores", description: "A max-heap keeps the largest score at the root.", state: { remaining_heap: "[9, 5, 7, 2]", result: "[]" } },
+        { values: [9, 5, 7, 2], ids: ["score9", "score5", "score7", "score2"], active: [0], line: 2, title: "Root is 9", description: "The first root is the largest score.", state: { root: 9, result: "[]" } },
+        { values: [5, 2, 7], ids: ["score5", "score2", "score7"], active: [0, 2], comparing: [0, 2], line: 3, title: "Remove 9", description: "9 leaves into the result. The last item fills the root before the heap is restored.", state: { removed: 9, result: "[9]" } },
+        { values: [7, 2, 5], ids: ["score7", "score2", "score5"], active: [0], visited: [2], line: 4, title: "Swap 7 up", description: "7 is larger than 5, so 7 moves to the root for the next removal.", state: { action: "7 swaps with 5", result: "[9]" } },
+        { values: [5, 2], ids: ["score5", "score2"], active: [0], line: 5, title: "Save 7", description: "The next root is appended after 9.", state: { removed: 7, result: "[9, 7]" } },
+        { values: [5, 2], ids: ["score5", "score2"], active: [0], line: 6, title: "Need one more", description: "Only two scores are saved, so the heap continues.", state: { count: "2 of 3", result: "[9, 7]" } },
+        { values: [2], ids: ["score2"], active: [0], line: 5, title: "Save 5", description: "One more removal completes the top-three list. The 2 remains in the heap but is not part of the answer.", state: { removed: 5, remainder: 2, result: "[9, 7, 5]" } },
+        { values: [2], ids: ["score2"], active: [], discarded: [0], line: 7, title: "Return descending scores", description: "The leftover 2 is muted because the prompt only asks for three scores.", state: { remainder: 2, final_result: "[9, 7, 5]" } },
+      ],
+    },
+    "heap-smallest-two": {
+      example: "scores=[8, 3, 5]",
+      target: "return two smallest scores",
+      code: ["build a min-priority heap", "read the smallest root", "remove the root into the result", "restore the heap rule", "repeat until two scores are saved", "stop after two removals", "return scores in removal order"],
+      phases: [
+        { values: [3, 8, 5], active: [0], line: 1, title: context.title || "Smallest Two Scores", description: "A min-heap keeps the smallest score at the root.", state: { remaining_heap: "[3, 8, 5]", result: "[]" } },
+        { values: [3, 8, 5], active: [0], line: 2, title: "Root is 3", description: "The first root is the smallest score.", state: { root: 3, result: "[]" } },
+        { values: [5, 8], active: [0], visited: [1], line: 3, title: "Save 3", description: "Remove the smallest score and restore the heap.", state: { removed: 3, result: "[3]" } },
+        { values: [5, 8], active: [0, 1], comparing: [0, 1], line: 4, title: "Next smallest rises", description: "5 becomes the next root because it is smaller than 8.", state: { root: 5, result: "[3]" } },
+        { values: [8], active: [0], line: 5, title: "Save 5", description: "The second removal completes the answer.", state: { removed: 5, result: "[3, 5]" } },
+        { values: [8], active: [], discarded: [0], line: 6, title: "Stop after two", description: "The prompt asks for two values, so the remaining 8 is not returned.", state: { remaining: 8, result: "[3, 5]" } },
+        { values: [8], active: [], discarded: [0], line: 7, title: "Return ascending scores", description: "A min-heap removal order gives the smallest values first.", state: { final_result: "[3, 5]" } },
+      ],
+    },
+    "heap-top-priority-assignments": {
+      example: "names=[lab, quiz, project], priorities=[2, 5, 5], k=2",
+      target: "return top k assignment names",
+      code: ["pair each assignment with priority", "order higher priority first", "break tied priorities by name", "read the best root", "save one selected name", "repeat until k names are saved", "return the selected names"],
+      phases: [
+        { values: ["project:5", "lab:2", "quiz:5"], active: [0, 2], comparing: [0, 2], line: 1, title: context.title || "Top Priority Assignments", description: "Each heap item carries both the name and the priority.", state: { k: 2, candidate: "project:5", result: "[]" } },
+        { values: ["project:5", "lab:2", "quiz:5"], active: [0, 2], line: 3, title: "Tie goes alphabetical", description: "Project and quiz both have priority 5, and project comes first alphabetically.", state: { tie_rule: "alphabetical", top: "project:5" } },
+        { values: ["quiz:5", "lab:2"], active: [0], visited: [1], line: 5, title: "Save project", description: "The top assignment is removed into the answer.", state: { selected: "project", result: "[project]" } },
+        { values: ["quiz:5", "lab:2"], active: [0, 1], comparing: [0, 1], line: 6, title: "Restore for next pick", description: "Quiz now outranks lab, so quiz becomes the next root.", state: { top: "quiz:5", result: "[project]" } },
+        { values: ["lab:2"], active: [0], line: 5, title: "Save quiz", description: "The second selected name completes k=2.", state: { selected: "quiz", result: "[project, quiz]" } },
+        { values: ["lab:2"], active: [], discarded: [0], line: 6, title: "Stop at k", description: "Lab remains in the heap, but the prompt only asks for two assignments.", state: { k: 2, remaining: "lab", result: "[project, quiz]" } },
+        { values: ["lab:2"], active: [], discarded: [0], line: 7, title: "Return names only", description: "Return assignment names, not their priority numbers.", state: { final_result: "[project, quiz]" } },
+      ],
+    },
+    "heap-lowest-priority-assignment": {
+      example: "names=[lab, quiz, essay], priorities=[3, 1, 1]",
+      target: "return lowest priority assignment",
+      code: ["pair each assignment with priority", "keep the lowest priority at the root", "compare priority values", "break ties alphabetically", "read the root candidate", "return the assignment name", "finish"],
+      phases: [
+        { values: ["lab:3"], active: [0], line: 1, title: context.title || "Lowest Priority Assignment", description: "Start by pairing each assignment with its priority.", state: { candidate: "lab:3", rule: "lower priority wins" } },
+        { values: ["quiz:1", "lab:3"], active: [0], comparing: [0, 1], line: 3, title: "Quiz moves up", description: "Priority 1 is lower than 3, so quiz becomes the root.", state: { candidate: "quiz:1", result: "not final" } },
+        { values: ["essay:1", "lab:3", "quiz:1"], active: [0, 2], comparing: [0, 2], line: 4, title: "Essay ties quiz", description: "Essay and quiz both have priority 1, so compare names.", state: { compared: "essay vs quiz", tie_rule: "alphabetical" } },
+        { values: ["essay:1", "lab:3", "quiz:1"], active: [0], visited: [2], line: 4, title: "Essay wins tie", description: "Essay comes before quiz alphabetically, so it stays at the min-heap root.", state: { top: "essay:1", decision: "keep essay" } },
+        { values: ["essay:1", "lab:3", "quiz:1"], active: [0], line: 5, title: "Read root", description: "The root is now the lowest-priority assignment.", state: { top: "essay:1", result: "essay" } },
+        { values: ["essay:1", "lab:3", "quiz:1"], active: [0], line: 6, title: "Return essay", description: "Return the assignment name, not the priority pair.", state: { final_result: "essay" } },
+        { values: ["essay:1", "lab:3", "quiz:1"], active: [0], visited: [0, 1, 2], line: 7, title: "Heap rule explains the choice", description: "The root keeps the best candidate according to the prompt's priority and tie rules.", state: { final_result: "essay", rule: "priority, then name" } },
+      ],
+    },
+    "heap-kth-largest-stream": {
+      example: "k=3, stream=[4, 5, 8, 2]",
+      target: "return kth largest after each insert",
+      code: ["read the next stream value", "keep a small heap of only k values", "output null before k values arrive", "when size exceeds k, remove the smallest saved value", "the root is the kth largest", "append that root to the output", "return all stream outputs"],
+      phases: [
+        { values: [4], active: [0], line: 1, title: context.title || "Kth Largest Stream", description: "After 4 arrives, fewer than k values have been seen.", state: { k: 3, incoming: 4, kept: "[4]", result: "[null]" } },
+        { values: [4, 5], active: [1], line: 3, title: "Still waiting for k", description: "After 5 arrives, there are still only two saved values.", state: { incoming: 5, kept: "[4, 5]", result: "[null, null]" } },
+        { values: [4, 5, 8], active: [0], line: 5, title: "Third value gives a root", description: "Now the heap has k values. The smallest kept value is the kth largest overall.", state: { incoming: 8, root: 4, result: "[null, null, 4]" } },
+        { values: [2, 4, 8, 5], active: [0], line: 1, title: "Read 2", description: "The next stream value enters the temporary heap.", state: { incoming: 2, kept: "[2, 4, 8, 5]" } },
+        { values: [4, 5, 8], active: [0], visited: [1], line: 4, title: "Remove smallest", description: "Size is now above k, so remove 2 and keep the three largest values.", state: { removed: 2, kept: "[4, 5, 8]" } },
+        { values: [4, 5, 8], active: [0], line: 5, title: "Root is kth largest", description: "The root 4 is the smallest among the kept top three values.", state: { root: 4, result: "[null, null, 4, 4]" } },
+        { values: [4, 5, 8, 2], active: [0], visited: [0, 1, 2], discarded: [3], line: 7, title: "Return stream outputs", description: "2 was discarded because it cannot be in the top three kept values.", state: { final_result: "[null, null, 4, 4]" } },
+      ],
+    },
+    "heap-top-k-scores": {
+      example: "scores=[88, 91, 72, 91, 84], k=3",
+      target: "return k highest scores",
+      code: ["build access to the largest scores", "read the largest candidate", "save the candidate in the answer", "keep duplicate scores as separate entries", "repeat until k scores are saved", "stop after k saves", "return scores from high to low"],
+      phases: [
+        { values: [91, 91, 88, 72, 84], active: [0, 1], line: 1, title: context.title || "Top K Scores", description: "A max view keeps the highest scores easy to remove.", state: { k: 3, result: "[]" } },
+        { values: [91, 91, 88, 72, 84], active: [0], line: 2, title: "First top score", description: "The first root is 91.", state: { candidate: 91, result: "[]" } },
+        { values: [91, 88, 84, 72], active: [0], line: 3, title: "Save first 91", description: "Remove one 91 and keep scanning for the next top score.", state: { saved: 91, result: "[91]" } },
+        { values: [91, 88, 84, 72], active: [0], line: 4, title: "Duplicate still counts", description: "The second 91 remains as its own score and can also be returned.", state: { candidate: 91, result: "[91]" } },
+        { values: [88, 84, 72], active: [0], line: 5, title: "Save second 91", description: "The duplicate 91 is saved as the second top score.", state: { saved: 91, result: "[91, 91]" } },
+        { values: [84, 72], active: [0], line: 5, title: "Save 88", description: "The third saved value completes k=3.", state: { saved: 88, result: "[91, 91, 88]" } },
+        { values: [84, 72], active: [], discarded: [0, 1], line: 7, title: "Return top k", description: "84 and 72 stay muted because the prompt only asks for the top three scores.", state: { final_result: "[91, 91, 88]" } },
+      ],
+    },
+    "heap-running-median": {
+      example: "scores=[80, 90, 70, 100]",
+      target: "return lower median after each score",
+      code: ["read the next score", "put smaller half on the left heap", "put larger half on the right heap", "rebalance so left has the median", "read the left root as lower median", "append that median to the result", "return all medians"],
+      phases: [
+        { values: [80], active: [0], line: 1, title: context.title || "Running Median Scores", description: "The first score starts the smaller-half heap.", state: { incoming: 80, left_heap: "[80]", right_heap: "[]", result: "[80]" } },
+        { values: [80, 90], active: [0, 1], comparing: [0, 1], line: 3, title: "90 goes right", description: "90 is larger than 80, so it belongs on the larger side.", state: { incoming: 90, left_heap: "[80]", right_heap: "[90]" } },
+        { values: [80, 90], active: [0], line: 5, title: "Lower median stays 80", description: "With two scores, the lower median is the top of the smaller half.", state: { median: 80, result: "[80, 80]" } },
+        { values: [80, 70, 90], active: [1], comparing: [0, 1], line: 2, title: "70 goes left", description: "70 belongs with the smaller half.", state: { incoming: 70, left_heap: "[80, 70]", right_heap: "[90]" } },
+        { values: [80, 70, 90], active: [0], line: 4, title: "Left holds the median", description: "The left heap may have one extra value, so its root is still the lower median.", state: { median: 80, result: "[80, 80, 80]" } },
+        { values: [80, 70, 90, 100], active: [3], line: 3, title: "100 goes right", description: "100 joins the larger side, keeping the heaps balanced.", state: { incoming: 100, left_heap: "[80, 70]", right_heap: "[90, 100]" } },
+        { values: [80, 70, 90, 100], active: [0], visited: [0, 1, 2, 3], line: 7, title: "Return medians", description: "Each output is the lower median after that insertion.", state: { final_result: "[80, 80, 80, 80]" } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["heap-top-three"]!;
+  return config.phases.map((phase, index) => {
+    const visual = heapTreeFromArray(phase);
+    let nodes = visual.nodes;
+    if (phase.discarded?.length) nodes = withNodeState(nodes, phaseIds(phase, phase.discarded), "skipped");
+    if (phase.visited?.length) nodes = withNodeState(nodes, phaseIds(phase, phase.visited), "visited");
+    if (phase.comparing?.length) nodes = withNodeState(nodes, phaseIds(phase, phase.comparing), "comparing");
+    if (phase.active.length) nodes = withNodeState(nodes, phaseIds(phase, phase.active), "active");
+    const activeIds = phaseIds(phase, phase.active);
+    const comparingIds = phaseIds(phase, phase.comparing || []);
+    return step({
+      concept: "heap",
+      title: phase.title,
+      description: phase.description,
+      nodes,
+      edges: visual.edges,
+      highlights: { nodeIds: [...activeIds, ...comparingIds], lineNumbers: [phase.line] },
+      code: config.code,
+      activeLine: phase.line,
+      state: { example: config.example, target: config.target, visual_family: family, ...phase.state },
+    }, index + 1);
+  });
 }
 
 export function generateTrieSteps(context: GeneratorContext = {}): Step[] {

@@ -113,6 +113,7 @@ function StateStrip({ step }: { step: Step }) {
   if (step.concept === "dynamic-programming") return null;
   if (step.concept === "graph") return null;
   if (step.concept === "binary-tree") return null;
+  if (step.concept === "heap") return null;
   if (step.concept === "recursion") return null;
   if (step.concept === "stack") return null;
   if (step.concept === "queue") return null;
