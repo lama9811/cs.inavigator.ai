@@ -1366,7 +1366,7 @@ function FlowScene({
   );
 }
 
-function NetworkScene({ step, rankdir, className = "" }: { step: Step; rankdir: "TB" | "LR"; className?: string }) {
+function NetworkScene({ step, rankdir, className = "", children }: { step: Step; rankdir: "TB" | "LR"; className?: string; children?: ReactNode }) {
   const positioned = useMemo(() => layoutWithDagre(step.nodes, step.edges, rankdir), [step.nodes, step.edges, rankdir]);
   const flowNodes = positioned.map((node) => ({
     id: node.id,
@@ -1382,7 +1382,7 @@ function NetworkScene({ step, rankdir, className = "" }: { step: Step; rankdir: 
   const flowEdges = step.edges
     .filter((edge) => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to))
     .map((edge) => flowEdgeFromStep(edge, step, rankdir));
-  return <FlowScene step={step} nodes={flowNodes} edges={flowEdges} className={`ucv-network-canvas ${className}`} />;
+  return <FlowScene step={step} nodes={flowNodes} edges={flowEdges} className={`ucv-network-canvas ${className}`}>{children}</FlowScene>;
 }
 
 export function TreeVisualizer({ step }: { step: Step }) {
@@ -1391,7 +1391,44 @@ export function TreeVisualizer({ step }: { step: Step }) {
 
 export function GraphVisualizer({ step }: { step: Step }) {
   const rankdir = step.concept === "union-find" ? "TB" : "LR";
-  return <NetworkScene step={step} rankdir={rankdir} className="ucv-graph-canvas" />;
+  if (step.concept !== "graph") return <NetworkScene step={step} rankdir={rankdir} className="ucv-graph-canvas" />;
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example ?? state.sample);
+  const target = formatArrayStateValue(state.target ?? state.goal ?? "visit the needed nodes");
+  const resultText = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? "not final");
+  const hidden = new Set(["answer", "changed", "example", "expected", "final_result", "goal", "result", "sample", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
+  return (
+    <NetworkScene step={step} rankdir={rankdir} className="ucv-graph-canvas ucv-graph-canvas--with-panel">
+      <aside className="ucv-array-state-panel ucv-graph-state-panel" aria-label="Graph trace state">
+        {example ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">example</span>
+            <strong className="ucv-array-state-panel-value">{example}</strong>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">target</span>
+          <strong className="ucv-array-state-panel-value">{target}</strong>
+        </div>
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.slice(0, 5).map(([key, value]) => (
+              <div key={key} className="ucv-array-state-panel-row">
+                <span>{key.replace(/_/g, " ")}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultText}</strong>
+        </div>
+      </aside>
+    </NetworkScene>
+  );
 }
 
 export function HashTableVisualizer({ step }: { step: Step }) {
@@ -1506,6 +1543,80 @@ export function HashTableVisualizer({ step }: { step: Step }) {
 
 export function DPTableVisualizer({ step }: { step: Step }) {
   const cells = [...step.nodes].sort((a, b) => a.y - b.y || a.x - b.x);
+  if (step.concept === "dynamic-programming") {
+    const state = step.state || {};
+    const example = formatArrayStateValue(state.example ?? state.sample);
+    const target = formatArrayStateValue(state.target ?? state.goal ?? "reuse saved states");
+    const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? state.best);
+    const hidden = new Set(["answer", "best", "example", "final_result", "goal", "result", "sample", "target", "visual_family"]);
+    const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
+    const activeNode = cells.find((node) => node.state === "active" || isHighlighted(step, node.id)) || cells[0];
+    const activeDeps = new Set(step.highlights?.edgeIds?.flatMap((edgeId) => String(edgeId).split("->")) || []);
+    return (
+      <Canvas concept={step.concept} className="ucv-structure-canvas ucv-dp-canvas">
+        <div className="ucv-dp-trace-layout" aria-label="Dynamic programming trace">
+          <aside className="ucv-array-state-panel ucv-dp-state-panel" aria-label="Dynamic programming state">
+            {example ? (
+              <div className="ucv-array-state-panel-section">
+                <span className="ucv-array-state-panel-label">example</span>
+                <strong className="ucv-array-state-panel-value">{example}</strong>
+              </div>
+            ) : null}
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">target</span>
+              <strong className="ucv-array-state-panel-value">{target}</strong>
+            </div>
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">current state</span>
+              <strong className="ucv-array-state-panel-value">{String(state.current_state || activeNode?.label || "choose a state")}</strong>
+            </div>
+            <div className="ucv-array-state-panel-section">
+              <span className="ucv-array-state-panel-label">variables</span>
+              <div className="ucv-array-state-panel-list">
+                {variables.slice(0, 5).map(([key, value]) => (
+                  <div key={key} className="ucv-array-state-panel-row">
+                    <span>{key.replace(/_/g, " ")}</span>
+                    <strong>{formatArrayStateValue(value)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+              <span className="ucv-array-state-panel-label">result so far</span>
+              <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+            </div>
+          </aside>
+          <div className="ucv-dp-main-region">
+            <div className="ucv-dp-state-row" aria-label="Saved DP states">
+              {cells.map((node) => (
+                <StatusBlock
+                  key={node.id}
+                  node={{
+                    ...node,
+                    state: activeDeps.has(node.id) && node.state !== "active" ? "comparing" : node.state,
+                  }}
+                  step={step}
+                  className="ucv-dp-state-cell"
+                />
+              ))}
+            </div>
+            <div className="ucv-dp-dependency-row" aria-label="Saved state dependencies">
+              {step.edges.map((edge) => (
+                <span key={edge.id || `${edge.from}-${edge.to}`} className={edge.state === "active" ? "is-active" : ""}>
+                  {`${edge.from.replace(/^dp-/, "state ")} -> ${edge.to.replace(/^dp-/, "state ")}`}
+                </span>
+              ))}
+            </div>
+            <div className="ucv-dp-insight ucv-dp-insight--wide">
+              <span>{String(state.rule_label || "why this state")}</span>
+              <strong>{String(state.rule || "reuse saved answers before saving the next one")}</strong>
+              <p>{String(state.action || step.description)}</p>
+            </div>
+          </div>
+        </div>
+      </Canvas>
+    );
+  }
   const labelCoords = cells.map((node) => String(node.label || node.id).match(/(?:cell-|dp-)?(\d+)[,-](\d+)/));
   const flatRows = Math.ceil(Math.sqrt(cells.length || 1));
   const flatCols = Math.ceil((cells.length || 1) / Math.max(flatRows, 1));

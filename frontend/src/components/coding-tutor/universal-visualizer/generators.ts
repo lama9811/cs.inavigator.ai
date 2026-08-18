@@ -101,8 +101,30 @@ type VisualizerFamily =
   | "binary-search-median-two-lists"
   | "bit-count"
   | "conditional-flow"
+  | "dp-blocked-stairs"
+  | "dp-best-non-adjacent"
+  | "dp-climb-stairs"
+  | "dp-coin-change"
+  | "dp-decode-ways"
+  | "dp-edit-distance"
+  | "dp-lis"
+  | "dp-max-subarray-deletion"
+  | "dp-maximal-square"
+  | "dp-min-cost-stairs"
+  | "dp-non-adjacent-points"
+  | "dp-one-three-steps"
+  | "dp-study-plan-cost"
+  | "dp-study-plan-ways"
+  | "graph-alien-order"
+  | "graph-campus-reachable"
+  | "graph-clone"
+  | "graph-course-chain"
   | "dp-table"
+  | "graph-neighbor-count"
+  | "graph-shortest-grid"
+  | "graph-topological-order"
   | "graph-traversal"
+  | "graph-word-ladder"
   | "graph-islands"
   | "hash-complement"
   | "hash-frequency"
@@ -139,7 +161,14 @@ type VisualizerFamily =
   | "queue-ticket-rounds"
   | "queue-window-count"
   | "queue-fifo"
+  | "recursion-countdown-list"
+  | "recursion-digit-sum"
+  | "recursion-factorial"
+  | "recursion-list-count"
+  | "recursion-list-sum"
   | "recursion-nested-list"
+  | "recursion-power"
+  | "recursion-reverse-text"
   | "recursion-stack"
   | "set-first-missing"
   | "set-first-repeat"
@@ -283,7 +312,17 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/longest study stretch under limit/.test(text)) return "sliding-window-longest-under-limit";
     return "sliding-window";
   }
-  if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
+  if (concept === "recursion") {
+    if (/countdown/.test(text)) return "recursion-countdown-list";
+    if (/factorial/.test(text)) return "recursion-factorial";
+    if (/recursive list count|list count/.test(text)) return "recursion-list-count";
+    if (/recursive list sum|list sum/.test(text)) return "recursion-list-sum";
+    if (/nested list depth sum|nested|depth|flatten/.test(text)) return "recursion-nested-list";
+    if (/digit sum/.test(text)) return "recursion-digit-sum";
+    if (/power|exponent/.test(text)) return "recursion-power";
+    if (/reverse text|reverse.*text/.test(text)) return "recursion-reverse-text";
+    return "recursion-stack";
+  }
   if (concept === "matrix") return "matrix-traverse";
   if (concept === "intervals") {
     if (/two intervals overlap/.test(text)) return "interval-overlap";
@@ -299,9 +338,37 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   if (concept === "heap") return "heap-priority";
   if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
-  if (concept === "dynamic-programming") return "dp-table";
+  if (concept === "dynamic-programming") {
+    if (/climb small staircase|climb.*stair/.test(text)) return "dp-climb-stairs";
+    if (/tiny minimum stair cost/.test(text)) return "dp-min-cost-stairs";
+    if (/ways with one or three steps/.test(text)) return "dp-one-three-steps";
+    if (/best non adjacent total/.test(text)) return "dp-best-non-adjacent";
+    if (/non adjacent points/.test(text)) return "dp-non-adjacent-points";
+    if (/longest increasing subsequence/.test(text)) return "dp-lis";
+    if (/edit distance/.test(text)) return "dp-edit-distance";
+    if (/decode ways/.test(text)) return "dp-decode-ways";
+    if (/maximum subarray with one deletion/.test(text)) return "dp-max-subarray-deletion";
+    if (/maximal square/.test(text)) return "dp-maximal-square";
+    if (/minimum study plan cost/.test(text)) return "dp-study-plan-cost";
+    if (/study plan ways/.test(text)) return "dp-study-plan-ways";
+    if (/coin change ways/.test(text)) return "dp-coin-change";
+    if (/blocked stair ways/.test(text)) return "dp-blocked-stairs";
+    return "dp-table";
+  }
   if (concept === "bit-manipulation") return "bit-count";
-  if (concept === "binary-tree" || concept === "graph") return "graph-traversal";
+  if (concept === "graph") {
+    if (/neighbor count/.test(text)) return "graph-neighbor-count";
+    if (/course prerequisite chain/.test(text)) return "graph-course-chain";
+    if (/count islands|island|land.*water|water.*land/.test(text)) return "graph-islands";
+    if (/campus stop reachable/.test(text)) return "graph-campus-reachable";
+    if (/shortest path/.test(text)) return "graph-shortest-grid";
+    if (/course plan topological order|topological/.test(text)) return "graph-topological-order";
+    if (/word ladder/.test(text)) return "graph-word-ladder";
+    if (/clone graph/.test(text)) return "graph-clone";
+    if (/alien dictionary/.test(text)) return "graph-alien-order";
+    return "graph-traversal";
+  }
+  if (concept === "binary-tree") return "graph-traversal";
   if (concept === "stack") {
     if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
     if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
@@ -452,7 +519,36 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
     if (/undo/.test(title)) return "actions=[open, type, undo]";
     return "commands=[push tray, push cup, pop]";
   }
+  if (family === "recursion-countdown-list") return "n=2";
+  if (family === "recursion-factorial") return "n=3";
+  if (family === "recursion-list-count") return "nums=[5,6]";
+  if (family === "recursion-list-sum") return "nums=[2,5]";
   if (family === "recursion-nested-list") return "value=[1,[2,[3]]]";
+  if (family === "recursion-digit-sum") return "number=34";
+  if (family === "recursion-power") return "base=2, exponent=2";
+  if (family === "recursion-reverse-text") return "text='go'";
+  if (family === "dp-climb-stairs") return "n=4";
+  if (family === "dp-min-cost-stairs") return "costs=[2,5,1]";
+  if (family === "dp-one-three-steps") return "n=4";
+  if (family === "dp-best-non-adjacent") return "points=[4,1,7]";
+  if (family === "dp-non-adjacent-points") return "points=[3,2,7,10]";
+  if (family === "dp-study-plan-ways") return "days=4";
+  if (family === "dp-lis") return "nums=[2,5,3,7]";
+  if (family === "dp-edit-distance") return "cat -> cut";
+  if (family === "dp-decode-ways") return "digits=226";
+  if (family === "dp-max-subarray-deletion") return "values=[1,-2,0,3]";
+  if (family === "dp-maximal-square") return "grid=[[1,1],[1,1]]";
+  if (family === "dp-study-plan-cost") return "costs=[10,15,20]";
+  if (family === "dp-coin-change") return "coins=[1,2], amount=4";
+  if (family === "dp-blocked-stairs") return "openSteps=[1,1,0,1]";
+  if (family === "graph-neighbor-count") return "edges=[A-B, A-C, B-D], node=A";
+  if (family === "graph-course-chain") return "pairs=[COSC350->COSC220, COSC220->COSC112], course=COSC350, prereq=COSC112";
+  if (family === "graph-campus-reachable") return "connections=[library-union, union-gym], start=library, target=gym";
+  if (family === "graph-shortest-grid") return "grid=S..|.#.|..T";
+  if (family === "graph-topological-order") return "prereqs=[B before C, A before B]";
+  if (family === "graph-word-ladder") return "hit -> hot -> dot -> dog";
+  if (family === "graph-clone") return "node 1 connected to 2 and 3";
+  if (family === "graph-alien-order") return "words=[ba, bc, ac]";
   if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
   if (family === "queue-serve-count") return "names=[Ana, Bo, Cy], serveCount=2";
   if (family === "queue-line-commands") {
@@ -3561,7 +3657,11 @@ export function generateTupleSwapSteps(context: GeneratorContext = {}): Step[] {
       code,
       activeLine: phase.line,
       workflow: workflowFromLabels(phases.map((item) => item.title), index),
-      state: phase.state,
+      state: {
+        example: "grid=[[1,1,0],[0,0,1],[1,0,1]]",
+        target: "count separate land groups",
+        ...phase.state,
+      },
     }, index + 1);
   });
 }
@@ -4372,40 +4472,196 @@ export function generateHashMapCollisionSteps(context: GeneratorContext = {}): S
 }
 
 export function generateGraphTraversalSteps(context: GeneratorContext = {}): Step[] {
-  const code = [
-    "start with the first node in the frontier",
-    "take the next node from the frontier",
-    "mark that node as visited",
-    "add unvisited neighbors to the frontier",
-    "continue while the frontier has nodes",
-  ];
-  const graph = layoutCircularGraph(["A", "B", "C", "D", "E"], [["A", "B"], ["A", "C"], ["B", "D"], ["C", "D"], ["D", "E"]]);
-  const phases = [
-    { title: context.title || "Graph BFS", description: "Start from A. The queue holds places to visit next.", visited: [], active: ["A"], queued: ["A"], activeEdges: [], line: 1 },
-    { title: "Visit A", description: "A is visited first, then its neighbors B and C join the queue.", visited: ["A"], active: ["A"], queued: ["B", "C"], activeEdges: ["A-B", "A-C"], line: 3 },
-    { title: "Take B from frontier", description: "B comes out of the queue before C, so BFS spreads level by level.", visited: ["A", "B"], active: ["B"], queued: ["C"], activeEdges: [], line: 2 },
-    { title: "Add B's neighbor", description: "D is discovered from B and joins the back of the frontier.", visited: ["A", "B"], active: ["B"], queued: ["C", "D"], activeEdges: ["B-D"], line: 4 },
-    { title: "Visit C next", description: "C was already waiting, so it gets its turn before nodes farther away.", visited: ["A", "B", "C"], active: ["C"], queued: ["D"], activeEdges: ["C-D"], line: 2 },
-    { title: "Skip repeated D", description: "C also points toward D, but D is already waiting, so the search does not add it twice.", visited: ["A", "B", "C"], active: ["D"], queued: ["D"], activeEdges: ["B-D", "C-D"], line: 4 },
-    { title: "Trace the path", description: "When D is reached, the highlighted path shows how the search got there.", visited: ["A", "B", "C", "D"], active: ["D"], queued: [], activeEdges: ["A-B", "B-D"], line: 5 },
-  ];
+  const family = detectVisualizerFamily("graph", context);
+  type GraphPhase = {
+    title: string;
+    description: string;
+    visited: string[];
+    active: string[];
+    queued?: string[];
+    skipped?: string[];
+    activeEdges: string[];
+    skippedEdges?: string[];
+    line: number;
+    state: Record<string, string | number | boolean>;
+    edgeState?: Edge["state"];
+  };
+  type GraphConfig = {
+    labels: string[];
+    links: Array<[string, string]>;
+    example: string;
+    target: string;
+    code: string[];
+    phases: GraphPhase[];
+  };
+  const configs: Partial<Record<VisualizerFamily, GraphConfig>> = {
+    "graph-neighbor-count": {
+      labels: ["A", "B", "C", "D"],
+      links: [["A", "B"], ["A", "C"], ["B", "D"]],
+      example: "edges=[A-B, A-C, B-D], node=A",
+      target: "count A's direct neighbors",
+      code: ["read the graph edges", "choose the target node", "inspect each edge touching the target", "add one for each direct neighbor", "skip edges that do not touch the target", "save the neighbor count", "finish scanning edges", "return the count"],
+      phases: [
+        { title: context.title || "Neighbor Count", description: "Start with A and the three visible edges.", visited: [], active: ["A"], queued: [], activeEdges: [], line: 1, state: { current: "A", count: 0, action: "read graph" } },
+        { title: "Choose node A", description: "Only edges touching A should count.", visited: [], active: ["A"], queued: ["B", "C"], activeEdges: [], line: 2, state: { current: "A", looking_for: "direct neighbors", count: 0 } },
+        { title: "A connects to B", description: "The A-B edge touches A, so B is one neighbor.", visited: ["A"], active: ["B"], queued: ["C"], activeEdges: ["A-B"], line: 4, state: { edge: "A-B", neighbor: "B", count: 1 } },
+        { title: "A connects to C", description: "The A-C edge also touches A.", visited: ["A", "B"], active: ["C"], queued: [], activeEdges: ["A-C"], line: 4, state: { edge: "A-C", neighbor: "C", count: 2 } },
+        { title: "B-D does not touch A", description: "This edge is in the graph, but it is not a direct neighbor edge for A.", visited: ["A", "B", "C"], active: [], skipped: ["D"], queued: [], activeEdges: [], skippedEdges: ["B-D"], line: 5, state: { edge: "B-D", decision: "skip D", count: 2 } },
+        { title: "Save count 2", description: "A has exactly B and C as direct neighbors. D is ruled out because only B connects to it.", visited: ["A", "B", "C"], active: ["A"], skipped: ["D"], queued: [], activeEdges: ["A-B", "A-C"], skippedEdges: ["B-D"], line: 6, state: { neighbors: "B, C", skipped: "D", result: 2 } },
+        { title: "No more edges", description: "All edges have been checked once; only A's direct edges stayed bright.", visited: ["A", "B", "C"], active: ["A"], skipped: ["D"], queued: [], activeEdges: ["A-B", "A-C"], skippedEdges: ["B-D"], line: 7, state: { scanned: "all edges", skipped: "D", result: 2 } },
+        { title: "Return 2", description: "Return the direct-neighbor count for A: B and C.", visited: ["A", "B", "C"], active: ["A"], skipped: ["D"], queued: [], activeEdges: ["A-B", "A-C"], skippedEdges: ["B-D"], line: 8, edgeState: "path", state: { neighbors: "B, C", skipped: "D", final_result: 2 } },
+      ],
+    },
+    "graph-course-chain": {
+      labels: ["COSC350", "COSC220", "COSC112"],
+      links: [["COSC350", "COSC220"], ["COSC220", "COSC112"]],
+      example: "COSC350 -> COSC220 -> COSC112",
+      target: "is COSC112 required before COSC350?",
+      code: ["start from the course", "put the course in the frontier", "visit the next prerequisite node", "if it is the target prerequisite, save true", "otherwise add that course's prerequisites", "repeat while nodes remain", "save false if target is never reached", "return the boolean result"],
+      phases: [
+        { title: context.title || "Course Prerequisite Chain", description: "Start from COSC350 and walk backward through prerequisites.", visited: [], active: ["COSC350"], queued: ["COSC350"], activeEdges: [], line: 1, state: { current: "COSC350", target_prereq: "COSC112", result: "not decided" } },
+        { title: "Frontier has COSC350", description: "The search begins with the requested course.", visited: [], active: ["COSC350"], queued: ["COSC350"], activeEdges: [], line: 2, state: { frontier: "COSC350" } },
+        { title: "Read COSC220", description: "COSC350 requires COSC220, so add it to the search.", visited: ["COSC350"], active: ["COSC220"], queued: ["COSC220"], activeEdges: ["COSC350-COSC220"], line: 5, state: { current: "COSC220", frontier: "COSC220" } },
+        { title: "COSC220 is not target", description: "Keep searching because COSC220 is not COSC112.", visited: ["COSC350", "COSC220"], active: ["COSC220"], queued: [], activeEdges: [], line: 4, state: { current: "COSC220", decision: "keep going" } },
+        { title: "Read COSC112", description: "COSC220 requires COSC112.", visited: ["COSC350", "COSC220"], active: ["COSC112"], queued: ["COSC112"], activeEdges: ["COSC220-COSC112"], line: 5, state: { current: "COSC112", frontier: "COSC112" } },
+        { title: "Target reached", description: "The target prerequisite is found in the chain.", visited: ["COSC350", "COSC220", "COSC112"], active: ["COSC112"], activeEdges: ["COSC220-COSC112"], line: 4, state: { decision: "found target", result: "true" } },
+        { title: "Path proves it", description: "The highlighted path shows why the answer is true.", visited: ["COSC350", "COSC220", "COSC112"], active: ["COSC112"], activeEdges: ["COSC350-COSC220", "COSC220-COSC112"], line: 6, edgeState: "path", state: { path: "COSC350 -> COSC220 -> COSC112", result: "true" } },
+        { title: "Return true", description: "Return the boolean result.", visited: ["COSC350", "COSC220", "COSC112"], active: ["COSC112"], activeEdges: ["COSC350-COSC220", "COSC220-COSC112"], line: 8, edgeState: "path", state: { final_result: "true" } },
+      ],
+    },
+    "graph-campus-reachable": {
+      labels: ["library", "union", "gym"],
+      links: [["library", "union"], ["union", "gym"]],
+      example: "library -> union -> gym",
+      target: "can we reach gym?",
+      code: ["start at the first stop", "put start in the frontier", "visit a stop", "if stop is target, save true", "add unvisited neighboring stops", "repeat until target or empty frontier", "save false if no route exists", "return the boolean result"],
+      phases: [
+        { title: context.title || "Campus Stop Reachable", description: "The route starts at library and wants gym.", visited: [], active: ["library"], queued: ["library"], activeEdges: [], line: 1, state: { current: "library", target_stop: "gym" } },
+        { title: "Visit library", description: "library is not the target, so inspect neighbors.", visited: ["library"], active: ["library"], queued: [], activeEdges: [], line: 3, state: { current: "library", decision: "not target" } },
+        { title: "Add union", description: "union is connected to library, so it joins the frontier.", visited: ["library"], active: ["union"], queued: ["union"], activeEdges: ["library-union"], line: 5, state: { frontier: "union" } },
+        { title: "Visit union", description: "union is a middle stop, not the target.", visited: ["library", "union"], active: ["union"], queued: [], activeEdges: [], line: 3, state: { current: "union", decision: "not target" } },
+        { title: "Add gym", description: "gym is connected to union.", visited: ["library", "union"], active: ["gym"], queued: ["gym"], activeEdges: ["union-gym"], line: 5, state: { frontier: "gym" } },
+        { title: "Target found", description: "The next stop is gym, so the route exists.", visited: ["library", "union", "gym"], active: ["gym"], activeEdges: ["union-gym"], line: 4, state: { current: "gym", result: "true" } },
+        { title: "Path is visible", description: "The highlighted route explains the true answer.", visited: ["library", "union", "gym"], active: ["gym"], activeEdges: ["library-union", "union-gym"], line: 6, edgeState: "path", state: { path: "library -> union -> gym", result: "true" } },
+        { title: "Return true", description: "Return the boolean reachability result.", visited: ["library", "union", "gym"], active: ["gym"], activeEdges: ["library-union", "union-gym"], line: 8, edgeState: "path", state: { final_result: "true" } },
+      ],
+    },
+    "graph-shortest-grid": {
+      labels: ["S", "1", "2", "3", "T"],
+      links: [["S", "1"], ["1", "2"], ["2", "3"], ["3", "T"]],
+      example: "grid=S..|.#.|..T",
+      target: "shortest move count from S to T",
+      code: ["start BFS at S with distance 0", "take the next cell from the frontier", "if it is T, save its distance", "add open unvisited neighbors with distance + 1", "skip walls and visited cells", "repeat level by level", "trace the shortest path", "return the distance"],
+      phases: [
+        { title: context.title || "Shortest Path in Campus Grid", description: "BFS starts at S because it finds shortest paths level by level.", visited: [], active: ["S"], queued: ["S"], activeEdges: [], line: 1, state: { current: "S", distance: 0 } },
+        { title: "Expand S", description: "Open neighbors one move away join the frontier.", visited: ["S"], active: ["1"], queued: ["1"], activeEdges: ["S-1"], line: 4, state: { frontier: "distance 1", distance: 1 } },
+        { title: "Take distance 1", description: "BFS handles all closer cells before farther cells.", visited: ["S", "1"], active: ["1"], queued: [], activeEdges: [], line: 2, state: { current: "1", distance: 1 } },
+        { title: "Add distance 2", description: "The next open cell is two moves from S.", visited: ["S", "1"], active: ["2"], queued: ["2"], activeEdges: ["1-2"], line: 4, state: { frontier: "distance 2" } },
+        { title: "Add distance 3", description: "Continue through open cells and skip walls.", visited: ["S", "1", "2"], active: ["3"], queued: ["3"], activeEdges: ["2-3"], line: 5, state: { skipped: "wall", distance: 3 } },
+        { title: "Reach target", description: "T is discovered from the distance-3 cell.", visited: ["S", "1", "2", "3"], active: ["T"], queued: ["T"], activeEdges: ["3-T"], line: 3, state: { current: "T", distance: 4, result: 4 } },
+        { title: "Trace shortest path", description: "The path has four edges, so the shortest move count is 4.", visited: ["S", "1", "2", "3", "T"], active: ["T"], activeEdges: ["S-1", "1-2", "2-3", "3-T"], line: 7, edgeState: "path", state: { path: "S -> 1 -> 2 -> 3 -> T", result: 4 } },
+        { title: "Return 4", description: "Return the saved distance when T is reached.", visited: ["S", "1", "2", "3", "T"], active: ["T"], activeEdges: ["S-1", "1-2", "2-3", "3-T"], line: 8, edgeState: "path", state: { final_result: 4 } },
+      ],
+    },
+    "graph-topological-order": {
+      labels: ["A", "B", "C"],
+      links: [["A", "B"], ["B", "C"]],
+      example: "A before B before C",
+      target: "return a valid course order",
+      code: ["build prerequisite arrows", "count how many prerequisites each course has", "start with courses that have zero prerequisites", "remove one ready course", "lower counts for its outgoing neighbors", "add newly ready courses", "repeat until all courses are ordered", "return the order"],
+      phases: [
+        { title: context.title || "Course Plan Topological Order", description: "Arrows point from prerequisite to course.", visited: [], active: ["A", "B", "C"], queued: [], activeEdges: ["A-B", "B-C"], line: 1, state: { order: "empty", ready: "none yet" } },
+        { title: "Count prerequisites", description: "A has none, B waits for A, and C waits for B.", visited: [], active: ["A"], queued: ["A"], activeEdges: [], line: 2, state: { ready: "A", counts: "A:0 B:1 C:1" } },
+        { title: "Place A", description: "A is ready, so put it first in the order.", visited: ["A"], active: ["A"], queued: [], activeEdges: [], line: 4, state: { order: "A", ready: "none" } },
+        { title: "Unlock B", description: "Removing A lowers B's prerequisite count to 0.", visited: ["A"], active: ["B"], queued: ["B"], activeEdges: ["A-B"], line: 5, state: { ready: "B", counts: "B:0" } },
+        { title: "Place B", description: "B is now safe to take after A.", visited: ["A", "B"], active: ["B"], queued: [], activeEdges: [], line: 4, state: { order: "A, B" } },
+        { title: "Unlock C", description: "Removing B lowers C's prerequisite count to 0.", visited: ["A", "B"], active: ["C"], queued: ["C"], activeEdges: ["B-C"], line: 6, state: { ready: "C", counts: "C:0" } },
+        { title: "Place C", description: "All prerequisites before C are already in the order.", visited: ["A", "B", "C"], active: ["C"], activeEdges: [], line: 7, state: { order: "A, B, C", result: "[A, B, C]" } },
+        { title: "Return order", description: "Return a valid topological ordering.", visited: ["A", "B", "C"], active: ["C"], activeEdges: ["A-B", "B-C"], line: 8, edgeState: "path", state: { final_result: "[A, B, C]" } },
+      ],
+    },
+    "graph-word-ladder": {
+      labels: ["hit", "hot", "dot", "dog"],
+      links: [["hit", "hot"], ["hot", "dot"], ["dot", "dog"]],
+      example: "hit -> hot -> dot -> dog",
+      target: "count shortest word steps",
+      code: ["start BFS from the first word", "change one letter to find neighbors", "add unseen valid words to the frontier", "store each word's distance", "stop when the target word appears", "trace the word chain", "count words in the chain", "return the step count"],
+      phases: [
+        { title: context.title || "Word Ladder Steps", description: "Start at hit with distance 1.", visited: [], active: ["hit"], queued: ["hit"], activeEdges: [], line: 1, state: { current: "hit", distance: 1 } },
+        { title: "Change one letter", description: "hot differs by one letter and is in the word list.", visited: ["hit"], active: ["hot"], queued: ["hot"], activeEdges: ["hit-hot"], line: 2, state: { neighbor: "hot", distance: 2 } },
+        { title: "Visit hot", description: "BFS visits hot before deeper words.", visited: ["hit", "hot"], active: ["hot"], queued: [], activeEdges: [], line: 4, state: { current: "hot", distance: 2 } },
+        { title: "Add dot", description: "dot is a valid one-letter change from hot.", visited: ["hit", "hot"], active: ["dot"], queued: ["dot"], activeEdges: ["hot-dot"], line: 3, state: { neighbor: "dot", distance: 3 } },
+        { title: "Add dog", description: "dog is one letter away from dot.", visited: ["hit", "hot", "dot"], active: ["dog"], queued: ["dog"], activeEdges: ["dot-dog"], line: 3, state: { neighbor: "dog", distance: 4 } },
+        { title: "Target appears", description: "The target word is reached, so stop the BFS.", visited: ["hit", "hot", "dot", "dog"], active: ["dog"], activeEdges: ["dot-dog"], line: 5, state: { current: "dog", result: 4 } },
+        { title: "Trace ladder", description: "The highlighted chain shows the shortest transformation.", visited: ["hit", "hot", "dot", "dog"], active: ["dog"], activeEdges: ["hit-hot", "hot-dot", "dot-dog"], line: 6, edgeState: "path", state: { path: "hit -> hot -> dot -> dog", result: 4 } },
+        { title: "Return 4", description: "Return the compact ladder length.", visited: ["hit", "hot", "dot", "dog"], active: ["dog"], activeEdges: ["hit-hot", "hot-dot", "dot-dog"], line: 8, edgeState: "path", state: { final_result: 4 } },
+      ],
+    },
+    "graph-clone": {
+      labels: ["1", "2", "3", "1'", "2'", "3'"],
+      links: [["1", "2"], ["1", "3"], ["1'", "2'"], ["1'", "3'"]],
+      example: "node 1 connected to 2 and 3",
+      target: "copy graph shape",
+      code: ["visit an original node", "create its clone if missing", "remember original to clone", "visit each original neighbor", "create missing neighbor clones", "connect clone to cloned neighbors", "repeat until originals are copied", "return the cloned start node"],
+      phases: [
+        { title: context.title || "Clone Graph", description: "Original nodes 1, 2, and 3 are on the left; clone nodes appear as they are created.", visited: [], active: ["1"], queued: [], activeEdges: ["1-2", "1-3"], line: 1, state: { current: "1", cloned: "none" } },
+        { title: "Create clone 1'", description: "The first original gets a matching clone.", visited: ["1"], active: ["1'"], queued: [], activeEdges: [], line: 2, state: { map: "1 -> 1'", cloned: "1'" } },
+        { title: "Remember the clone", description: "Store the original-to-clone mapping so repeats use the same copy.", visited: ["1"], active: ["1", "1'"], queued: [], activeEdges: [], line: 3, state: { map: "1 -> 1'" } },
+        { title: "Visit neighbor 2", description: "Neighbor 2 needs its own clone before the edge can be copied.", visited: ["1"], active: ["2", "2'"], queued: ["3"], activeEdges: ["1-2"], line: 4, state: { current: "2", cloned: "2'" } },
+        { title: "Connect 1' to 2'", description: "Copy the original 1-2 edge into the clone graph.", visited: ["1", "2"], active: ["1'", "2'"], queued: ["3"], activeEdges: ["1'-2'"], line: 6, state: { copied_edge: "1' -> 2'" } },
+        { title: "Visit neighbor 3", description: "Create the clone for 3 and copy the second edge.", visited: ["1", "2"], active: ["3", "3'"], queued: [], activeEdges: ["1-3"], line: 5, state: { current: "3", cloned: "3'" } },
+        { title: "Connect 1' to 3'", description: "The clone now has the same two neighbors as the original.", visited: ["1", "2", "3"], active: ["1'", "3'"], activeEdges: ["1'-2'", "1'-3'"], line: 7, state: { cloned_shape: "1' connected to 2' and 3'", result: "clone ready" } },
+        { title: "Return clone 1'", description: "Return the cloned starting node.", visited: ["1", "2", "3", "1'", "2'", "3'"], active: ["1'"], activeEdges: ["1'-2'", "1'-3'"], line: 8, edgeState: "path", state: { final_result: "new graph with same shape" } },
+      ],
+    },
+    "graph-alien-order": {
+      labels: ["b", "a", "c"],
+      links: [["b", "a"], ["a", "c"]],
+      example: "words=[ba, bc, ac]",
+      target: "infer letter order",
+      code: ["compare neighboring words", "find the first different letter", "draw an ordering edge", "count incoming edges for each letter", "start with letters that have no incoming edges", "remove ready letters and unlock neighbors", "append letters to the order", "return the inferred order"],
+      phases: [
+        { title: context.title || "Alien Dictionary Order", description: "Compare words to discover letter rules.", visited: [], active: ["b", "a", "c"], queued: [], activeEdges: [], line: 1, state: { words: "ba, bc, ac", order: "empty" } },
+        { title: "ba before bc", description: "The first different letters are a and c, so a comes before c.", visited: [], active: ["a", "c"], queued: [], activeEdges: ["a-c"], line: 3, state: { rule: "a before c" } },
+        { title: "bc before ac", description: "The first different letters are b and a, so b comes before a.", visited: [], active: ["b", "a"], queued: [], activeEdges: ["b-a"], line: 3, state: { rule: "b before a" } },
+        { title: "Count incoming edges", description: "b has no incoming edges, so it is ready first.", visited: [], active: ["b"], queued: ["b"], activeEdges: [], line: 4, state: { ready: "b", incoming: "b:0 a:1 c:1" } },
+        { title: "Append b", description: "Removing b unlocks a.", visited: ["b"], active: ["a"], queued: ["a"], activeEdges: ["b-a"], line: 6, state: { order: "b", ready: "a" } },
+        { title: "Append a", description: "Removing a unlocks c.", visited: ["b", "a"], active: ["c"], queued: ["c"], activeEdges: ["a-c"], line: 6, state: { order: "b, a", ready: "c" } },
+        { title: "Append c", description: "All letters are now ordered.", visited: ["b", "a", "c"], active: ["c"], activeEdges: [], line: 7, state: { order: "b, a, c", result: "bac" } },
+        { title: "Return bac", description: "Return the inferred letter order for the compact sample.", visited: ["b", "a", "c"], active: ["c"], activeEdges: ["b-a", "a-c"], line: 8, edgeState: "path", state: { final_result: "bac" } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["graph-campus-reachable"]!;
+  const graph = layoutCircularGraph(config.labels, config.links);
+  const phases = config.phases;
   return phases.map((phase, index) => {
     const visited = new Set(phase.visited);
     const active = new Set(phase.active);
-    const queued = new Set(phase.queued);
+    const queued = new Set(phase.queued || []);
+    const skipped = new Set(phase.skipped || []);
+    const skippedEdges = new Set(phase.skippedEdges || []);
+    const baseEdges = graph.edges.map((edge) => (skippedEdges.has(edge.id || `${edge.from}-${edge.to}`) ? { ...edge, state: "skipped" as const } : edge));
     return step({
       concept: "graph",
       title: phase.title,
       description: phase.description,
       nodes: graph.nodes.map((node) => ({
         ...node,
-        state: active.has(node.id) ? "active" : visited.has(node.id) ? "visited" : queued.has(node.id) ? "queued" : "default",
+        state: active.has(node.id) ? "active" : visited.has(node.id) ? "visited" : queued.has(node.id) ? "queued" : skipped.has(node.id) ? "skipped" : "default",
       })),
-      edges: withEdgeState(graph.edges, phase.activeEdges, index === phases.length - 1 ? "path" : "active"),
+      edges: withEdgeState(baseEdges, phase.activeEdges, phase.edgeState || (index === phases.length - 1 ? "path" : "active")),
       highlights: { nodeIds: [...phase.active, ...phase.visited], edgeIds: phase.activeEdges, lineNumbers: [phase.line] },
-      code,
+      code: config.code,
       activeLine: phase.line,
-      state: { queue: phase.queued.join(", ") || "empty", visited: phase.visited.join(", ") || "none" },
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: {
+        example: config.example,
+        target: config.target,
+        frontier: (phase.queued || []).join(", ") || "empty",
+        visited: phase.visited.join(", ") || "none",
+        ...phase.state,
+      },
     }, index + 1);
   });
 }
@@ -5966,18 +6222,108 @@ export function generateSlidingWindowSteps(context: GeneratorContext = {}): Step
 }
 
 export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
-  const code = [
-    "start a countdown call with n",
-    "base case: when n is 0, return the base list",
-    "ask a smaller countdown call for help",
-    "answer = [n] + smaller",
-    "send the answer back up",
-    "pause the current call on the stack",
-    "return the base value",
-    "combine the current call with the smaller answer",
-    "return the combined answer",
-  ];
-  const returnSteps = "base gives [0]|1 + [0] gives [1, 0]|2 + [1, 0] gives [2, 1, 0]";
+  const family = detectVisualizerFamily("recursion", context);
+  if (family === "recursion-nested-list") return generateNestedRecursionSteps(context);
+  const configs: Partial<Record<VisualizerFamily, {
+    example: string;
+    target: string;
+    calls: string[];
+    baseText: string;
+    returnValues: string[];
+    returnSteps: string[];
+    code: string[];
+    ownValue: string[];
+    smallerValue: string[];
+    finalResult: string;
+  }>> = {
+    "recursion-countdown-list": {
+      example: "countdown(2)",
+      target: "return [2, 1, 0]",
+      calls: ["countdown(2)", "countdown(1)", "countdown(0)"],
+      baseText: "n == 0",
+      returnValues: ["[0]", "[1, 0]", "[2, 1, 0]"],
+      returnSteps: ["base gives [0]", "1 + [0] gives [1, 0]", "2 + [1, 0] gives [2, 1, 0]"],
+      code: ["start a countdown call with n", "base case: when n is 0, return the base list", "ask a smaller countdown call for help", "answer = [n] + smaller", "send the answer back up", "pause the current call on the stack", "return the base value", "combine the current call with the smaller answer", "return the combined answer"],
+      ownValue: ["2", "1"],
+      smallerValue: ["[1, 0]", "[0]"],
+      finalResult: "[2, 1, 0]",
+    },
+    "recursion-factorial": {
+      example: "factorial(3)",
+      target: "return 6",
+      calls: ["factorial(3)", "factorial(2)", "factorial(1)"],
+      baseText: "n == 1",
+      returnValues: ["1", "2", "6"],
+      returnSteps: ["base gives 1", "2 x 1 gives 2", "3 x 2 gives 6"],
+      code: ["start a factorial call with n", "base case: when n is 1, return 1", "ask a smaller factorial call for help", "answer = n * smaller", "send the answer back up", "pause the current call on the stack", "return the base value", "multiply the current n by the smaller answer", "return the combined answer"],
+      ownValue: ["3", "2"],
+      smallerValue: ["2", "1"],
+      finalResult: "6",
+    },
+    "recursion-list-count": {
+      example: "count([5,6])",
+      target: "return 2",
+      calls: ["count([5,6])", "count([6])", "count([])"],
+      baseText: "list empty",
+      returnValues: ["0", "1", "2"],
+      returnSteps: ["empty list gives 0", "count [6] gives 1", "count [5,6] gives 2"],
+      code: ["start a count call with the list", "base case: when the list is empty, return 0", "ask for the count of the rest", "answer = 1 + smaller", "send the answer back up", "pause the current call on the stack", "return the base value", "add one item to the smaller count", "return the combined answer"],
+      ownValue: ["5", "6"],
+      smallerValue: ["1", "0"],
+      finalResult: "2",
+    },
+    "recursion-list-sum": {
+      example: "sum([2,5])",
+      target: "return 7",
+      calls: ["sum([2,5])", "sum([5])", "sum([])"],
+      baseText: "list empty",
+      returnValues: ["0", "5", "7"],
+      returnSteps: ["empty list gives 0", "5 + 0 gives 5", "2 + 5 gives 7"],
+      code: ["start a sum call with the list", "base case: when the list is empty, return 0", "ask for the sum of the rest", "answer = first + smaller", "send the answer back up", "pause the current call on the stack", "return the base value", "add the current first value to the smaller sum", "return the combined answer"],
+      ownValue: ["2", "5"],
+      smallerValue: ["5", "0"],
+      finalResult: "7",
+    },
+    "recursion-digit-sum": {
+      example: "digit_sum(34)",
+      target: "return 7",
+      calls: ["digit_sum(34)", "digit_sum(3)", "digit_sum(0)"],
+      baseText: "number == 0",
+      returnValues: ["0", "3", "7"],
+      returnSteps: ["base gives 0", "3 + 0 gives 3", "4 + 3 gives 7"],
+      code: ["start a digit-sum call with the number", "base case: when the number is 0, return 0", "ask for the digit sum of the number without its last digit", "answer = last digit + smaller", "send the answer back up", "pause the current call on the stack", "return the base value", "add the current last digit to the smaller sum", "return the combined answer"],
+      ownValue: ["4", "3"],
+      smallerValue: ["3", "0"],
+      finalResult: "7",
+    },
+    "recursion-power": {
+      example: "power(2,2)",
+      target: "return 4",
+      calls: ["power(2,2)", "power(2,1)", "power(2,0)"],
+      baseText: "exponent == 0",
+      returnValues: ["1", "2", "4"],
+      returnSteps: ["base gives 1", "2 x 1 gives 2", "2 x 2 gives 4"],
+      code: ["start a power call with base and exponent", "base case: when exponent is 0, return 1", "ask for power with one smaller exponent", "answer = base * smaller", "send the answer back up", "pause the current call on the stack", "return the base value", "multiply by the base as the calls return", "return the combined answer"],
+      ownValue: ["2", "2"],
+      smallerValue: ["2", "1"],
+      finalResult: "4",
+    },
+    "recursion-reverse-text": {
+      example: "reverse('go')",
+      target: "return 'og'",
+      calls: ["reverse(go)", "reverse(o)", "reverse()"],
+      baseText: "text empty",
+      returnValues: ["''", "'o'", "'og'"],
+      returnSteps: ["empty text gives ''", "'' + o gives 'o'", "'o' + g gives 'og'"],
+      code: ["start a reverse call with the text", "base case: when text is empty, return empty text", "ask for the reverse of the rest", "answer = smaller + first character", "send the answer back up", "pause the current call on the stack", "return the base value", "place the current first character after the smaller answer", "return the combined answer"],
+      ownValue: ["g", "o"],
+      smallerValue: ["'o'", "''"],
+      finalResult: "'og'",
+    },
+  };
+  const config = configs[family] || configs["recursion-countdown-list"]!;
+  const code = config.code;
+  const returnSteps = config.returnSteps.join("|");
   const callFrame = (id: string, y: number, label: string, value: string, state: Node["state"] = "default"): Node => ({
     id,
     x: 360,
@@ -6001,14 +6347,12 @@ export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
       if (index < activeIndex) return "waiting";
       return "returned";
     };
-    const allCalls = [
-      callFrame("call-0", 115, callLabel(0), "countdown(2)", callState(0)),
-      callFrame("call-1", 205, callLabel(1), "countdown(1)", callState(1)),
-      callFrame("call-2", 295, callLabel(2), "countdown(0)", callState(2)),
-    ].slice(0, visibleCalls);
+    const allCalls = config.calls.map((value, callIndex) => (
+      callFrame(`call-${callIndex}`, 115 + callIndex * 90, callLabel(callIndex), value, callState(callIndex))
+    )).slice(0, visibleCalls);
     const nodes: Node[] = [
       ...allCalls,
-      { id: "base-case", x: 650, y: 175, value: baseState === "active" || baseState === "visited" ? "n == 0" : "not yet", type: "logic-node", label: "base case", state: baseState, meta: { role: "base-case" } },
+      { id: "base-case", x: 650, y: 175, value: baseState === "active" || baseState === "visited" ? config.baseText : "not yet", type: "logic-node", label: "base case", state: baseState, meta: { role: "base-case" } },
       { id: "return-chain", x: 650, y: 335, value: resultValue, type: "logic-node", label: "return value", state: resultState, meta: { role: "result" } },
     ];
     const edges: Edge[] = allCalls.slice(0, -1).map((node, edgeIndex) => ({
@@ -6029,15 +6373,15 @@ export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
     return { nodes, edges, highlights };
   };
   const phases = [
-    { visible: 1, active: 0, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: context.title || "Call countdown(2)", desc: "Use a tiny example. The first call owns n = 2 and must decide whether it can answer now.", line: 1, state: { phase: "call", current_call: "countdown(2)", waiting: "none", action: "start with n = 2", return_value: "not returned yet", return_step_index: -1 } },
-    { visible: 1, active: 0, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Check n = 2", desc: "n is not 0, so this call cannot finish yet. It will ask a smaller call for help.", line: 2, state: { phase: "base check", current_call: "countdown(2)", waiting: "none", action: "not base case; call n - 1", return_value: "not returned yet", return_step_index: -1 } },
-    { visible: 2, active: 1, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Call countdown(1)", desc: "countdown(2) pauses and waits while countdown(1) starts.", line: 3, state: { phase: "smaller call", current_call: "countdown(1)", waiting: "countdown(2)", action: "push countdown(1) onto stack", return_value: "not returned yet", return_step_index: -1 } },
-    { visible: 2, active: 1, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Check n = 1", desc: "n is still not 0, so countdown(1) also pauses and asks for a smaller answer.", line: 2, state: { phase: "base check", current_call: "countdown(1)", waiting: "countdown(2)", action: "not base case; call n - 1", return_value: "not returned yet", return_step_index: -1 } },
-    { visible: 3, active: 2, base: "active" as const, ret: "not returned yet", retState: "default" as const, title: "Call countdown(0)", desc: "The next call reaches n = 0. This is the base case, so recursion stops going deeper.", line: 2, state: { phase: "base case", current_call: "countdown(0)", waiting: "countdown(2), countdown(1)", action: "base case found", return_value: "not returned yet", return_step_index: -1 } },
-    { visible: 3, active: 2, base: "visited" as const, ret: "[0]", retState: "active" as const, title: "Return base value", desc: "countdown(0) can answer directly by returning [0]. Now the return chain begins.", line: 2, state: { phase: "return", current_call: "countdown(0)", waiting: "countdown(2), countdown(1)", action: "send [0] back up", return_value: "[0]", return_step_index: 0 } },
-    { visible: 3, active: 1, base: "visited" as const, ret: "[1, 0]", retState: "active" as const, title: "Unwind to countdown(1)", desc: "countdown(1) receives [0], puts its own 1 in front, and returns [1, 0].", line: 4, state: { phase: "unwind", current_call: "countdown(1)", waiting: "countdown(2)", action: "combine 1 with [0]", return_value: "[1, 0]", return_step_index: 1 } },
-    { visible: 3, active: 0, base: "visited" as const, ret: "[2, 1, 0]", retState: "active" as const, title: "Unwind to countdown(2)", desc: "countdown(2) receives [1, 0], puts its own 2 in front, and returns [2, 1, 0].", line: 4, state: { phase: "unwind", current_call: "countdown(2)", waiting: "none", action: "combine 2 with [1, 0]", return_value: "[2, 1, 0]", return_step_index: 2 } },
-    { visible: 3, active: -1, base: "visited" as const, ret: "[2, 1, 0]", retState: "matched" as const, title: "Finish recursion", desc: "The first call has returned, so the whole recursive process is complete.", line: 5, state: { phase: "done", current_call: "none", waiting: "none", action: "all frames returned", result: "[2, 1, 0]", return_step_index: 2 } },
+    { visible: 1, active: 0, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: context.title || `Call ${config.calls[0]}`, desc: `Use a tiny example: ${config.example}. The first call must decide whether it can answer now.`, line: 1, state: { phase: "call", current_call: config.calls[0], waiting: "none", action: "start first call", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 1, active: 0, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Check first call", desc: `The first call is not at ${config.baseText}, so it asks a smaller call for help.`, line: 2, state: { phase: "base check", current_call: config.calls[0], waiting: "none", action: "not base case", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 2, active: 1, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: `Call ${config.calls[1]}`, desc: `${config.calls[0]} pauses and waits while ${config.calls[1]} starts.`, line: 3, state: { phase: "smaller call", current_call: config.calls[1], waiting: config.calls[0], action: "push smaller call", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 2, active: 1, base: "default" as const, ret: "not returned yet", retState: "default" as const, title: "Check smaller call", desc: `This call is still not at ${config.baseText}, so it asks for one more smaller answer.`, line: 2, state: { phase: "base check", current_call: config.calls[1], waiting: config.calls[0], action: "ask again", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 3, active: 2, base: "active" as const, ret: "not returned yet", retState: "default" as const, title: `Reach ${config.calls[2]}`, desc: `Now the active call matches the base case: ${config.baseText}. Recursion stops going deeper.`, line: 2, state: { phase: "base case", current_call: config.calls[2], waiting: "2 calls waiting", action: "base case found", return_value: "not returned yet", return_step_index: -1 } },
+    { visible: 3, active: 2, base: "visited" as const, ret: config.returnValues[0], retState: "active" as const, title: "Return base value", desc: `The base call returns ${config.returnValues[0]}. Now the answer starts moving back up the stack.`, line: 7, state: { phase: "return", current_call: config.calls[2], waiting: "2 calls waiting", action: `send ${config.returnValues[0]} back up`, return_value: config.returnValues[0], return_step_index: 0 } },
+    { visible: 3, active: 1, base: "visited" as const, ret: config.returnValues[1], retState: "active" as const, title: `Unwind to ${config.calls[1]}`, desc: `${config.calls[1]} receives ${config.smallerValue[1]}, combines its own ${config.ownValue[1]}, and returns ${config.returnValues[1]}.`, line: 8, state: { phase: "unwind", current_call: config.calls[1], waiting: config.calls[0], action: `${config.ownValue[1]} with ${config.smallerValue[1]}`, return_value: config.returnValues[1], return_step_index: 1 } },
+    { visible: 3, active: 0, base: "visited" as const, ret: config.returnValues[2], retState: "active" as const, title: `Unwind to ${config.calls[0]}`, desc: `${config.calls[0]} receives ${config.smallerValue[0]}, combines its own ${config.ownValue[0]}, and returns ${config.returnValues[2]}.`, line: 8, state: { phase: "unwind", current_call: config.calls[0], waiting: "none", action: `${config.ownValue[0]} with ${config.smallerValue[0]}`, return_value: config.returnValues[2], return_step_index: 2 } },
+    { visible: 3, active: -1, base: "visited" as const, ret: config.returnValues[2], retState: "matched" as const, title: "Finish recursion", desc: "The first call has returned, so the recursive trace is complete.", line: 9, state: { phase: "done", current_call: "none", waiting: "none", action: "all frames returned", result: config.finalResult, return_step_index: 2 } },
   ];
   return phases.map((phase, index) => {
     const visual = build(phase.visible, phase.active, phase.base, phase.ret, phase.retState);
@@ -6051,7 +6395,7 @@ export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
       code,
       activeLine: phase.line,
       workflow: workflowFromLabels(phases.map((item) => item.title), index),
-      state: { example: "countdown(2)", target: "return [2, 1, 0]", return_steps: returnSteps, ...phase.state },
+      state: { example: config.example, target: config.target, return_steps: returnSteps, ...phase.state },
     }, index + 1);
   });
 }
@@ -6537,105 +6881,284 @@ export function generateUnionFindSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateDynamicProgrammingSteps(context: GeneratorContext = {}): Step[] {
-  const code = [
-    "dp[0] = base_answer",
-    "for state from 1 to target:",
-    "  read smaller saved answers",
-    "  candidate = combine(smaller answers)",
-    "  dp[state] = best candidate",
-    "return dp[target]",
-  ];
-  const baseNodes = Array.from({ length: 5 }, (_, index) => ({
-    id: `dp-${index}`,
-    x: 260 + index * 110,
-    y: 230,
-    value: "",
-    type: "array-cell" as const,
-    label: `dp[${index}]`,
-  }));
-  const phases = [
-    {
-      active: 4,
-      filled: -1,
-      title: context.title || "Dynamic programming goal",
-      description: "We want dp[4]. Instead of solving it all at once, build smaller saved answers first.",
-      line: 2,
-      state: { target: "dp[4]", saved: "none yet" },
+  const family = detectVisualizerFamily("dynamic-programming", context);
+  type DPPhase = {
+    active: number;
+    filled: Array<string | number>;
+    deps?: number[];
+    line: number;
+    title: string;
+    description: string;
+    state: Record<string, string | number | boolean>;
+  };
+  type DPConfig = {
+    labels: string[];
+    example: string;
+    target: string;
+    code: string[];
+    phases: DPPhase[];
+  };
+  const configs: Partial<Record<VisualizerFamily, DPConfig>> = {
+    "dp-climb-stairs": {
+      labels: ["ways 0", "ways 1", "ways 2", "ways 3", "ways 4"],
+      example: "n=4",
+      target: "count ways to reach step 4",
+      code: ["name the target step", "save ways for step 0 and step 1", "read the previous two saved steps", "answer = one step back + two steps back", "save ways for this step", "repeat until the target step", "read the target state", "return the saved answer"],
+      phases: [
+        { active: 4, filled: ["", "", "", "", ""], line: 1, title: context.title || "Climb Small Staircase", description: "The answer is stored at the target step, but smaller steps must be saved first.", state: { current_state: "ways 4", rule_label: "goal", rule: "build from smaller stair counts", action: "target is step 4" } },
+        { active: 0, filled: [1, 1, "", "", ""], line: 2, title: "Save base steps", description: "There is 1 way to stand at step 0 and 1 way to reach step 1.", state: { current_state: "ways 0 and ways 1", saved: "1, 1", action: "base states are ready" } },
+        { active: 2, deps: [1, 0], filled: [1, 1, "", "", ""], line: 3, title: "Build step 2", description: "Step 2 can come from step 1 or step 0.", state: { current_state: "ways 2", read_from: "ways 1, ways 0", rule: "1 + 1", action: "combine previous two states" } },
+        { active: 2, filled: [1, 1, 2, "", ""], line: 5, title: "Save ways 2", description: "Save 2 so later steps can reuse it.", state: { current_state: "ways 2", saved: 2, result: 2, action: "store ways[2]" } },
+        { active: 3, deps: [2, 1], filled: [1, 1, 2, 3, ""], line: 4, title: "Save ways 3", description: "Use the two saved states behind step 3.", state: { current_state: "ways 3", read_from: "ways 2, ways 1", rule: "2 + 1 = 3", result: 3 } },
+        { active: 4, deps: [3, 2], filled: [1, 1, 2, 3, ""], line: 3, title: "Build target step", description: "The target step reads the two saved answers directly before saving.", state: { current_state: "ways 4", read_from: "ways 3, ways 2", rule: "3 + 2", action: "no recalculation needed" } },
+        { active: 4, filled: [1, 1, 2, 3, 5], line: 5, title: "Save ways 4", description: "Step 4 has 5 possible paths.", state: { current_state: "ways 4", saved: 5, result: 5 } },
+        { active: 4, filled: [1, 1, 2, 3, 5], line: 8, title: "Return 5", description: "Return the saved value at the target state.", state: { current_state: "ways 4", final_result: 5 } },
+      ],
     },
-    {
-      active: 0,
-      filled: 0,
-      title: "Save the base case",
-      description: "The smallest state is already known, so store it in dp[0].",
-      line: 1,
-      state: { saved: "dp[0]", value: 1 },
+    "dp-min-cost-stairs": {
+      labels: ["cost 0", "cost 1", "cost 2", "top"],
+      example: "costs=[2,5,1]",
+      target: "minimum cost to reach top",
+      code: ["save the cost of the first two places", "for each next place, read the two ways to arrive", "choose the cheaper previous cost", "add the current cost if this is a paid step", "save the best cost here", "repeat to the top", "compare the final two positions", "return the cheaper total"],
+      phases: [
+        { active: 0, filled: [2, "", "", ""], line: 1, title: context.title || "Tiny Minimum Stair Cost", description: "Start by saving the cost of landing on the first step.", state: { current_state: "cost 0", paid: 2, result: 2 } },
+        { active: 1, filled: [2, 5, "", ""], line: 1, title: "Save second step", description: "The second step can also be a starting point.", state: { current_state: "cost 1", paid: 5, result: 5 } },
+        { active: 2, deps: [1, 0], filled: [2, 5, "", ""], line: 2, title: "Read ways to step 2", description: "Step 2 can be reached from step 1 or step 0.", state: { current_state: "cost 2", read_from: "cost 1, cost 0", rule: "choose cheaper previous" } },
+        { active: 2, deps: [1, 0], filled: [2, 5, "", ""], line: 3, title: "Choose cost 0", description: "2 is cheaper than 5, so use it before adding this step's cost.", state: { current_state: "cost 2", chosen: 2, decision: "cost 0" } },
+        { active: 2, filled: [2, 5, 3, ""], line: 5, title: "Save cost 2", description: "Add step cost 1 to the cheaper previous total: 2 + 1 = 3.", state: { current_state: "cost 2", saved: 3, result: 3 } },
+        { active: 3, deps: [2, 1], filled: [2, 5, 3, ""], line: 7, title: "Compare final positions", description: "The top can be reached from the last two saved positions.", state: { current_state: "top", read_from: "cost 2, cost 1", rule: "min(3, 5)" } },
+        { active: 3, filled: [2, 5, 3, 3], line: 8, title: "Save top cost", description: "The cheaper total to reach the top is 3.", state: { current_state: "top", saved: 3, result: 3 } },
+        { active: 3, filled: [2, 5, 3, 3], line: 8, title: "Return 3", description: "Return the saved minimum top cost.", state: { current_state: "top", final_result: 3 } },
+      ],
     },
-    {
-      active: 1,
-      filled: 0,
-      title: "Read a saved answer",
-      description: "To fill dp[1], read dp[0] instead of recalculating the base case.",
-      line: 3,
-      state: { reading: "dp[0]", building: "dp[1]" },
+    "dp-one-three-steps": {
+      labels: ["ways 0", "ways 1", "ways 2", "ways 3", "ways 4"],
+      example: "n=4",
+      target: "use jumps of 1 or 3",
+      code: ["save the starting step", "read the one-step-back state", "also read the three-step-back state when it exists", "answer = allowed saved ways added together", "save ways for this step", "repeat to n", "read ways at n", "return the saved answer"],
+      phases: [
+        { active: 0, filled: [1, "", "", "", ""], line: 1, title: context.title || "Ways With One Or Three Steps", description: "There is one way to be at the ground before taking steps.", state: { current_state: "ways 0", saved: 1 } },
+        { active: 1, deps: [0], filled: [1, 1, "", "", ""], line: 2, title: "Reach step 1", description: "Only a 1-step jump can reach step 1.", state: { current_state: "ways 1", read_from: "ways 0", result: 1 } },
+        { active: 2, deps: [1], filled: [1, 1, 1, "", ""], line: 2, title: "Reach step 2", description: "Again only the one-step-back state is valid.", state: { current_state: "ways 2", read_from: "ways 1", result: 1 } },
+        { active: 3, deps: [2, 0], filled: [1, 1, 1, "", ""], line: 3, title: "Step 3 has two sources", description: "Step 3 can come from step 2 or from step 0 using a 3-step jump.", state: { current_state: "ways 3", read_from: "ways 2, ways 0", rule: "1 + 1" } },
+        { active: 3, filled: [1, 1, 1, 2, ""], line: 5, title: "Save ways 3", description: "Store 2 ways for step 3.", state: { current_state: "ways 3", result: 2 } },
+        { active: 4, deps: [3, 1], filled: [1, 1, 1, 2, ""], line: 3, title: "Build step 4", description: "Step 4 reads step 3 and step 1.", state: { current_state: "ways 4", read_from: "ways 3, ways 1", rule: "2 + 1" } },
+        { active: 4, filled: [1, 1, 1, 2, 3], line: 5, title: "Save ways 4", description: "The target state stores 3.", state: { current_state: "ways 4", result: 3 } },
+        { active: 4, filled: [1, 1, 1, 2, 3], line: 8, title: "Return 3", description: "Return the saved answer for n = 4.", state: { current_state: "ways 4", final_result: 3 } },
+      ],
     },
-    {
-      active: 1,
-      filled: 1,
-      title: "Save dp[1]",
-      description: "After using the smaller answer, store the new answer so later states can reuse it.",
-      line: 5,
-      state: { saved: "dp[1]", value: 1 },
+    "dp-best-non-adjacent": {
+      labels: ["item 0", "item 1", "item 2"],
+      example: "points=[4,1,7]",
+      target: "best total without adjacent items",
+      code: ["save the best before any item", "for each item, compare take vs skip", "take means add current points to the best two back", "skip means keep the previous best", "save the larger choice", "repeat to the last item", "read the last saved best", "return the best total"],
+      phases: [
+        { active: 0, filled: [4, "", ""], line: 1, title: context.title || "Best Non Adjacent Total", description: "The first item can be taken, so the best starts at 4.", state: { current_state: "item 0", take: 4, skip: 0, result: 4 } },
+        { active: 1, deps: [0], filled: [4, "", ""], line: 2, title: "Check item 1", description: "Item 1 is adjacent to item 0, so compare taking 1 with skipping it.", state: { current_state: "item 1", take: 1, skip: 4 } },
+        { active: 1, filled: [4, 4, ""], line: 5, title: "Save best 4", description: "Skipping item 1 keeps the better total.", state: { current_state: "item 1", decision: "skip", result: 4 } },
+        { active: 2, deps: [0, 1], filled: [4, 4, ""], line: 3, title: "Check item 2", description: "Taking 7 can combine with the best before item 1.", state: { current_state: "item 2", read_from: "item 0 and item 1", take: 11, skip: 4 } },
+        { active: 2, filled: [4, 4, 11], line: 5, title: "Save best 11", description: "4 + 7 beats skipping, so save 11.", state: { current_state: "item 2", decision: "take", result: 11 } },
+        { active: 2, filled: [4, 4, 11], line: 6, title: "Last item reached", description: "Every item has a saved best total.", state: { current_state: "item 2", saved: "4, 4, 11" } },
+        { active: 2, filled: [4, 4, 11], line: 7, title: "Read final best", description: "The last saved state is the whole-list answer.", state: { current_state: "item 2", result: 11 } },
+        { active: 2, filled: [4, 4, 11], line: 8, title: "Return 11", description: "Return the best non-adjacent total.", state: { current_state: "item 2", final_result: 11 } },
+      ],
     },
-    {
-      active: 2,
-      filled: 2,
-      title: "Combine earlier cells",
-      description: "dp[2] can use saved answers such as dp[1] and dp[0]. The table prevents repeated work.",
-      line: 4,
-      state: { reading: "dp[1], dp[0]", saved: "dp[2]" },
+    "dp-study-plan-ways": {
+      labels: ["day 0", "day 1", "day 2", "day 3", "day 4"],
+      example: "days=4",
+      target: "count study plans through day 4",
+      code: ["save the empty plan", "save one-day plans", "read the last two saved days", "answer = yesterday + two days back", "save plans for this day", "repeat to the target day", "read the target day", "return the count"],
+      phases: [
+        { active: 0, filled: [1, "", "", "", ""], line: 1, title: context.title || "Study Plan Ways", description: "Start with one empty plan before any days are scheduled.", state: { current_state: "day 0", saved: 1 } },
+        { active: 1, filled: [1, 1, "", "", ""], line: 2, title: "Save day 1", description: "There is one simple plan for one day.", state: { current_state: "day 1", result: 1 } },
+        { active: 2, deps: [1, 0], filled: [1, 1, "", "", ""], line: 3, title: "Build day 2", description: "Day 2 reuses day 1 and day 0.", state: { current_state: "day 2", read_from: "day 1, day 0", rule: "1 + 1" } },
+        { active: 2, filled: [1, 1, 2, "", ""], line: 5, title: "Save day 2", description: "Store 2 plans for day 2.", state: { current_state: "day 2", result: 2 } },
+        { active: 3, deps: [2, 1], filled: [1, 1, 2, 3, ""], line: 4, title: "Save day 3", description: "Day 3 uses the same two-saved-states rule.", state: { current_state: "day 3", rule: "2 + 1 = 3", result: 3 } },
+        { active: 4, deps: [3, 2], filled: [1, 1, 2, 3, ""], line: 3, title: "Build day 4", description: "The target reads day 3 and day 2.", state: { current_state: "day 4", read_from: "day 3, day 2", rule: "3 + 2" } },
+        { active: 4, filled: [1, 1, 2, 3, 5], line: 5, title: "Save day 4", description: "Day 4 stores 5 plans.", state: { current_state: "day 4", result: 5 } },
+        { active: 4, filled: [1, 1, 2, 3, 5], line: 8, title: "Return 5", description: "Return the saved count for the target day.", state: { current_state: "day 4", final_result: 5 } },
+      ],
     },
-    {
-      active: 3,
-      filled: 3,
-      title: "Repeat the same rule",
-      description: "Each new state follows the same rule: read earlier cells, choose the best answer, then save it.",
-      line: 5,
-      state: { saved: "dp[0] through dp[3]" },
+    "dp-non-adjacent-points": {
+      labels: ["item 0", "item 1", "item 2", "item 3"],
+      example: "points=[3,2,7,10]",
+      target: "best total without adjacent picks",
+      code: ["start with no adjacent picks chosen", "compare taking the current item with skipping it", "take uses current points plus the best two back", "skip keeps the previous best", "save the larger choice", "repeat across the list", "read the last saved best", "return the best total"],
+      phases: [
+        { active: 0, filled: [3, "", "", ""], line: 1, title: context.title || "Non Adjacent Points", description: "The first saved best is 3.", state: { current_state: "item 0", result: 3 } },
+        { active: 1, deps: [0], filled: [3, "", "", ""], line: 2, title: "Compare item 1", description: "Taking 2 loses to keeping 3.", state: { current_state: "item 1", take: 2, skip: 3 } },
+        { active: 1, filled: [3, 3, "", ""], line: 5, title: "Save 3", description: "The best through item 1 is still 3.", state: { current_state: "item 1", result: 3 } },
+        { active: 2, deps: [0, 1], filled: [3, 3, "", ""], line: 3, title: "Compare item 2", description: "Taking 7 can pair with item 0's saved best.", state: { current_state: "item 2", take: 10, skip: 3 } },
+        { active: 2, filled: [3, 3, 10, ""], line: 5, title: "Save 10", description: "3 + 7 is the best through item 2.", state: { current_state: "item 2", result: 10 } },
+        { active: 3, deps: [1, 2], filled: [3, 3, 10, ""], line: 3, title: "Compare item 3", description: "Taking 10 combines with best through item 1.", state: { current_state: "item 3", take: 13, skip: 10 } },
+        { active: 3, filled: [3, 3, 10, 13], line: 5, title: "Save 13", description: "13 is the best through the whole list.", state: { current_state: "item 3", result: 13 } },
+        { active: 3, filled: [3, 3, 10, 13], line: 8, title: "Return 13", description: "Return the last saved best total.", state: { current_state: "item 3", final_result: 13 } },
+      ],
     },
-    {
-      active: 4,
-      filled: 4,
-      title: "Fill the target cell",
-      description: "Now dp[4] is filled from earlier saved answers, so the hard-looking answer is just a lookup.",
-      line: 5,
-      state: { saved: "dp[4]", value: "answer" },
+    "dp-lis": {
+      labels: ["2", "5", "3", "7"],
+      example: "nums=[2,5,3,7]",
+      target: "longest increasing subsequence length",
+      code: ["each number starts with length 1", "look left for smaller numbers", "read saved lengths from smaller previous values", "candidate = saved length + 1", "save the best length ending here", "repeat for each number", "read the largest saved length", "return that length"],
+      phases: [
+        { active: 0, filled: [1, "", "", ""], line: 1, title: context.title || "Longest Increasing Subsequence Length", description: "A single number is an increasing subsequence of length 1.", state: { current_state: "ending at 2", result: 1 } },
+        { active: 1, deps: [0], filled: [1, "", "", ""], line: 3, title: "5 can follow 2", description: "Since 2 < 5, read the saved length at 2.", state: { current_state: "ending at 5", read_from: "2", rule: "1 + 1" } },
+        { active: 1, filled: [1, 2, "", ""], line: 5, title: "Save length 2", description: "The best sequence ending at 5 has length 2.", state: { current_state: "ending at 5", result: 2 } },
+        { active: 2, deps: [0], filled: [1, 2, "", ""], line: 3, title: "3 can follow 2", description: "3 cannot follow 5, but it can follow 2.", state: { current_state: "ending at 3", read_from: "2", rule: "1 + 1" } },
+        { active: 2, filled: [1, 2, 2, ""], line: 5, title: "Save length 2", description: "The best sequence ending at 3 has length 2.", state: { current_state: "ending at 3", result: 2 } },
+        { active: 3, deps: [1, 2], filled: [1, 2, 2, ""], line: 3, title: "7 reads earlier bests", description: "7 can follow 5 or 3, so read the best saved lengths before it.", state: { current_state: "ending at 7", read_from: "5 and 3", rule: "max(2, 2) + 1" } },
+        { active: 3, filled: [1, 2, 2, 3], line: 5, title: "Save length 3", description: "The best increasing subsequence in this compact example has length 3.", state: { current_state: "ending at 7", result: 3 } },
+        { active: 3, filled: [1, 2, 2, 3], line: 8, title: "Return 3", description: "Return the largest saved length.", state: { current_state: "best saved length", final_result: 3 } },
+      ],
     },
-    {
-      active: 4,
-      filled: 4,
-      title: "Return dp[4]",
-      description: "The final result comes from the target cell, not from recomputing the whole problem.",
-      line: 6,
-      state: { result: "dp[4]" },
+    "dp-edit-distance": {
+      labels: ["", "c", "a", "t", "cut"],
+      example: "cat -> cut",
+      target: "minimum edits from cat to cut",
+      code: ["base states handle empty text", "compare the current characters", "if characters match, reuse the diagonal saved state", "otherwise read replace, insert, and delete states", "save one plus the cheapest edit", "move to the next character pair", "read the final state", "return the edit count"],
+      phases: [
+        { active: 0, filled: [0, "", "", "", ""], line: 1, title: context.title || "Edit Distance", description: "Empty-to-empty costs 0 edits.", state: { current_state: "empty prefix", result: 0 } },
+        { active: 1, deps: [0], filled: [0, 0, "", "", ""], line: 3, title: "c matches c", description: "Matching characters reuse the diagonal saved state.", state: { current_state: "c -> c", rule: "reuse 0", result: 0 } },
+        { active: 2, deps: [1], filled: [0, 0, 0, "", ""], line: 3, title: "a matches a", description: "Another match keeps the edit count at 0.", state: { current_state: "ca -> ca", rule: "reuse 0", result: 0 } },
+        { active: 3, deps: [2], filled: [0, 0, 0, "", ""], line: 2, title: "t versus u", description: "The last characters differ, so an edit is needed.", state: { current_state: "cat -> cau", decision: "different characters" } },
+        { active: 3, deps: [2], filled: [0, 0, 0, 1, ""], line: 5, title: "Save one replace", description: "Replacing t with u costs 1 edit.", state: { current_state: "cat -> cau", rule: "0 + 1", result: 1 } },
+        { active: 4, deps: [3], filled: [0, 0, 0, 1, ""], line: 6, title: "Finish target prefix", description: "The compact trace reaches the target word shape.", state: { current_state: "cat -> cut", read_from: "saved edit states", result: 1 } },
+        { active: 4, filled: [0, 0, 0, 1, 1], line: 7, title: "Read final state", description: "The final saved state holds the edit count.", state: { current_state: "cat -> cut", result: 1 } },
+        { active: 4, filled: [0, 0, 0, 1, 1], line: 8, title: "Return 1", description: "Return the minimum edit count for the compact example.", state: { current_state: "final state", final_result: 1 } },
+      ],
     },
-  ];
-
-  return phases.map((phase, index) => {
-    const nodes = baseNodes.map((node, nodeIndex) => ({
-      ...node,
-      value: nodeIndex <= phase.filled ? (nodeIndex <= 1 ? 1 : nodeIndex + 1) : "",
-      state: nodeIndex < phase.filled ? "visited" as const : node.state,
+    "dp-decode-ways": {
+      labels: ["pos 0", "pos 1", "pos 2", "pos 3"],
+      example: "digits=226",
+      target: "count valid decodings",
+      code: ["save one way before reading digits", "read the one-digit choice", "read the two-digit choice when valid", "add the saved counts for valid choices", "save ways at this position", "repeat through all digits", "read the final position", "return the count"],
+      phases: [
+        { active: 0, filled: [1, "", "", ""], line: 1, title: context.title || "Decode Ways", description: "Before reading digits, there is one empty decoding.", state: { current_state: "pos 0", result: 1 } },
+        { active: 1, deps: [0], filled: [1, 1, "", ""], line: 2, title: "Decode 2", description: "The first digit is valid by itself.", state: { current_state: "pos 1", one_digit: "2", result: 1 } },
+        { active: 2, deps: [1, 0], filled: [1, 1, "", ""], line: 3, title: "Decode 22", description: "The second 2 works alone, and 22 also works together.", state: { current_state: "pos 2", one_digit: "2", two_digit: "22" } },
+        { active: 2, filled: [1, 1, 2, ""], line: 5, title: "Save 2 ways", description: "Add the one-digit and two-digit saved counts.", state: { current_state: "pos 2", result: 2 } },
+        { active: 3, deps: [2, 1], filled: [1, 1, 2, ""], line: 3, title: "Decode 226", description: "6 is valid alone and 26 is valid as a pair.", state: { current_state: "pos 3", one_digit: "6", two_digit: "26" } },
+        { active: 3, filled: [1, 1, 2, 3], line: 5, title: "Save 3 ways", description: "The final position stores 3 decodings.", state: { current_state: "pos 3", result: 3 } },
+        { active: 3, filled: [1, 1, 2, 3], line: 7, title: "Read final position", description: "The answer is already saved at the end.", state: { current_state: "pos 3", result: 3 } },
+        { active: 3, filled: [1, 1, 2, 3], line: 8, title: "Return 3", description: "Return the number of valid decodings.", state: { current_state: "pos 3", final_result: 3 } },
+      ],
+    },
+    "dp-max-subarray-deletion": {
+      labels: ["1", "-2", "0", "3"],
+      example: "values=[1,-2,0,3]",
+      target: "max subarray sum with one deletion",
+      code: ["track best ending here without deletion", "track best ending here after one deletion", "read previous saved states", "choose extend, start over, or delete current value", "save both states for this index", "update the global best", "repeat through the list", "return the best sum"],
+      phases: [
+        { active: 0, filled: ["keep 1", "", "", ""], line: 1, title: context.title || "Maximum Subarray With One Deletion", description: "At value 1, the best kept subarray is 1.", state: { current_state: "index 0", keep: 1, delete_used: "none", result: 1 } },
+        { active: 1, deps: [0], filled: ["keep 1", "", "", ""], line: 3, title: "Read previous states", description: "At -2, decide whether to keep it or spend the deletion.", state: { current_state: "index 1", value: -2, read_from: "index 0" } },
+        { active: 1, filled: ["keep 1", "drop -2", "", ""], line: 4, title: "Delete -2", description: "Deleting -2 keeps the better total 1.", state: { current_state: "index 1", keep: -1, delete_used: 1, result: 1 } },
+        { active: 2, deps: [1], filled: ["keep 1", "drop -2", "keep 0", ""], line: 5, title: "Save at 0", description: "Adding 0 keeps the best deletion-used state at 1.", state: { current_state: "index 2", keep: 0, delete_used: 1, result: 1 } },
+        { active: 3, deps: [2], filled: ["keep 1", "drop -2", "keep 0", ""], line: 3, title: "Read before 3", description: "The previous deletion-used state can extend with 3.", state: { current_state: "index 3", read_from: "index 2", rule: "1 + 3" } },
+        { active: 3, filled: ["keep 1", "drop -2", "keep 0", "best 4"], line: 6, title: "Update best to 4", description: "Using the deletion on -2 gives subarray 1, 0, 3 for total 4.", state: { current_state: "index 3", result: 4 } },
+        { active: 3, filled: ["keep 1", "drop -2", "keep 0", "best 4"], line: 7, title: "End of list", description: "All states have been processed.", state: { current_state: "index 3", best: 4 } },
+        { active: 3, filled: ["keep 1", "drop -2", "keep 0", "best 4"], line: 8, title: "Return 4", description: "Return the best saved subarray sum.", state: { current_state: "global best", final_result: 4 } },
+      ],
+    },
+    "dp-maximal-square": {
+      labels: ["0,0", "0,1", "1,0", "1,1"],
+      example: "grid=[[1,1],[1,1]]",
+      target: "largest square area",
+      code: ["read each grid cell", "a 1 can extend a square", "read top, left, and diagonal saved sizes", "new size = 1 + smallest neighbor", "save square size at this cell", "track the largest size", "square area is size times size", "return the largest area"],
+      phases: [
+        { active: 0, filled: [1, "", "", ""], line: 2, title: context.title || "Maximal Square", description: "A 1 in the corner forms a square of size 1.", state: { current_state: "cell 0,0", result: 1 } },
+        { active: 1, deps: [0], filled: [1, 1, "", ""], line: 5, title: "Save top row", description: "Top-row cells can only make size-1 squares.", state: { current_state: "cell 0,1", result: 1 } },
+        { active: 2, deps: [0], filled: [1, 1, 1, ""], line: 5, title: "Save left column", description: "Left-column cells also stay size 1.", state: { current_state: "cell 1,0", result: 1 } },
+        { active: 3, deps: [0, 1, 2], filled: [1, 1, 1, ""], line: 3, title: "Read three neighbors", description: "The bottom-right cell can extend only if top, left, and diagonal all support it.", state: { current_state: "cell 1,1", read_from: "top, left, diagonal" } },
+        { active: 3, deps: [0, 1, 2], filled: [1, 1, 1, ""], line: 4, title: "Smallest neighbor is 1", description: "1 plus the smallest neighbor gives square size 2.", state: { current_state: "cell 1,1", rule: "1 + min(1,1,1)" } },
+        { active: 3, filled: [1, 1, 1, 2], line: 6, title: "Track largest size 2", description: "The largest square side is now 2.", state: { current_state: "cell 1,1", best_size: 2 } },
+        { active: 3, filled: [1, 1, 1, 2], line: 7, title: "Area is 4", description: "A side length of 2 makes area 4.", state: { current_state: "area", result: 4 } },
+        { active: 3, filled: [1, 1, 1, 2], line: 8, title: "Return 4", description: "Return the largest square area.", state: { current_state: "largest area", final_result: 4 } },
+      ],
+    },
+    "dp-study-plan-cost": {
+      labels: ["cost 0", "cost 1", "cost 2", "top"],
+      example: "costs=[10,15,20]",
+      target: "minimum study plan cost",
+      code: ["save the first two costs", "read the two previous saved costs", "choose the cheaper previous path", "add the current cost", "save the best cost here", "repeat to the top", "compare the final two saved costs", "return the cheaper total"],
+      phases: [
+        { active: 0, filled: [10, "", "", ""], line: 1, title: context.title || "Minimum Study Plan Cost", description: "Save the cost if the plan starts at the first session.", state: { current_state: "cost 0", result: 10 } },
+        { active: 1, filled: [10, 15, "", ""], line: 1, title: "Save cost 1", description: "The second session can also be a starting state.", state: { current_state: "cost 1", result: 15 } },
+        { active: 2, deps: [1, 0], filled: [10, 15, "", ""], line: 2, title: "Read previous costs", description: "To reach cost 2, read cost 1 and cost 0.", state: { current_state: "cost 2", read_from: "cost 1, cost 0" } },
+        { active: 2, deps: [0], filled: [10, 15, "", ""], line: 3, title: "Choose cheaper path", description: "10 is cheaper than 15.", state: { current_state: "cost 2", chosen: 10 } },
+        { active: 2, filled: [10, 15, 30, ""], line: 5, title: "Save cost 2", description: "10 + 20 gives 30 for the last paid session.", state: { current_state: "cost 2", result: 30 } },
+        { active: 3, deps: [2, 1], filled: [10, 15, 30, ""], line: 7, title: "Compare paths to top", description: "The top can come from cost 2 or cost 1.", state: { current_state: "top", read_from: "cost 2, cost 1", rule: "min(30,15)" } },
+        { active: 3, filled: [10, 15, 30, 15], line: 8, title: "Save top 15", description: "The cheaper way to finish is 15.", state: { current_state: "top", result: 15 } },
+        { active: 3, filled: [10, 15, 30, 15], line: 8, title: "Return 15", description: "Return the minimum saved cost.", state: { current_state: "top", final_result: 15 } },
+      ],
+    },
+    "dp-coin-change": {
+      labels: ["amt 0", "amt 1", "amt 2", "amt 3", "amt 4"],
+      example: "coins=[1,2], amount=4",
+      target: "count combinations for amount 4",
+      code: ["save one way to make amount 0", "process one coin value at a time", "for each amount, read amount minus coin", "add that saved count into the current amount", "save the updated count", "repeat through the target amount", "read target amount", "return the count"],
+      phases: [
+        { active: 0, filled: [1, 0, 0, 0, 0], line: 1, title: context.title || "Coin Change Ways Small", description: "Amount 0 starts with one empty combination.", state: { current_state: "amount 0", result: 1 } },
+        { active: 1, deps: [0], filled: [1, 1, 0, 0, 0], line: 4, title: "Use coin 1", description: "Coin 1 adds one way to make amount 1.", state: { current_state: "amount 1", coin: 1, read_from: "amount 0", result: 1 } },
+        { active: 2, deps: [1], filled: [1, 1, 1, 0, 0], line: 5, title: "Continue coin 1", description: "Using only coin 1 gives one way for amount 2.", state: { current_state: "amount 2", coin: 1, result: 1 } },
+        { active: 2, deps: [0], filled: [1, 1, 2, 0, 0], line: 3, title: "Use coin 2", description: "Coin 2 can also make amount 2 by reading amount 0.", state: { current_state: "amount 2", coin: 2, read_from: "amount 0", result: 2 } },
+        { active: 3, deps: [1], filled: [1, 1, 2, 2, 0], line: 4, title: "Update amount 3", description: "Amount 3 gains combinations from amount 1.", state: { current_state: "amount 3", coin: 2, result: 2 } },
+        { active: 4, deps: [2], filled: [1, 1, 2, 2, 3], line: 5, title: "Update amount 4", description: "Amount 4 gains combinations from amount 2.", state: { current_state: "amount 4", coin: 2, read_from: "amount 2", result: 3 } },
+        { active: 4, filled: [1, 1, 2, 2, 3], line: 7, title: "Read target amount", description: "The target amount cell now stores all combinations.", state: { current_state: "amount 4", result: 3 } },
+        { active: 4, filled: [1, 1, 2, 2, 3], line: 8, title: "Return 3", description: "Return the saved count for amount 4.", state: { current_state: "amount 4", final_result: 3 } },
+      ],
+    },
+    "dp-blocked-stairs": {
+      labels: ["step 0", "step 1", "step 2", "step 3"],
+      example: "openSteps=[1,1,0,1]",
+      target: "ways to reach last open step",
+      code: ["start from the first open step", "if a step is blocked, save 0", "otherwise read one and two steps back", "answer = saved ways from reachable previous steps", "save ways for this step", "repeat to the final step", "read the final saved state", "return the count"],
+      phases: [
+        { active: 0, filled: [1, "", "", ""], line: 1, title: context.title || "Blocked Stair Ways", description: "Step 0 is open, so it starts with one way.", state: { current_state: "step 0", open: "yes", result: 1 } },
+        { active: 1, deps: [0], filled: [1, 1, "", ""], line: 3, title: "Step 1 is open", description: "Step 1 can be reached from step 0.", state: { current_state: "step 1", read_from: "step 0", result: 1 } },
+        { active: 2, filled: [1, 1, "", ""], line: 2, title: "Step 2 is blocked", description: "A blocked step saves 0 ways no matter what came before.", state: { current_state: "step 2", open: "no", decision: "blocked" } },
+        { active: 2, filled: [1, 1, 0, ""], line: 5, title: "Save 0", description: "No path may land on step 2.", state: { current_state: "step 2", result: 0 } },
+        { active: 3, deps: [2, 1], filled: [1, 1, 0, ""], line: 3, title: "Final step is open", description: "The final step reads step 2 and step 1.", state: { current_state: "step 3", read_from: "step 2, step 1" } },
+        { active: 3, filled: [1, 1, 0, 1], line: 5, title: "Save 1", description: "Only the path from step 1 counts because step 2 is blocked.", state: { current_state: "step 3", result: 1 } },
+        { active: 3, filled: [1, 1, 0, 1], line: 7, title: "Read final state", description: "The last step stores the answer.", state: { current_state: "step 3", result: 1 } },
+        { active: 3, filled: [1, 1, 0, 1], line: 8, title: "Return 1", description: "Return the count for this compact blocked-stair example.", state: { current_state: "step 3", final_result: 1 } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["dp-climb-stairs"]!;
+  const labels = config.phases.map((phase) => phase.title);
+  return config.phases.map((phase, index) => {
+    const gap = Math.min(120, Math.max(78, 680 / Math.max(config.labels.length, 1)));
+    const totalWidth = Math.max(0, (config.labels.length - 1) * gap);
+    const startX = 470 - totalWidth / 2;
+    const nodes: Node[] = config.labels.map((label, nodeIndex) => ({
+      id: `dp-${nodeIndex}`,
+      x: startX + nodeIndex * gap,
+      y: 245,
+      value: phase.filled[nodeIndex] ?? "",
+      type: "array-cell",
+      label,
+      state: nodeIndex < phase.filled.length && phase.filled[nodeIndex] !== "" ? "visited" : "default",
+      meta: { role: "dp-state" },
+    }));
+    const deps = phase.deps || [];
+    const edges: Edge[] = deps.map((dep) => ({
+      id: `dp-${dep}->dp-${phase.active}`,
+      from: `dp-${dep}`,
+      to: `dp-${phase.active}`,
+      type: "pointer",
+      state: "active",
     }));
     return step({
       concept: "dynamic-programming",
       title: phase.title,
       description: phase.description,
       nodes: withNodeState(nodes, [`dp-${phase.active}`], "active"),
-      edges: [],
-      highlights: { nodeIds: [`dp-${phase.active}`], lineNumbers: [phase.line] },
-      code,
+      edges,
+      highlights: { nodeIds: [`dp-${phase.active}`, ...deps.map((dep) => `dp-${dep}`)], edgeIds: edges.map((edge) => edge.id || ""), lineNumbers: [phase.line] },
+      code: config.code,
       activeLine: phase.line,
-      state: phase.state,
+      workflow: workflowFromLabels(labels, index),
+      state: { example: config.example, target: config.target, ...phase.state },
     }, index + 1);
   });
 }
@@ -6862,6 +7385,7 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
   if (family === "stack-adjacent-pairs") return generateAdjacentPairStackSteps(context);
   if (family === "stack-monotonic") return generateMonotonicStackSteps(context);
   if (family === "recursion-nested-list") return generateNestedRecursionSteps(context);
+  if (String(family).startsWith("recursion-")) return generateRecursionSteps(context);
   if (family === "queue-help-desk") return generateHelpDeskQueueSteps(context);
   if (family === "queue-serve-count") return generateServeCountQueueSteps(context);
   if (family === "queue-line-commands") return generateLineCommandQueueSteps(context);
@@ -6876,6 +7400,7 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
   if (family === "tuple-swap") return generateTupleSwapSteps(context);
   if (family === "tuple-score-at-index") return generateStudentScorePairSteps(context);
   if (family === "tuple-first-last") return generateFirstLastPairSteps(context);
+  if (String(family).startsWith("graph-")) return generateGraphTraversalSteps(context);
   const authoredSteps = generateAuthoredVisualizerSteps(concept, context);
   if (authoredSteps) return authoredSteps;
 

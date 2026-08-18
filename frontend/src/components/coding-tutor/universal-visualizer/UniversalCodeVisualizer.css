@@ -1861,8 +1861,9 @@ body.coding-dark .ucv-reverse-result-token {
 
 .ucv-recursion-state-panel .ucv-array-state-panel-row strong {
   font-size: 0.78rem;
-  overflow-wrap: normal;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .ucv-recursion-state-panel .ucv-array-state-panel-row--wide {
@@ -2162,6 +2163,46 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
 .ucv-flow-node-card--union-find {
   width: 112px;
   min-height: 82px;
+}
+
+.ucv-graph-canvas--with-panel {
+  min-height: 430px;
+}
+
+.ucv-graph-canvas--with-panel .react-flow {
+  width: calc(100% - clamp(10.5rem, 22vw, 14rem));
+  margin-left: clamp(10.5rem, 22vw, 14rem);
+}
+
+.ucv-graph-state-panel {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  left: clamp(0.65rem, 1.6vw, 1rem);
+  width: clamp(10rem, 20vw, 13rem);
+  transform: translateY(-50%);
+  border-color: color-mix(in srgb, #22c55e 42%, var(--ct-border, #c7d6ea));
+  background: linear-gradient(145deg,
+    color-mix(in srgb, #dcfce7 44%, var(--ct-panel, #fff)),
+    color-mix(in srgb, #dbeafe 30%, var(--ct-panel, #fff))
+  );
+  box-shadow: 0 18px 38px rgba(34, 197, 94, 0.12);
+}
+
+.ucv-graph-state-panel .ucv-array-state-panel-value,
+.ucv-graph-state-panel .ucv-array-state-panel-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.ucv-graph-canvas--with-panel .ucv-flow-node-card--graph {
+  width: clamp(82px, 10vw, 108px);
+  min-height: 68px;
+}
+
+.ucv-graph-canvas--with-panel .ucv-flow-node-card--graph strong {
+  font-size: clamp(0.82rem, 1vw, 0.98rem);
 }
 
 .ucv-flow-node-card--input,
@@ -2470,6 +2511,88 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
   align-content: center;
 }
 
+.ucv-dp-trace-layout {
+  display: grid;
+  grid-template-columns: minmax(10.5rem, 13.5rem) minmax(0, 1fr);
+  align-items: center;
+  width: min(900px, 100%);
+  gap: clamp(0.8rem, 2vw, 1.3rem);
+  padding-inline: clamp(0.25rem, 1vw, 0.65rem);
+  box-sizing: border-box;
+}
+
+.ucv-dp-state-panel {
+  border-color: color-mix(in srgb, #14b8a6 42%, var(--ct-border, #c7d6ea));
+  background: linear-gradient(145deg,
+    color-mix(in srgb, #ccfbf1 42%, var(--ct-panel, #fff)),
+    color-mix(in srgb, #dbeafe 30%, var(--ct-panel, #fff))
+  );
+  box-shadow: 0 18px 38px rgba(20, 184, 166, 0.12);
+}
+
+.ucv-dp-state-panel .ucv-array-state-panel-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.ucv-dp-main-region {
+  display: grid;
+  min-width: 0;
+  gap: 0.8rem;
+  justify-items: center;
+}
+
+.ucv-dp-state-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(650px, 100%);
+  gap: clamp(0.4rem, 1.5vw, 0.7rem);
+  overflow-x: auto;
+  padding: 0.6rem 0.25rem;
+  scroll-padding-inline: 0.25rem;
+}
+
+.ucv-dp-state-cell {
+  flex: 0 0 clamp(78px, 13vw, 112px);
+  min-height: 68px;
+  border-radius: 12px;
+}
+
+.ucv-dp-state-cell span {
+  font-size: 0.64rem;
+}
+
+.ucv-dp-state-cell strong {
+  font-size: clamp(0.78rem, 1vw, 0.98rem);
+  overflow-wrap: anywhere;
+}
+
+.ucv-dp-dependency-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 1.75rem;
+}
+
+.ucv-dp-dependency-row span {
+  border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 75%, transparent);
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  color: var(--ct-muted, #5d6b82);
+  background: color-mix(in srgb, var(--ct-panel, #fff) 82%, var(--ct-info, #2563eb));
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.ucv-dp-dependency-row span.is-active {
+  border-color: color-mix(in srgb, var(--ct-accent, #f97316) 60%, var(--ct-border, #d7e1ef));
+  color: var(--ct-text, #082343);
+  background: color-mix(in srgb, var(--ct-accent, #f97316) 12%, var(--ct-panel, #fff));
+}
+
 .ucv-matrix-shell {
   display: grid;
   width: min(820px, 100%);
@@ -2563,6 +2686,10 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
   border-radius: 18px;
   background: color-mix(in srgb, #22c55e 8%, var(--ct-panel, #fff));
   padding: 0.85rem 1rem;
+}
+
+.ucv-dp-insight--wide {
+  width: min(660px, 100%);
 }
 
 .ucv-dp-insight p {

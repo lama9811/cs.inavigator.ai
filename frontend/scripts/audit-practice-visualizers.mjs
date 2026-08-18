@@ -134,10 +134,39 @@ const familyStepTargets = {
   "prefix-subarray-k": 8,
   "prefix-subarray-longest": 8,
   "matrix-traverse": 7,
+  "dp-blocked-stairs": 8,
+  "dp-best-non-adjacent": 8,
+  "dp-climb-stairs": 8,
+  "dp-coin-change": 8,
+  "dp-decode-ways": 8,
+  "dp-edit-distance": 8,
+  "dp-lis": 8,
+  "dp-max-subarray-deletion": 8,
+  "dp-maximal-square": 8,
+  "dp-min-cost-stairs": 8,
+  "dp-non-adjacent-points": 8,
+  "dp-one-three-steps": 8,
+  "dp-study-plan-cost": 8,
+  "dp-study-plan-ways": 8,
   "dp-table": 8,
+  "graph-alien-order": 8,
+  "graph-campus-reachable": 8,
+  "graph-clone": 8,
+  "graph-course-chain": 8,
+  "graph-neighbor-count": 8,
+  "graph-shortest-grid": 8,
+  "graph-topological-order": 8,
   "graph-traversal": 7,
-  "recursion-stack": 9,
+  "graph-word-ladder": 8,
+  "recursion-countdown-list": 9,
+  "recursion-digit-sum": 9,
+  "recursion-factorial": 9,
+  "recursion-list-count": 9,
+  "recursion-list-sum": 9,
   "recursion-nested-list": 8,
+  "recursion-power": 9,
+  "recursion-reverse-text": 9,
+  "recursion-stack": 9,
   "heap-priority": 7,
   "trie-prefix": 7,
   "union-find": 7,
@@ -297,6 +326,46 @@ const trueIntervalFamilies = {
   "hard-34": { family: "interval-busy-minutes", sample: "intervals=[[9,12],[11,13],[14,16]]", expected: "6" },
 };
 
+const trueRecursionFamilies = {
+  "easy-40": { family: "recursion-countdown-list", sample: "n=2", expected: "[2,1,0]" },
+  "easy-44": { family: "recursion-factorial", sample: "n=3", expected: "6" },
+  "easy-59": { family: "recursion-list-count", sample: "nums=[5,6]", expected: "2" },
+  "easy-83": { family: "recursion-list-sum", sample: "nums=[2,5]", expected: "7" },
+  "medium-19": { family: "recursion-nested-list", sample: "value=[1,[2,[3]]]", expected: "14" },
+  "medium-24": { family: "recursion-digit-sum", sample: "number=34", expected: "7" },
+  "medium-40": { family: "recursion-power", sample: "base=2, exponent=2", expected: "4" },
+  "medium-54": { family: "recursion-reverse-text", sample: "text='go'", expected: "og" },
+};
+
+const trueDynamicProgrammingFamilies = {
+  "easy-62": { family: "dp-climb-stairs", sample: "n=4", expected: "5" },
+  "easy-63": { family: "dp-min-cost-stairs", sample: "costs=[2,5,1]", expected: "3" },
+  "easy-85": { family: "dp-one-three-steps", sample: "n=4", expected: "3" },
+  "easy-86": { family: "dp-best-non-adjacent", sample: "points=[4,1,7]", expected: "11" },
+  "hard-03": { family: "dp-lis", sample: "nums=[2,5,3,7]", expected: "3" },
+  "hard-04": { family: "dp-edit-distance", sample: "cat -> cut", expected: "1" },
+  "hard-12": { family: "dp-decode-ways", sample: "digits=226", expected: "3" },
+  "hard-15": { family: "dp-max-subarray-deletion", sample: "values=[1,-2,0,3]", expected: "4" },
+  "hard-19": { family: "dp-maximal-square", sample: "grid=[[1,1],[1,1]]", expected: "4" },
+  "hard-25": { family: "dp-study-plan-cost", sample: "costs=[10,15,20]", expected: "15" },
+  "medium-51": { family: "dp-study-plan-ways", sample: "days=4", expected: "5" },
+  "medium-57": { family: "dp-non-adjacent-points", sample: "points=[3,2,7,10]", expected: "13" },
+  "medium-72": { family: "dp-coin-change", sample: "coins=[1,2], amount=4", expected: "3" },
+  "medium-73": { family: "dp-blocked-stairs", sample: "openSteps=[1,1,0,1]", expected: "1" },
+};
+
+const trueGraphFamilies = {
+  "easy-95": { family: "graph-neighbor-count", sample: "edges=[A-B, A-C, B-D], node=A", expected: "2" },
+  "hard-01": { family: "graph-shortest-grid", sample: "grid=S..|.#.|..T", expected: "4" },
+  "hard-02": { family: "graph-topological-order", sample: "prereqs=[B before C, A before B]", expected: "[A,B,C]" },
+  "hard-07": { family: "graph-word-ladder", sample: "hit -> hot -> dot -> dog", expected: "4" },
+  "hard-14": { family: "graph-clone", sample: "node 1 connected to 2 and 3", expected: "new graph with same shape" },
+  "hard-17": { family: "graph-alien-order", sample: "words=[ba, bc, ac]", expected: "bac" },
+  "medium-06": { family: "graph-course-chain", sample: "pairs=[COSC350->COSC220, COSC220->COSC112], course=COSC350, prereq=COSC112", expected: "true" },
+  "medium-14": { family: "graph-islands", sample: "grid=[[1,1,0],[0,0,1],[1,0,1]]", expected: "3" },
+  "medium-28": { family: "graph-campus-reachable", sample: "connections=[library-union, union-gym], start=library, target=gym", expected: "true" },
+};
+
 function visualizerFamilyText(problem) {
   return `${problem?.title || ""} ${problem?.topic || ""} ${problem?.prompt || ""} ${problem?.visualizer?.title || ""} ${problem?.visualizer?.caption || ""} ${problem?.visualizer?.concept || ""}`.toLowerCase();
 }
@@ -397,7 +466,17 @@ function detectVisualizerFamily(problem, concept) {
     if (/longest study stretch under limit/.test(text)) return "sliding-window-longest-under-limit";
     return "sliding-window";
   }
-  if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
+  if (concept === "recursion") {
+    if (/countdown/.test(text)) return "recursion-countdown-list";
+    if (/factorial/.test(text)) return "recursion-factorial";
+    if (/recursive list count|list count/.test(text)) return "recursion-list-count";
+    if (/recursive list sum|list sum/.test(text)) return "recursion-list-sum";
+    if (/nested list depth sum|nested|depth|flatten/.test(text)) return "recursion-nested-list";
+    if (/digit sum/.test(text)) return "recursion-digit-sum";
+    if (/power|exponent/.test(text)) return "recursion-power";
+    if (/reverse text|reverse.*text/.test(text)) return "recursion-reverse-text";
+    return "recursion-stack";
+  }
   if (concept === "matrix") return "matrix-traverse";
   if (concept === "intervals") {
     if (/two intervals overlap/.test(text)) return "interval-overlap";
@@ -413,9 +492,37 @@ function detectVisualizerFamily(problem, concept) {
   if (concept === "heap") return "heap-priority";
   if (concept === "trie") return "trie-prefix";
   if (concept === "union-find") return "union-find";
-  if (concept === "dynamic-programming") return "dp-table";
+  if (concept === "dynamic-programming") {
+    if (/climb small staircase|climb.*stair/.test(text)) return "dp-climb-stairs";
+    if (/tiny minimum stair cost/.test(text)) return "dp-min-cost-stairs";
+    if (/ways with one or three steps/.test(text)) return "dp-one-three-steps";
+    if (/best non adjacent total/.test(text)) return "dp-best-non-adjacent";
+    if (/non adjacent points/.test(text)) return "dp-non-adjacent-points";
+    if (/longest increasing subsequence/.test(text)) return "dp-lis";
+    if (/edit distance/.test(text)) return "dp-edit-distance";
+    if (/decode ways/.test(text)) return "dp-decode-ways";
+    if (/maximum subarray with one deletion/.test(text)) return "dp-max-subarray-deletion";
+    if (/maximal square/.test(text)) return "dp-maximal-square";
+    if (/minimum study plan cost/.test(text)) return "dp-study-plan-cost";
+    if (/study plan ways/.test(text)) return "dp-study-plan-ways";
+    if (/coin change ways/.test(text)) return "dp-coin-change";
+    if (/blocked stair ways/.test(text)) return "dp-blocked-stairs";
+    return "dp-table";
+  }
   if (concept === "bit-manipulation") return "bit-count";
-  if (concept === "binary-tree" || concept === "graph") return "graph-traversal";
+  if (concept === "graph") {
+    if (/neighbor count/.test(text)) return "graph-neighbor-count";
+    if (/course prerequisite chain/.test(text)) return "graph-course-chain";
+    if (/count islands|island|land.*water|water.*land/.test(text)) return "graph-islands";
+    if (/campus stop reachable/.test(text)) return "graph-campus-reachable";
+    if (/shortest path/.test(text)) return "graph-shortest-grid";
+    if (/course plan topological order|topological/.test(text)) return "graph-topological-order";
+    if (/word ladder/.test(text)) return "graph-word-ladder";
+    if (/clone graph/.test(text)) return "graph-clone";
+    if (/alien dictionary/.test(text)) return "graph-alien-order";
+    return "graph-traversal";
+  }
+  if (concept === "binary-tree") return "graph-traversal";
   if (concept === "stack") {
     if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
     if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
@@ -510,6 +617,7 @@ function conceptFromProblem(problem) {
   if (raw.includes("two pointer")) return "two-pointers";
   if (raw.includes("sliding")) return "sliding-window";
   if (raw.includes("binary search")) return "binary-search";
+  if (raw.includes("graph")) return "graph";
   if (raw.includes("heap")) return "heap";
   if (raw.includes("trie")) return "trie";
   if (raw.includes("union") || raw.includes("disjoint")) return "union-find";
@@ -520,7 +628,6 @@ function conceptFromProblem(problem) {
   if (raw.includes("queue")) return "queue";
   if (raw.includes("recursion")) return "recursion";
   if (raw.includes("tree")) return "binary-tree";
-  if (raw.includes("graph")) return "graph";
   if (raw.includes("condition") || raw.includes("decision")) return "conditional";
   if (raw.includes("math") || raw.includes("arithmetic")) return "math";
   if (raw.includes("matrix")) return "matrix";
@@ -546,6 +653,9 @@ function compactVisualInput(problem, concept, state = {}) {
   if (trueMathFamilies[problem.id]) return trueMathFamilies[problem.id].sample;
   if (trueTupleFamilies[problem.id]) return trueTupleFamilies[problem.id].sample;
   if (trueStringFamilies[problem.id]) return trueStringFamilies[problem.id].sample;
+  if (trueRecursionFamilies[problem.id]) return trueRecursionFamilies[problem.id].sample;
+  if (trueDynamicProgrammingFamilies[problem.id]) return trueDynamicProgrammingFamilies[problem.id].sample;
+  if (trueGraphFamilies[problem.id]) return trueGraphFamilies[problem.id].sample;
   if (family === "set-first-missing") return "values=[1, 2, 0]";
   if (family === "string-run-compress") return "aaabbc";
   if (family === "graph-islands") return "grid=[[1,1,0],[0,0,1],[1,0,1]]";
@@ -558,7 +668,36 @@ function compactVisualInput(problem, concept, state = {}) {
     if (/undo/.test(title)) return "actions=[open, type, undo]";
     return "commands=[push tray, push cup, pop]";
   }
+  if (family === "recursion-countdown-list") return "n=2";
+  if (family === "recursion-factorial") return "n=3";
+  if (family === "recursion-list-count") return "nums=[5,6]";
+  if (family === "recursion-list-sum") return "nums=[2,5]";
   if (family === "recursion-nested-list") return "value=[1,[2,[3]]]";
+  if (family === "recursion-digit-sum") return "number=34";
+  if (family === "recursion-power") return "base=2, exponent=2";
+  if (family === "recursion-reverse-text") return "text='go'";
+  if (family === "dp-climb-stairs") return "n=4";
+  if (family === "dp-min-cost-stairs") return "costs=[2,5,1]";
+  if (family === "dp-one-three-steps") return "n=4";
+  if (family === "dp-best-non-adjacent") return "points=[4,1,7]";
+  if (family === "dp-non-adjacent-points") return "points=[3,2,7,10]";
+  if (family === "dp-study-plan-ways") return "days=4";
+  if (family === "dp-lis") return "nums=[2,5,3,7]";
+  if (family === "dp-edit-distance") return "cat -> cut";
+  if (family === "dp-decode-ways") return "digits=226";
+  if (family === "dp-max-subarray-deletion") return "values=[1,-2,0,3]";
+  if (family === "dp-maximal-square") return "grid=[[1,1],[1,1]]";
+  if (family === "dp-study-plan-cost") return "costs=[10,15,20]";
+  if (family === "dp-coin-change") return "coins=[1,2], amount=4";
+  if (family === "dp-blocked-stairs") return "openSteps=[1,1,0,1]";
+  if (family === "graph-neighbor-count") return "edges=[A-B, A-C, B-D], node=A";
+  if (family === "graph-course-chain") return "pairs=[COSC350->COSC220, COSC220->COSC112], course=COSC350, prereq=COSC112";
+  if (family === "graph-campus-reachable") return "connections=[library-union, union-gym], start=library, target=gym";
+  if (family === "graph-shortest-grid") return "grid=S..|.#.|..T";
+  if (family === "graph-topological-order") return "prereqs=[B before C, A before B]";
+  if (family === "graph-word-ladder") return "hit -> hot -> dot -> dog";
+  if (family === "graph-clone") return "node 1 connected to 2 and 3";
+  if (family === "graph-alien-order") return "words=[ba, bc, ac]";
   if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
   if (family === "queue-serve-count") return "names=[Ana, Bo, Cy], serveCount=2";
   if (family === "queue-line-commands") {
@@ -645,6 +784,9 @@ function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
   if (concept === "sliding-window") return true;
   if (concept === "prefix-sum") return true;
   if (concept === "intervals") return true;
+  if (concept === "recursion") return true;
+  if (concept === "dynamic-programming") return true;
+  if (concept === "graph") return true;
   const target = targetStepCountFor(problem, concept);
   if (!rawSteps.length || rawSteps.length >= target) return false;
   if (rawSteps.length < Math.min(target, 6)) return true;
@@ -881,6 +1023,42 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       }
       if (family === "interval-merge" && requiredInterval.family !== "interval-merge") {
         warnings.push(`${problem.id} ${problem.title}: Interval visualizer still uses shared merge fallback`);
+      }
+    }
+    const requiredRecursion = trueRecursionFamilies[problem.id];
+    if (requiredRecursion) {
+      if (family !== requiredRecursion.family) {
+        warnings.push(`${problem.id} ${problem.title}: Recursion visualizer routes to "${family}", expected "${requiredRecursion.family}"`);
+      }
+      if (sample !== requiredRecursion.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Recursion sample is "${sample}", expected "${requiredRecursion.sample}"`);
+      }
+      if (family === "recursion-stack") {
+        warnings.push(`${problem.id} ${problem.title}: Recursion visualizer still uses shared generic stack fallback`);
+      }
+    }
+    const requiredDynamicProgramming = trueDynamicProgrammingFamilies[problem.id];
+    if (requiredDynamicProgramming) {
+      if (family !== requiredDynamicProgramming.family) {
+        warnings.push(`${problem.id} ${problem.title}: Dynamic Programming visualizer routes to "${family}", expected "${requiredDynamicProgramming.family}"`);
+      }
+      if (sample !== requiredDynamicProgramming.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Dynamic Programming sample is "${sample}", expected "${requiredDynamicProgramming.sample}"`);
+      }
+      if (family === "dp-table") {
+        warnings.push(`${problem.id} ${problem.title}: Dynamic Programming visualizer still uses shared table fallback`);
+      }
+    }
+    const requiredGraph = trueGraphFamilies[problem.id];
+    if (requiredGraph) {
+      if (family !== requiredGraph.family) {
+        warnings.push(`${problem.id} ${problem.title}: Graph visualizer routes to "${family}", expected "${requiredGraph.family}"`);
+      }
+      if (sample !== requiredGraph.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Graph sample is "${sample}", expected "${requiredGraph.sample}"`);
+      }
+      if (family === "graph-traversal") {
+        warnings.push(`${problem.id} ${problem.title}: Graph visualizer still uses shared traversal fallback`);
       }
     }
     const requiredString = trueStringFamilies[problem.id];
