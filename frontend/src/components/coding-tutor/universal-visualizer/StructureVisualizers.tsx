@@ -1867,17 +1867,17 @@ export function TreeVisualizer({ step }: { step: Step }) {
 }
 
 export function GraphVisualizer({ step }: { step: Step }) {
-  const rankdir = step.concept === "union-find" ? "TB" : "LR";
-  if (step.concept !== "graph") return <NetworkScene step={step} rankdir={rankdir} className="ucv-graph-canvas" />;
+  const rankdir = "LR";
+  if (step.concept !== "graph" && step.concept !== "union-find") return <NetworkScene step={step} rankdir={rankdir} className="ucv-graph-canvas" />;
   const state = step.state || {};
   const example = formatArrayStateValue(state.example ?? state.sample);
-  const target = formatArrayStateValue(state.target ?? state.goal ?? "visit the needed nodes");
+  const target = formatArrayStateValue(state.target ?? state.goal ?? (step.concept === "union-find" ? "merge and query groups" : "visit the needed nodes"));
   const resultText = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? "not final");
   const hidden = new Set(["answer", "changed", "example", "expected", "final_result", "goal", "result", "sample", "target", "visual_family"]);
   const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
   return (
-    <NetworkScene step={step} rankdir={rankdir} className="ucv-graph-canvas ucv-graph-canvas--with-panel">
-      <aside className="ucv-array-state-panel ucv-graph-state-panel" aria-label="Graph trace state">
+    <NetworkScene step={step} rankdir={rankdir} className={`ucv-graph-canvas ucv-graph-canvas--with-panel ${step.concept === "union-find" ? "ucv-union-find-canvas--with-panel" : ""}`}>
+      <aside className={`ucv-array-state-panel ucv-graph-state-panel ${step.concept === "union-find" ? "ucv-union-find-state-panel" : ""}`} aria-label={`${step.concept === "union-find" ? "Disjoint set" : "Graph"} trace state`}>
         {example ? (
           <div className="ucv-array-state-panel-section">
             <span className="ucv-array-state-panel-label">example</span>
@@ -1891,7 +1891,7 @@ export function GraphVisualizer({ step }: { step: Step }) {
         <div className="ucv-array-state-panel-section">
           <span className="ucv-array-state-panel-label">variables</span>
           <div className="ucv-array-state-panel-list">
-            {variables.slice(0, 5).map(([key, value]) => (
+            {variables.slice(0, step.concept === "union-find" ? 7 : 5).map(([key, value]) => (
               <div key={key} className="ucv-array-state-panel-row">
                 <span>{key.replace(/_/g, " ")}</span>
                 <strong>{formatArrayStateValue(value)}</strong>

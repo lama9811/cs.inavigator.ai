@@ -44,7 +44,7 @@ const conceptStepTargets = {
   "binary-tree": 7,
   heap: 7,
   trie: 7,
-  "union-find": 7,
+  "union-find": 8,
   intervals: 7,
   "bit-manipulation": 7,
 };
@@ -187,7 +187,18 @@ const familyStepTargets = {
   "trie-prefix": 7,
   "trie-prefix-counts": 7,
   "trie-prefix-match-count": 7,
-  "union-find": 7,
+  "union-find": 8,
+  "union-find-club-groups": 8,
+  "union-find-components": 8,
+  "union-find-earliest-connected": 8,
+  "union-find-group-size": 8,
+  "union-find-largest-group": 8,
+  "union-find-members-zero": 8,
+  "union-find-redundant-edge": 8,
+  "union-find-repeated-link": 8,
+  "union-find-same-club": 8,
+  "union-find-same-group": 8,
+  "union-find-timeline": 8,
   "tree-contains": 8,
   "tree-height": 8,
   "tree-lca": 8,
@@ -347,6 +358,20 @@ const trueHeapFamilies = {
   "hard-28": { family: "heap-running-median", sample: "scores=[80, 90, 70, 100]", expected: "[80,80,80,80]" },
 };
 
+const trueUnionFindFamilies = {
+  "easy-75": { family: "union-find-same-group", sample: "n=4, links=[[0,1],[1,2]], a=0, b=2", expected: "true" },
+  "easy-76": { family: "union-find-group-size", sample: "n=5, pairs=[[0,1],[1,2],[3,4]], student=1", expected: "3" },
+  "easy-93": { family: "union-find-repeated-link", sample: "n=3, pairs=[[0,1],[1,2],[0,2]]", expected: "true" },
+  "easy-94": { family: "union-find-members-zero", sample: "n=4, pairs=[[0,1],[1,2]]", expected: "[0,1,2]" },
+  "hard-10": { family: "union-find-components", sample: "n=5, pairs=[[0,1],[1,2],[3,4]]", expected: "2" },
+  "hard-23": { family: "union-find-earliest-connected", sample: "n=3, events=[[1,0,1],[4,1,2]]", expected: "4" },
+  "hard-27": { family: "union-find-redundant-edge", sample: "n=3, pairs=[[0,1],[1,2],[0,2]]", expected: "[0,2]" },
+  "medium-30": { family: "union-find-club-groups", sample: "n=5, pairs=[[0,1],[1,2],[3,4]]", expected: "2" },
+  "medium-50": { family: "union-find-same-club", sample: "n=5, pairs=[[0,1],[1,2]], a=0, b=2", expected: "true" },
+  "medium-67": { family: "union-find-timeline", sample: "n=4, pairs=[[0,1],[2,3],[1,2]]", expected: "[3,2,1]" },
+  "medium-74": { family: "union-find-largest-group", sample: "n=5, pairs=[[0,1],[1,2],[3,4]]", expected: "3" },
+};
+
 const trueTwoPointerFamilies = {
   "easy-42": { family: "two-pointer-edge-pairs", sample: "words=[lab, quiz, lab]", expected: "1" },
   "easy-57": { family: "two-pointer-symmetric", sample: "names=[Ana, Bo, Ana]", expected: "true" },
@@ -476,7 +501,7 @@ function isTupleSwapProblem(problem) {
 
 function detectVisualizerFamily(problem, concept) {
   const text = visualizerFamilyText(problem);
-  const isTrieConcept = concept === "trie" || concept === "tries" || /\btries?\b/.test(text);
+  const isTrieConcept = concept === "trie" || concept === "tries" || (concept !== "union-find" && /\btries?\b/.test(text));
   if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
   if (concept === "prefix-sum") {
     if (/running prefix totals/.test(text)) return "prefix-running-totals";
@@ -623,7 +648,20 @@ function detectVisualizerFamily(problem, concept) {
     if (/running median/.test(text)) return "heap-running-median";
     return "heap-priority";
   }
-  if (concept === "union-find") return "union-find";
+  if (concept === "union-find") {
+    if (/same group after links/.test(text)) return "union-find-same-group";
+    if (/group size of student/.test(text)) return "union-find-group-size";
+    if (/repeated group link/.test(text)) return "union-find-repeated-link";
+    if (/members connected to zero/.test(text)) return "union-find-members-zero";
+    if (/union find components/.test(text)) return "union-find-components";
+    if (/earliest connected time/.test(text)) return "union-find-earliest-connected";
+    if (/redundant friendship edge/.test(text)) return "union-find-redundant-edge";
+    if (/club membership groups/.test(text)) return "union-find-club-groups";
+    if (/same club group/.test(text)) return "union-find-same-club";
+    if (/component count timeline/.test(text)) return "union-find-timeline";
+    if (/largest group after links/.test(text)) return "union-find-largest-group";
+    return "union-find";
+  }
   if (concept === "dynamic-programming") {
     if (/climb small staircase|climb.*stair/.test(text)) return "dp-climb-stairs";
     if (/tiny minimum stair cost/.test(text)) return "dp-min-cost-stairs";
@@ -880,6 +918,7 @@ function compactVisualInput(problem, concept, state = {}) {
   if (trueSlidingWindowFamilies[problem.id]) return trueSlidingWindowFamilies[problem.id].sample;
   if (truePrefixSumFamilies[problem.id]) return truePrefixSumFamilies[problem.id].sample;
   if (trueIntervalFamilies[problem.id]) return trueIntervalFamilies[problem.id].sample;
+  if (trueUnionFindFamilies[problem.id]) return trueUnionFindFamilies[problem.id].sample;
   if (title.includes("vowel")) return "Code";
   if (title.includes("palindrome")) return "level";
   if (title.includes("reverse words")) return "red blue";
@@ -1249,6 +1288,18 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       }
       if (family === "heap-priority") {
         warnings.push(`${problem.id} ${problem.title}: Heap visualizer still uses shared priority fallback`);
+      }
+    }
+    const requiredUnionFind = trueUnionFindFamilies[problem.id];
+    if (requiredUnionFind) {
+      if (family !== requiredUnionFind.family) {
+        warnings.push(`${problem.id} ${problem.title}: Disjoint Sets visualizer routes to "${family}", expected "${requiredUnionFind.family}"`);
+      }
+      if (sample !== requiredUnionFind.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Disjoint Sets sample is "${sample}", expected "${requiredUnionFind.sample}"`);
+      }
+      if (family === "union-find") {
+        warnings.push(`${problem.id} ${problem.title}: Disjoint Sets visualizer still uses shared union-find fallback`);
       }
     }
     const requiredGraph = trueGraphFamilies[problem.id];

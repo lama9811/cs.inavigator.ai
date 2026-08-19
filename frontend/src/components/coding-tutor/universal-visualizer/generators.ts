@@ -24,7 +24,7 @@ const WORKFLOW_LABELS: Record<ConceptType, string[]> = {
   intervals: ["Sort", "First range", "Compare next", "Merge", "Carry", "Separate", "Finish"],
   heap: ["Start heap", "Add item", "Compare parent", "Swap up", "Check again", "Top ready", "Finish"],
   trie: ["Root", "Read char", "Follow branch", "Create missing", "Word end", "Reuse prefix", "Lookup result"],
-  "union-find": ["Own groups", "Find A", "Find B", "Union", "Find again", "Compress path", "Count"],
+  "union-find": ["Own groups", "Read link", "Find ends", "Merge/check", "Update answer", "Next link", "Query group", "Return"],
   "dynamic-programming": ["Goal", "Base case", "Read saved", "Build next", "Save cell", "Repeat", "Lookup", "Return"],
   "bit-manipulation": ["Write bits", "Inspect bit", "Update count", "Shift", "Inspect next", "Repeat", "Return"],
 };
@@ -44,7 +44,7 @@ const CONCEPT_STEP_TARGETS: Partial<Record<ConceptType, number>> = {
   "binary-tree": 7,
   heap: 7,
   trie: 7,
-  "union-find": 7,
+  "union-find": 8,
   intervals: 7,
   "bit-manipulation": 7,
   array: 7,
@@ -257,7 +257,18 @@ type VisualizerFamily =
   | "two-pointer-reverse-letters"
   | "two-pointer-symmetric"
   | "two-pointers"
-  | "union-find";
+  | "union-find"
+  | "union-find-club-groups"
+  | "union-find-components"
+  | "union-find-earliest-connected"
+  | "union-find-group-size"
+  | "union-find-largest-group"
+  | "union-find-members-zero"
+  | "union-find-redundant-edge"
+  | "union-find-repeated-link"
+  | "union-find-same-club"
+  | "union-find-same-group"
+  | "union-find-timeline";
 
 function visualizerFamilyText(context: GeneratorContext = {}): string {
   return `${context.title || ""} ${context.topic || ""} ${context.prompt || ""} ${context.visualizer?.title || ""} ${context.visualizer?.caption || ""} ${context.visualizer?.concept || ""}`.toLowerCase();
@@ -265,7 +276,7 @@ function visualizerFamilyText(context: GeneratorContext = {}): string {
 
 export function detectVisualizerFamily(concept: string, context: GeneratorContext = {}): VisualizerFamily {
   const text = visualizerFamilyText(context);
-  const isTrieConcept = concept === "trie" || concept === "tries" || /\btries?\b/.test(text);
+  const isTrieConcept = concept === "trie" || concept === "tries" || (concept !== "union-find" && /\btries?\b/.test(text));
   if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
   if (concept === "prefix-sum") {
     if (/running prefix totals/.test(text)) return "prefix-running-totals";
@@ -412,7 +423,20 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     if (/running median/.test(text)) return "heap-running-median";
     return "heap-priority";
   }
-  if (concept === "union-find") return "union-find";
+  if (concept === "union-find") {
+    if (/same group after links/.test(text)) return "union-find-same-group";
+    if (/group size of student/.test(text)) return "union-find-group-size";
+    if (/repeated group link/.test(text)) return "union-find-repeated-link";
+    if (/members connected to zero/.test(text)) return "union-find-members-zero";
+    if (/union find components/.test(text)) return "union-find-components";
+    if (/earliest connected time/.test(text)) return "union-find-earliest-connected";
+    if (/redundant friendship edge/.test(text)) return "union-find-redundant-edge";
+    if (/club membership groups/.test(text)) return "union-find-club-groups";
+    if (/same club group/.test(text)) return "union-find-same-club";
+    if (/component count timeline/.test(text)) return "union-find-timeline";
+    if (/largest group after links/.test(text)) return "union-find-largest-group";
+    return "union-find";
+  }
   if (concept === "dynamic-programming") {
     if (/climb small staircase|climb.*stair/.test(text)) return "dp-climb-stairs";
     if (/tiny minimum stair cost/.test(text)) return "dp-min-cost-stairs";
@@ -7771,19 +7795,239 @@ export function generateTrieSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateUnionFindSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["parent[item] = item", "root_a = find(a)", "root_b = find(b)", "if root_a != root_b: parent[root_a] = root_b", "root = find(item)", "parent[item] = root", "return count_roots(parent)"];
-  const start = layoutCircularGraph(["A", "B", "C", "D"], []);
-  const connected = layoutCircularGraph(["A", "B", "C", "D"], [["A", "B"], ["C", "D"]]);
-  const merged = layoutCircularGraph(["A", "B", "C", "D"], [["A", "B"], ["B", "C"], ["C", "D"]]);
-  return [
-    step({ concept: "union-find", title: context.title || "Union find", description: "Every item begins as its own group.", nodes: start.nodes, edges: start.edges, highlights: { lineNumbers: [1] }, code, activeLine: 1, state: { groups: 4 } }, 1),
-    step({ concept: "union-find", title: "Find A leader", description: "Find follows parent links until it reaches A's group leader.", nodes: withNodeState(start.nodes, ["A"], "active"), edges: start.edges, highlights: { nodeIds: ["A"], lineNumbers: [2] }, code, activeLine: 2, state: { leader_A: "A" } }, 2),
-    step({ concept: "union-find", title: "Find B leader", description: "B has a different leader, so A and B can be connected.", nodes: withNodeState(start.nodes, ["B"], "active"), edges: start.edges, highlights: { nodeIds: ["B"], lineNumbers: [2] }, code, activeLine: 2, state: { leader_B: "B" } }, 3),
-    step({ concept: "union-find", title: "Connect pairs", description: "Union links two separate leaders into one group.", nodes: withNodeState(connected.nodes, ["A", "B"], "active"), edges: withEdgeState(connected.edges, ["A-B"], "active"), highlights: { nodeIds: ["A", "B"], edgeIds: ["A-B"], lineNumbers: [3] }, code, activeLine: 3, state: { groups: 2 } }, 4),
-    step({ concept: "union-find", title: "Merge groups", description: "Connecting B and C joins two groups into a larger one.", nodes: withNodeState(merged.nodes, ["B", "C"], "active"), edges: withEdgeState(merged.edges, ["B-C"], "active"), highlights: { nodeIds: ["B", "C"], edgeIds: ["B-C"], lineNumbers: [4] }, code, activeLine: 4, state: { groups: 1 } }, 5),
-    step({ concept: "union-find", title: "Compress the path", description: "A later find can point an item directly at its leader, making the next lookup shorter.", nodes: withNodeState(merged.nodes, ["A", "B", "C"], "comparing"), edges: withEdgeState(merged.edges, ["A-B", "B-C"], "active"), highlights: { nodeIds: ["A", "B", "C"], edgeIds: ["A-B", "B-C"], lineNumbers: [5, 6] }, code, activeLine: 6, state: { compressed: "A -> leader" } }, 6),
-    step({ concept: "union-find", title: "Count final leaders", description: "After unions, the answer comes from the remaining distinct leaders.", nodes: withNodeState(merged.nodes, ["A", "B", "C", "D"], "visited"), edges: merged.edges, highlights: { nodeIds: ["A", "B", "C", "D"], lineNumbers: [7] }, code, activeLine: 7, state: { groups: 1 } }, 7),
+  const family = detectVisualizerFamily("union-find", context);
+  const code = [
+    "start with every item in its own group",
+    "read the next link or event",
+    "find the group for the first endpoint",
+    "find the group for the second endpoint",
+    "join the groups only when they differ",
+    "update the answer state for this prompt",
+    "check any final query the prompt asks for",
+    "return only the requested value",
   ];
+  type UFPhase = {
+    title: string;
+    description: string;
+    links: Array<[string, string]>;
+    active?: string[];
+    activeEdges?: string[];
+    skippedEdges?: string[];
+    inactive?: string[];
+    line: number;
+    state: Record<string, string | number | boolean>;
+  };
+  type UFConfig = {
+    labels: string[];
+    example: string;
+    target: string;
+    phases: UFPhase[];
+  };
+  const edgeIdFor = ([from, to]: [string, string]) => `${from}-${to}`;
+  const buildGraph = (labels: string[], links: Array<[string, string]>, phase: UFPhase) => {
+    const graph = layoutCircularGraph(labels, links);
+    let nodes = withNodeState(graph.nodes, phase.inactive || [], "inactive");
+    nodes = withNodeState(nodes, labels.filter((label) => !phase.inactive?.includes(label)), "visited");
+    nodes = withNodeState(nodes, phase.active || [], "active");
+    const activeEdges = new Set(phase.activeEdges || []);
+    const skippedEdges = new Set(phase.skippedEdges || []);
+    const edges = graph.edges.map((edge) => {
+      const id = edge.id || `${edge.from}-${edge.to}`;
+      return {
+        ...edge,
+        state: skippedEdges.has(id) ? "skipped" as const : activeEdges.has(id) ? "active" as const : "default" as const,
+      };
+    });
+    return { nodes, edges };
+  };
+  const configs: Partial<Record<VisualizerFamily, UFConfig>> = {
+    "union-find-same-group": {
+      labels: ["0", "1", "2", "3"],
+      example: "n=4, links=[[0,1],[1,2]], a=0, b=2",
+      target: "are 0 and 2 connected?",
+      phases: [
+        { title: context.title || "Same Group After Links", description: "Each student starts alone, so no connection is assumed yet.", links: [], active: ["0", "2"], line: 1, state: { current_link: "none", query: "0 with 2", groups: "0 | 1 | 2 | 3", result: "not final" } },
+        { title: "Read link 0-1", description: "The first link says student 0 and student 1 belong in the same group.", links: [], active: ["0", "1"], line: 2, state: { current_link: "0-1", leaders: "0 and 1", decision: "different groups", groups: "0 | 1 | 2 | 3" } },
+        { title: "Join 0 and 1", description: "Because the leaders differ, the visual joins those students into one group.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_link: "0-1", decision: "merge", groups: "{0,1} | 2 | 3" } },
+        { title: "Read link 1-2", description: "Now student 1 is already in the group with 0, so this link can extend that group.", links: [["0", "1"]], active: ["1", "2"], activeEdges: ["0-1"], line: 2, state: { current_link: "1-2", leaders: "group 0 and 2", groups: "{0,1} | 2 | 3" } },
+        { title: "Join 2 into the group", description: "The second link pulls student 2 into the same group as 0 and 1.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_link: "1-2", decision: "merge", groups: "{0,1,2} | 3" } },
+        { title: "Check the query", description: "The prompt only asks whether 0 and 2 share a group after the links are done.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], line: 7, state: { query: "0 with 2", leaders: "same group", result: "true" } },
+        { title: "Ignore unrelated student", description: "Student 3 stays separate, but that does not change this true-or-false query.", links: [["0", "1"], ["1", "2"]], active: ["3"], inactive: ["3"], line: 7, state: { query: "0 with 2", unrelated: "3", groups: "{0,1,2} | 3", result: "true" } },
+        { title: "Return true", description: "Return the boolean requested by the prompt, not the group list.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: "true", result: "true" } },
+      ],
+    },
+    "union-find-group-size": {
+      labels: ["0", "1", "2", "3", "4"],
+      example: "n=5, pairs=[[0,1],[1,2],[3,4]], student=1",
+      target: "size of student 1 group",
+      phases: [
+        { title: context.title || "Group Size Of Student", description: "Track the chosen student while each pair builds groups.", links: [], active: ["1"], line: 1, state: { chosen_student: "1", groups: "0 | 1 | 2 | 3 | 4", result: "not final" } },
+        { title: "Merge 0-1", description: "The first pair joins 0 with the chosen student's group.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_link: "0-1", chosen_group: "{0,1}", group_size: 2 } },
+        { title: "Read 1-2", description: "Student 1's leader is already the group containing 0, so 2 can be added next.", links: [["0", "1"]], active: ["1", "2"], activeEdges: ["0-1"], line: 3, state: { current_link: "1-2", leaders: "group 0 and 2", group_size: 2 } },
+        { title: "Merge 2 in", description: "Adding 2 makes the chosen student's group contain three students.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_link: "1-2", chosen_group: "{0,1,2}", group_size: 3, result: 3 } },
+        { title: "Merge other pair", description: "The pair 3-4 forms a separate group and does not change student 1's size.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["3", "4"], activeEdges: ["3-4"], line: 6, state: { current_link: "3-4", chosen_group: "{0,1,2}", other_group: "{3,4}", group_size: 3 } },
+        { title: "Find chosen group", description: "Look back at student 1 and count only the members in that connected group.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "1", "2"], activeEdges: ["0-1", "1-2"], line: 7, state: { chosen_student: "1", chosen_group: "{0,1,2}", group_size: 3 } },
+        { title: "Keep separate groups separate", description: "Students 3 and 4 are connected to each other, but not to student 1.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["3", "4"], inactive: ["3", "4"], line: 7, state: { excluded: "{3,4}", result: 3 } },
+        { title: "Return 3", description: "Return the chosen group size only.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["1"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: 3, result: 3 } },
+      ],
+    },
+    "union-find-repeated-link": {
+      labels: ["0", "1", "2"],
+      example: "n=3, pairs=[[0,1],[1,2],[0,2]]",
+      target: "does a repeated link happen?",
+      phases: [
+        { title: context.title || "Repeated Group Link", description: "A repeated link happens when a pair's endpoints are already connected.", links: [], active: ["0", "1"], line: 1, state: { current_link: "0-1", result: "false so far" } },
+        { title: "Merge 0-1", description: "The first pair connects two separate students.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_link: "0-1", decision: "new merge", groups: "{0,1} | 2" } },
+        { title: "Read 1-2", description: "The second pair connects the current group to student 2.", links: [["0", "1"]], active: ["1", "2"], activeEdges: ["0-1"], line: 2, state: { current_link: "1-2", leaders: "group 0 and 2" } },
+        { title: "Merge 1-2", description: "After this merge, all three students are in one group.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_link: "1-2", groups: "{0,1,2}", result: "false so far" } },
+        { title: "Read 0-2", description: "Now 0 and 2 already have the same leader.", links: [["0", "1"], ["1", "2"], ["0", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], skippedEdges: ["0-2"], line: 3, state: { current_link: "0-2", leaders: "same group", decision: "repeated" } },
+        { title: "Mark repeated", description: "The dashed link is the attempted connection that does not need a new merge.", links: [["0", "1"], ["1", "2"], ["0", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], skippedEdges: ["0-2"], line: 6, state: { repeated_link: "0-2", result: "true" } },
+        { title: "Stop answer state", description: "Once a repeated link is found, the prompt's boolean answer is known.", links: [["0", "1"], ["1", "2"], ["0", "2"]], active: ["0", "2"], skippedEdges: ["0-2"], line: 7, state: { repeated_link: "0-2", result: "true" } },
+        { title: "Return true", description: "Return a real boolean value for the repeated-link question.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: "true", result: "true" } },
+      ],
+    },
+    "union-find-members-zero": {
+      labels: ["0", "1", "2", "3"],
+      example: "n=4, pairs=[[0,1],[1,2]]",
+      target: "members connected to 0",
+      phases: [
+        { title: context.title || "Members Connected To Zero", description: "Student 0 is the anchor; collect only students connected to that group.", links: [], active: ["0"], line: 1, state: { anchor: "0", members: "0", result: "not final" } },
+        { title: "Merge 0-1", description: "The first pair adds student 1 to the anchor group.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_link: "0-1", anchor_group: "{0,1}", members: "0, 1" } },
+        { title: "Read 1-2", description: "Because 1 is already with 0, connecting 1 to 2 extends the anchor group.", links: [["0", "1"]], active: ["1", "2"], activeEdges: ["0-1"], line: 2, state: { current_link: "1-2", anchor_group: "{0,1}" } },
+        { title: "Merge 2 in", description: "Student 2 becomes connected to 0 through student 1.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_link: "1-2", anchor_group: "{0,1,2}", members: "0, 1, 2" } },
+        { title: "Check student 3", description: "Student 3 has no link to the anchor group, so it is not included.", links: [["0", "1"], ["1", "2"]], active: ["3"], inactive: ["3"], line: 7, state: { current_check: "3", decision: "not connected to 0", members: "0, 1, 2" } },
+        { title: "List anchor members", description: "The answer is the sorted list of students whose leader matches student 0's leader.", links: [["0", "1"], ["1", "2"]], active: ["0", "1", "2"], activeEdges: ["0-1", "1-2"], line: 7, state: { anchor_group: "{0,1,2}", result: "[0,1,2]" } },
+        { title: "Leave outsiders out", description: "The visual greys out 3 so it is clear it is not part of the returned list.", links: [["0", "1"], ["1", "2"]], active: ["0", "1", "2"], inactive: ["3"], activeEdges: ["0-1", "1-2"], line: 7, state: { excluded: "3", result: "[0,1,2]" } },
+        { title: "Return [0,1,2]", description: "Return only the members connected to 0.", links: [["0", "1"], ["1", "2"]], active: ["0", "1", "2"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: "[0,1,2]", result: "[0,1,2]" } },
+      ],
+    },
+    "union-find-components": {
+      labels: ["0", "1", "2", "3", "4"],
+      example: "n=5, pairs=[[0,1],[1,2],[3,4]]",
+      target: "count friend groups",
+      phases: [
+        { title: context.title || "Union Find Components", description: "Start with five separate friend groups.", links: [], active: ["0", "1"], line: 1, state: { groups: 5, result: "not final" } },
+        { title: "Merge 0-1", description: "A successful merge reduces the group count by one.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_link: "0-1", groups: 4 } },
+        { title: "Merge 1-2", description: "Student 2 joins the existing 0-1 group.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_link: "1-2", groups: 3 } },
+        { title: "Read 3-4", description: "The next pair connects two students outside the first component.", links: [["0", "1"], ["1", "2"]], active: ["3", "4"], line: 2, state: { current_link: "3-4", groups: 3 } },
+        { title: "Merge 3-4", description: "This creates the second final component.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["3", "4"], activeEdges: ["3-4"], line: 5, state: { current_link: "3-4", groups: 2 } },
+        { title: "Count leaders", description: "The remaining leaders represent the final friend groups.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "3"], activeEdges: ["0-1", "3-4"], line: 7, state: { leaders: "0 and 3", groups: 2 } },
+        { title: "Show two groups", description: "The final components are {0,1,2} and {3,4}.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "1", "2", "3", "4"], activeEdges: ["0-1", "1-2", "3-4"], line: 7, state: { groups_detail: "{0,1,2} | {3,4}", result: 2 } },
+        { title: "Return 2", description: "Return the number of groups, not the groups themselves.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "3"], line: 8, state: { final_result: 2, result: 2 } },
+      ],
+    },
+    "union-find-earliest-connected": {
+      labels: ["0", "1", "2"],
+      example: "n=3, events=[[1,0,1],[4,1,2]]",
+      target: "earliest time all connected",
+      phases: [
+        { title: context.title || "Earliest Connected Time", description: "Events are processed in time order.", links: [], active: ["0", "1"], line: 1, state: { time: "start", groups: 3, result: "not final" } },
+        { title: "Read time 1", description: "At time 1, the event links students 0 and 1.", links: [], active: ["0", "1"], line: 2, state: { event: "time 1: 0-1", groups: 3 } },
+        { title: "Merge 0-1", description: "There are still two groups afterward, so this is not the final time yet.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { time: 1, groups: 2, result: "not all connected" } },
+        { title: "Read time 4", description: "At time 4, student 1 connects to student 2.", links: [["0", "1"]], active: ["1", "2"], activeEdges: ["0-1"], line: 2, state: { event: "time 4: 1-2", groups: 2 } },
+        { title: "Merge final group", description: "This merge pulls the last separate student into the same connected group.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { time: 4, groups: 1 } },
+        { title: "All connected", description: "The moment the group count becomes one is the earliest connected time.", links: [["0", "1"], ["1", "2"]], active: ["0", "1", "2"], activeEdges: ["0-1", "1-2"], line: 6, state: { time: 4, decision: "all connected", result: 4 } },
+        { title: "Stop at earliest", description: "Later events would not make the earliest time smaller.", links: [["0", "1"], ["1", "2"]], active: ["0", "1", "2"], line: 7, state: { saved_time: 4, result: 4 } },
+        { title: "Return 4", description: "Return the first time when all students became connected.", links: [["0", "1"], ["1", "2"]], active: ["0", "1", "2"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: 4, result: 4 } },
+      ],
+    },
+    "union-find-redundant-edge": {
+      labels: ["0", "1", "2"],
+      example: "n=3, pairs=[[0,1],[1,2],[0,2]]",
+      target: "first redundant pair",
+      phases: [
+        { title: context.title || "Redundant Friendship Edge", description: "Track the first pair that tries to connect an already connected group.", links: [], active: ["0", "1"], line: 1, state: { current_link: "0-1", result: "none yet" } },
+        { title: "Merge 0-1", description: "The first pair is useful, so it is not redundant.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_link: "0-1", decision: "keep", result: "none yet" } },
+        { title: "Merge 1-2", description: "The second pair grows the same group to include 2.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_link: "1-2", decision: "keep", groups: "{0,1,2}" } },
+        { title: "Test 0-2", description: "Both endpoints already belong to the same group before adding this pair.", links: [["0", "1"], ["1", "2"], ["0", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], skippedEdges: ["0-2"], line: 3, state: { current_link: "0-2", leaders: "same group" } },
+        { title: "Save redundant pair", description: "The dashed pair is the first one that does not create a new connection.", links: [["0", "1"], ["1", "2"], ["0", "2"]], active: ["0", "2"], skippedEdges: ["0-2"], line: 6, state: { redundant_pair: "[0,2]", result: "[0,2]" } },
+        { title: "Do not merge it", description: "A redundant edge is reported, not added as a new useful connection.", links: [["0", "1"], ["1", "2"], ["0", "2"]], active: ["0", "2"], skippedEdges: ["0-2"], line: 6, state: { action: "report pair", result: "[0,2]" } },
+        { title: "Keep first redundant pair", description: "The answer would stay the first redundant pair even if later pairs repeated.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], line: 7, state: { saved_answer: "[0,2]", result: "[0,2]" } },
+        { title: "Return [0,2]", description: "Return the pair itself for this prompt.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: "[0,2]", result: "[0,2]" } },
+      ],
+    },
+    "union-find-club-groups": {
+      labels: ["0", "1", "2", "3", "4"],
+      example: "n=5, pairs=[[0,1],[1,2],[3,4]]",
+      target: "separate club groups",
+      phases: [
+        { title: context.title || "Club Membership Groups", description: "Each student starts in a separate club network.", links: [], active: ["0", "1"], line: 1, state: { club_groups: 5, result: "not final" } },
+        { title: "Club pair 0-1", description: "A same-club pair merges two separate networks.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_pair: "0-1", club_groups: 4 } },
+        { title: "Club pair 1-2", description: "Student 2 joins the club network already containing 0 and 1.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_pair: "1-2", club_groups: 3 } },
+        { title: "Club pair 3-4", description: "This pair creates a second club network separate from the first.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["3", "4"], activeEdges: ["3-4"], line: 5, state: { current_pair: "3-4", club_groups: 2 } },
+        { title: "Find club leaders", description: "Count one leader per connected club network.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "3"], line: 7, state: { leaders: "0 and 3", club_groups: 2 } },
+        { title: "Show final networks", description: "The two club networks are visible as two connected components.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "1", "2", "3", "4"], activeEdges: ["0-1", "1-2", "3-4"], line: 7, state: { groups_detail: "{0,1,2} | {3,4}", result: 2 } },
+        { title: "Prepare count", description: "Only the number of club networks is returned.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "3"], line: 7, state: { club_groups: 2, result: 2 } },
+        { title: "Return 2", description: "Return the count of separate club groups.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "3"], line: 8, state: { final_result: 2, result: 2 } },
+      ],
+    },
+    "union-find-same-club": {
+      labels: ["0", "1", "2", "3", "4"],
+      example: "n=5, pairs=[[0,1],[1,2]], a=0, b=2",
+      target: "are 0 and 2 in one club?",
+      phases: [
+        { title: context.title || "Same Club Group", description: "The query is saved while the club pairs are processed.", links: [], active: ["0", "2"], line: 1, state: { query: "0 with 2", result: "not final" } },
+        { title: "Merge 0-1", description: "The first club pair places 0 and 1 together.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 5, state: { current_pair: "0-1", groups: "{0,1} | 2 | 3 | 4" } },
+        { title: "Read 1-2", description: "Student 1 connects the existing club group to student 2.", links: [["0", "1"]], active: ["1", "2"], activeEdges: ["0-1"], line: 2, state: { current_pair: "1-2", leaders: "group 0 and 2" } },
+        { title: "Merge 2", description: "After this merge, 0 and 2 share the same club group.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { groups: "{0,1,2} | 3 | 4" } },
+        { title: "Check query endpoints", description: "The final query compares only students 0 and 2.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], line: 7, state: { query: "0 with 2", decision: "same club", result: "true" } },
+        { title: "Ignore other students", description: "Students 3 and 4 do not affect this true-or-false answer.", links: [["0", "1"], ["1", "2"]], active: ["3", "4"], inactive: ["3", "4"], line: 7, state: { unrelated: "3, 4", result: "true" } },
+        { title: "Prepare boolean", description: "The return value is a real boolean, not the group itself.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], line: 7, state: { query: "same leader", result: "true" } },
+        { title: "Return true", description: "Return true because 0 and 2 end in the same club group.", links: [["0", "1"], ["1", "2"]], active: ["0", "2"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: "true", result: "true" } },
+      ],
+    },
+    "union-find-timeline": {
+      labels: ["0", "1", "2", "3"],
+      example: "n=4, pairs=[[0,1],[2,3],[1,2]]",
+      target: "group count after each request",
+      phases: [
+        { title: context.title || "Component Count Timeline", description: "This prompt records the group count after every union request.", links: [], active: ["0", "1"], line: 1, state: { groups: 4, timeline: "empty", result: "not final" } },
+        { title: "Request 0-1", description: "The first successful merge changes four groups into three.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 6, state: { current_link: "0-1", groups: 3, timeline: "[3]" } },
+        { title: "Request 2-3", description: "A second separate merge changes three groups into two.", links: [["0", "1"], ["2", "3"]], active: ["2", "3"], activeEdges: ["2-3"], line: 6, state: { current_link: "2-3", groups: 2, timeline: "[3,2]" } },
+        { title: "Request 1-2", description: "This request connects the two existing groups together.", links: [["0", "1"], ["2", "3"]], active: ["1", "2"], activeEdges: ["0-1", "2-3"], line: 3, state: { current_link: "1-2", leaders: "group 0 and group 2", groups: 2 } },
+        { title: "Merge both groups", description: "The final merge leaves one connected group.", links: [["0", "1"], ["2", "3"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 5, state: { current_link: "1-2", groups: 1 } },
+        { title: "Append final count", description: "After the third request, append the new group count to the timeline.", links: [["0", "1"], ["2", "3"], ["1", "2"]], active: ["0", "1", "2", "3"], activeEdges: ["0-1", "1-2", "2-3"], line: 6, state: { groups: 1, timeline: "[3,2,1]", result: "[3,2,1]" } },
+        { title: "Keep order of requests", description: "The output follows the request order, not sorted group labels.", links: [["0", "1"], ["2", "3"], ["1", "2"]], active: ["0", "1", "2", "3"], line: 7, state: { timeline: "[3,2,1]", result: "[3,2,1]" } },
+        { title: "Return timeline", description: "Return the list of counts collected after each request.", links: [["0", "1"], ["2", "3"], ["1", "2"]], active: ["0", "1", "2", "3"], activeEdges: ["0-1", "1-2", "2-3"], line: 8, state: { final_result: "[3,2,1]", result: "[3,2,1]" } },
+      ],
+    },
+    "union-find-largest-group": {
+      labels: ["0", "1", "2", "3", "4"],
+      example: "n=5, pairs=[[0,1],[1,2],[3,4]]",
+      target: "largest connected group size",
+      phases: [
+        { title: context.title || "Largest Group After Links", description: "Track group sizes as links merge students.", links: [], active: ["0", "1"], line: 1, state: { largest_size: 1, result: "not final" } },
+        { title: "Merge 0-1", description: "The first group now has size 2, so the largest size becomes 2.", links: [["0", "1"]], active: ["0", "1"], activeEdges: ["0-1"], line: 6, state: { current_link: "0-1", merged_size: 2, largest_size: 2 } },
+        { title: "Read 1-2", description: "Student 1's group already has two members before adding 2.", links: [["0", "1"]], active: ["1", "2"], activeEdges: ["0-1"], line: 3, state: { current_link: "1-2", current_group_size: 2 } },
+        { title: "Merge 2 into large group", description: "The 0-1 group grows to size 3.", links: [["0", "1"], ["1", "2"]], active: ["1", "2"], activeEdges: ["1-2"], line: 6, state: { current_link: "1-2", merged_size: 3, largest_size: 3 } },
+        { title: "Merge 3-4", description: "This separate group has size 2, so it does not beat the saved largest size.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["3", "4"], activeEdges: ["3-4"], line: 6, state: { current_link: "3-4", merged_size: 2, largest_size: 3 } },
+        { title: "Compare final groups", description: "The two final sizes are 3 and 2.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "1", "2"], activeEdges: ["0-1", "1-2"], line: 7, state: { group_sizes: "3 and 2", largest_size: 3 } },
+        { title: "Keep largest only", description: "The answer is the largest size, not the members in that group.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "1", "2"], line: 7, state: { largest_size: 3, result: 3 } },
+        { title: "Return 3", description: "Return the largest connected group size.", links: [["0", "1"], ["1", "2"], ["3", "4"]], active: ["0", "1", "2"], activeEdges: ["0-1", "1-2"], line: 8, state: { final_result: 3, result: 3 } },
+      ],
+    },
+  };
+  const config = configs[family] || configs["union-find-components"]!;
+  return config.phases.map((phase, index) => {
+    const graph = buildGraph(config.labels, phase.links, phase);
+    const edgeIds = phase.activeEdges || phase.links.map(edgeIdFor);
+    return step({
+      concept: "union-find",
+      title: phase.title,
+      description: phase.description,
+      nodes: graph.nodes,
+      edges: graph.edges,
+      highlights: { nodeIds: phase.active, edgeIds, lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      state: {
+        example: config.example,
+        target: config.target,
+        visual_family: family,
+        ...phase.state,
+      },
+    }, index + 1);
+  });
 }
 
 export function generateDynamicProgrammingSteps(context: GeneratorContext = {}): Step[] {

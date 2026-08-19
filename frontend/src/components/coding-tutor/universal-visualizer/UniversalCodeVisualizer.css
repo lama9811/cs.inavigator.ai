@@ -2420,6 +2420,24 @@ body.coding-dark .ucv-recursion-return-builder > strong.is-active {
   min-height: 68px;
 }
 
+.ucv-union-find-canvas--with-panel .react-flow {
+  width: calc(100% - clamp(13rem, 26vw, 17rem));
+  margin-left: clamp(13rem, 26vw, 17rem);
+}
+
+.ucv-union-find-state-panel {
+  width: clamp(12.2rem, 24vw, 16rem);
+}
+
+.ucv-graph-canvas--with-panel .ucv-flow-node-card--union-find {
+  width: clamp(78px, 8.8vw, 104px);
+  min-height: 66px;
+}
+
+.ucv-graph-canvas--with-panel .ucv-flow-node-card--union-find strong {
+  font-size: clamp(0.84rem, 1vw, 1rem);
+}
+
 .ucv-graph-canvas--with-panel .ucv-flow-node-card--graph strong {
   font-size: clamp(0.82rem, 1vw, 0.98rem);
 }
