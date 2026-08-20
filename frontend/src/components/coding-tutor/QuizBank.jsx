@@ -24,6 +24,13 @@ function conciseGuideReason(value = "") {
     .trim();
 }
 
+function firstSentence(value = "", fallback = "") {
+  const text = String(value || fallback || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  const match = text.match(/^.*?[.!?](?=\s|$)/);
+  return (match ? match[0] : text).trim();
+}
+
 function practiceGuideBand(value = "Review") {
   const label = titleCase(value || "Review");
   return label.toLowerCase().includes("review-only") ? "Review" : label;
@@ -873,6 +880,7 @@ export default function QuizBank({
                             progress={progressByQuestion[question.id]}
                             recommended={question.id === recommendedId}
                             onSelect={selectFromFilteredSet}
+                            showTopic={false}
                           />
                         ))}
                       </div>
@@ -1027,8 +1035,8 @@ export default function QuizBank({
                       <strong>{pattern.title || `${titleCase(pattern.topic)} pattern`}</strong>
                       <span>{pattern.count}x</span>
                     </div>
-                    <p>{pattern.summary}</p>
-                    <small>{pattern.next_step}</small>
+                    <p>{firstSentence(pattern.summary, `${titleCase(pattern.topic)} attempts are showing one repeated issue.`)}</p>
+                    <small>{firstSentence(pattern.next_step, "Run the smallest failing case first.")}</small>
                   </li>
                 ))}
               </ul>

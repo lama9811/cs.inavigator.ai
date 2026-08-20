@@ -159,7 +159,7 @@ function TraceObjectValue({ value, variableName, isUsedNow, status }) {
         </div>
         <div className="code-trace-object-meta">
           <span>{formatted.inline}</span>
-          <span>{status === "same" ? "stored" : status}</span>
+          <span>{traceStatusLabel(status)}</span>
           {isUsedNow ? <span>active line</span> : null}
         </div>
         <div className="code-trace-list-slots">
@@ -187,7 +187,7 @@ function TraceObjectValue({ value, variableName, isUsedNow, status }) {
         </div>
         <div className="code-trace-object-meta">
           <span>{formatted.inline}</span>
-          <span>{status === "same" ? "stored" : status}</span>
+          <span>{traceStatusLabel(status)}</span>
           {isUsedNow ? <span>active line</span> : null}
         </div>
         <div className="code-trace-object-pairs">
@@ -311,7 +311,7 @@ function TraceV2ObjectCell({ value, objects = {}, objectLabels = new Map() }) {
   if (!value) return <strong>?</strong>;
   if (value.kind === "reference") {
     const object = objects[value.object_id];
-    return <strong>{objectLabels.get(value.object_id)?.[0] || v2ObjectSummary(object) || "stored value"}</strong>;
+    return <strong>{objectLabels.get(value.object_id)?.[0] || v2ObjectSummary(object) || "value"}</strong>;
   }
   return <strong>{v2ScalarDisplay(value)}</strong>;
 }
@@ -344,7 +344,7 @@ function buildTraceObjectLabels(frames = [], objects = {}) {
 }
 
 function friendlyTraceObjectType(object) {
-  if (!object?.type) return "stored value";
+  if (!object?.type) return "value";
   if (object.type === "dict") return "dictionary";
   if (object.type === "tuple") return "tuple";
   if (object.type === "set") return "set";
@@ -356,6 +356,17 @@ function isTraceCollectionBinding(binding, objects = {}) {
   if (binding?.kind !== "reference") return false;
   const object = objects[binding.object_id];
   return ["dict", "list", "set", "tuple"].includes(object?.type);
+}
+
+function traceBindingStatusLabel(binding, isChanged = false) {
+  if (isChanged) return "changed";
+  if (binding?.type === "argument") return "input";
+  return "value";
+}
+
+function traceStatusLabel(status) {
+  if (status === "same") return "value";
+  return status || "value";
 }
 
 function TraceV2ObjectCard({ object, isChanged, label, objects = {}, objectLabels = new Map() }) {
@@ -374,7 +385,7 @@ function TraceV2ObjectCard({ object, isChanged, label, objects = {}, objectLabel
       </div>
       <div className="code-trace-object-meta">
         <span>{v2ObjectSummary(object)}</span>
-        <span>{isChanged ? "changed" : "stored"}</span>
+        <span>{isChanged ? "changed" : "value"}</span>
       </div>
       {showSlots && items.length ? (
         <div className="code-trace-list-slots">
@@ -475,7 +486,7 @@ function describeTraceOperation(line = "", locals = {}, previousLine = "") {
   const directMethod = sourceToExplain.match(/\b([A-Za-z_]\w*)\.(lower|upper|strip|split|replace)\s*\(/);
   if (directMethod) {
     const [, sourceName, methodName] = directMethod;
-    return `${sourceName}.${methodName}() returns a transformed value for this operation; ${sourceName} itself stays stored unless the result is assigned back.`;
+    return `${sourceName}.${methodName}() returns a transformed value for this operation; ${sourceName} itself keeps its current value unless the result is assigned back.`;
   }
 
   return "";
@@ -504,7 +515,7 @@ function traceErrorInfo(traceResult, activeStep, languageLabel = "Python") {
   if (missingName) {
     cause = `${cleanLine || "This line"} uses ${missingName}, but that name has not been created in this scope. Check for a typo or use the variable name that already exists.`;
   } else if (exceptionType === "TypeError" && cleanLine) {
-    cause = `${cleanLine} uses a value in a way its type does not support. Check the value stored in each variable on this line.`;
+    cause = `${cleanLine} uses a value in a way its type does not support. Check each variable's value on this line.`;
   } else if (exceptionType === "IndexError" && cleanLine) {
     cause = `${cleanLine} tries to read a position that is outside the list or string. Check the index and the collection length.`;
   } else if (exceptionType === "KeyError" && cleanLine) {
@@ -787,65 +798,70 @@ function CodeTraceModal({
           {trace.length ? (
             <>
               <div className="code-trace-stage">
-                <section className="code-trace-code-window" aria-label="Executed code">
-                  <div>
-                    <span>Step {stepIndex + 1} of {trace.length}</span>
-                    <strong>{activeStep?.function}</strong>
-                    <code>line {currentLineNo}</code>
-                    {activeStep?.call_depth ? <code>depth {activeStep.call_depth}</code> : null}
-                  </div>
-                  <pre>
-                    {codeLines.map(([lineNo, line]) => (
-                      <span
-                        key={lineNo}
-                        ref={(node) => {
-                          if (node) lineRefs.current.set(lineNo, node);
-                          else lineRefs.current.delete(lineNo);
-                        }}
-                        className={lineNo === currentLineNo ? "is-active" : ""}
-                      >
-                        <em>{lineNo}</em>
-                        <code>{line || " "}</code>
-                      </span>
-                    ))}
-                  </pre>
-                </section>
+                <div className="code-trace-main-column">
+                  <section className="code-trace-code-window" aria-label="Executed code">
+                    <div>
+                      <span>Step {stepIndex + 1} of {trace.length}</span>
+                      <strong>{activeStep?.function}</strong>
+                      <code>line {currentLineNo}</code>
+                      {activeStep?.call_depth ? <code>depth {activeStep.call_depth}</code> : null}
+                    </div>
+                    <pre>
+                      {codeLines.map(([lineNo, line]) => (
+                        <span
+                          key={lineNo}
+                          ref={(node) => {
+                            if (node) lineRefs.current.set(lineNo, node);
+                            else lineRefs.current.delete(lineNo);
+                          }}
+                          className={lineNo === currentLineNo ? "is-active" : ""}
+                        >
+                          <em>{lineNo}</em>
+                          <code>{line || " "}</code>
+                        </span>
+                      ))}
+                    </pre>
+                  </section>
 
-                <aside className="code-trace-state-panel" aria-label="Current trace state">
-                  <div>
-                    <span>Current step</span>
-                    <h4>{activeExplanation}</h4>
-                  </div>
-                  {activeStep?.line ? (
-                    <div className="code-trace-current-line">
-                      <span>{lineCardLabel}</span>
-                      <code>{currentLineDisplay}</code>
+                  <section className="code-trace-step-panel" aria-label="Current trace step">
+                    <div>
+                      <span>Current step</span>
+                      <h4>{activeExplanation}</h4>
                     </div>
-                  ) : null}
-                  {activeErrorInfo ? (
-                    <div className="code-trace-error-card">
-                      <span>{activeErrorInfo.label}</span>
-                      <strong>{activeErrorInfo.message}</strong>
-                      {activeErrorInfo.cause ? <p>{activeErrorInfo.cause}</p> : null}
-                      <p>{activeErrorInfo.location}</p>
-                    </div>
-                  ) : null}
-                  {activeStep?.return_value != null ? (
-                    <div className="code-trace-result-box">
-                      <span>Returned value</span>
-                      <strong>
-                        {isTraceV2 ? <TraceV2Value binding={activeStep.return_value} objects={activeObjects} /> : <TraceValue value={activeStep.return_value} />}
-                      </strong>
-                    </div>
-                  ) : null}
-                  {screenOutput ? (
-                    <div className="code-trace-output-box">
-                      <span>{canGoNext ? "Screen output so far" : "Final screen output"}</span>
-                      <pre>{screenOutput}</pre>
-                    </div>
-                  ) : null}
+                    {activeStep?.line ? (
+                      <div className="code-trace-current-line">
+                        <span>{lineCardLabel}</span>
+                        <code>{currentLineDisplay}</code>
+                      </div>
+                    ) : null}
+                    {activeErrorInfo ? (
+                      <div className="code-trace-error-card">
+                        <span>{activeErrorInfo.label}</span>
+                        <strong>{activeErrorInfo.message}</strong>
+                        {activeErrorInfo.cause ? <p>{activeErrorInfo.cause}</p> : null}
+                        <p>{activeErrorInfo.location}</p>
+                      </div>
+                    ) : null}
+                    {activeStep?.return_value != null ? (
+                      <div className="code-trace-result-box">
+                        <span>Returned value</span>
+                        <strong>
+                          {isTraceV2 ? <TraceV2Value binding={activeStep.return_value} objects={activeObjects} /> : <TraceValue value={activeStep.return_value} />}
+                        </strong>
+                      </div>
+                    ) : null}
+                    {screenOutput ? (
+                      <div className="code-trace-output-box">
+                        <span>{canGoNext ? "Screen output so far" : "Final screen output"}</span>
+                        <pre>{screenOutput}</pre>
+                      </div>
+                    ) : null}
+                  </section>
+                </div>
+
+                <aside className="code-trace-state-panel" aria-label="Current trace values">
                   <div className="code-trace-variable-updates" aria-label="Variable updates for this trace step">
-                    <span>{isTraceV2 ? "Variables used now" : "Variable updates"}</span>
+                    <span>{isTraceV2 ? "Values in this step" : "Variable updates"}</span>
                     {isTraceV2 ? (
                       currentFrame ? (
                         <div className="code-trace-v2-graph">
@@ -865,20 +881,20 @@ function CodeTraceModal({
                                       className={`code-trace-frame-local ${isChanged ? "is-changed" : "is-same"} ${binding?.kind === "reference" ? "is-reference" : "is-scalar"}`}
                                     >
                                       <strong>{name}</strong>
-                                      <span>{isChanged ? "changed" : "stored"}</span>
+                                      <span>{traceBindingStatusLabel(binding, isChanged)}</span>
                                       <TraceV2Value binding={binding} objects={activeObjects} />
                                     </div>
                                   );
                                 }) : (
                                   <p className="code-trace-no-declared-vars">
                                     {currentFrameBindings.length
-                                      ? "Stored lists and dictionaries are under More trace details."
+                                      ? "Lists and dictionaries are under More trace details."
                                       : "No variables captured in this frame yet."}
                                   </p>
                                 )}
                                 {hiddenCurrentCollectionCount ? (
                                   <p className="code-trace-no-declared-vars">
-                                    {hiddenCurrentCollectionCount} stored collection{hiddenCurrentCollectionCount === 1 ? "" : "s"} tucked under More trace details.
+                                    {hiddenCurrentCollectionCount} collection{hiddenCurrentCollectionCount === 1 ? "" : "s"} tucked under More trace details.
                                   </p>
                                 ) : null}
                               </div>
@@ -917,7 +933,7 @@ function CodeTraceModal({
                                             className={`code-trace-frame-local is-same ${binding?.kind === "reference" ? "is-reference" : "is-scalar"}`}
                                           >
                                             <strong>{name}</strong>
-                                            <span>stored</span>
+                                            <span>{traceBindingStatusLabel(binding)}</span>
                                             <TraceV2Value binding={binding} objects={activeObjects} />
                                           </div>
                                         )) : (
@@ -968,7 +984,7 @@ function CodeTraceModal({
                                 className={`code-trace-frame-local is-${status} ${usedNow ? "is-used-now" : ""}`}
                               >
                                 <strong>{name}</strong>
-                                <span>{status === "same" ? "stored" : status}</span>
+                                <span>{traceStatusLabel(status)}</span>
                                 <TraceInlineValue value={value} />
                               </div>
                             ))}

@@ -991,13 +991,21 @@
 
 .code-trace-stage {
   display: grid;
-  grid-template-columns: minmax(320px, 1.05fr) minmax(340px, 0.95fr);
+  grid-template-columns: minmax(360px, 0.98fr) minmax(300px, 0.52fr);
+  align-items: start;
   gap: 1rem;
   min-height: 0;
   margin: 1rem clamp(1rem, 2.4vw, 1.5rem) 1.25rem;
 }
 
+.code-trace-main-column {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
 .code-trace-code-window,
+.code-trace-step-panel,
 .code-trace-state-panel {
   border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 72%, transparent);
   border-radius: 16px;
@@ -1006,7 +1014,7 @@
 }
 
 .code-trace-code-window > div:first-child,
-.code-trace-state-panel > div:first-child {
+.code-trace-step-panel > div:first-child {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1020,7 +1028,7 @@
 
 .code-trace-code-window pre {
   margin: 0;
-  max-height: min(50vh, 520px);
+  max-height: min(31vh, 340px);
   overflow: auto;
   background: #07172d;
   color: #dbeafe;
@@ -1065,23 +1073,34 @@
   overflow-wrap: anywhere;
 }
 
-.code-trace-state-panel {
+.code-trace-step-panel {
   display: grid;
   align-content: start;
   gap: 0.72rem;
   padding-bottom: 0.75rem;
 }
 
-.code-trace-state-panel h4 {
+.code-trace-state-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.72rem;
+  max-height: min(68vh, 620px);
+  overflow: auto;
+  padding: 0.75rem;
+  scrollbar-gutter: stable;
+}
+
+.code-trace-step-panel h4 {
   flex-basis: 100%;
   margin: 0;
   color: var(--ct-primary, #082343);
-  font-size: 0.95rem;
+  font-size: 0.94rem;
+  line-height: 1.45;
 }
 
-.code-trace-state-panel h5,
-.code-trace-state-panel p,
-.code-trace-state-panel dl,
+.code-trace-step-panel h5,
+.code-trace-step-panel p,
+.code-trace-step-panel dl,
 .code-trace-call-stack,
 .code-trace-result-box,
 .code-trace-output-box {
@@ -1089,7 +1108,7 @@
   margin-right: 0.8rem;
 }
 
-.code-trace-state-panel p code {
+.code-trace-step-panel p code {
   border-radius: 8px;
   background: color-mix(in srgb, var(--ct-soft, #eef6ff) 70%, var(--ct-panel, #fff));
   padding: 0.16rem 0.32rem;
@@ -1167,12 +1186,14 @@
   display: block;
   margin-top: 0.28rem;
   color: #7f1d1d;
+  font-size: 0.94rem;
   line-height: 1.35;
 }
 
 .code-trace-error-card p {
   margin: 0.32rem 0 0;
   color: #991b1b;
+  font-size: 0.92rem;
   line-height: 1.45;
 }
 
@@ -1250,7 +1271,7 @@
   padding: 0.55rem;
 }
 
-.code-trace-state-panel h5 {
+.code-trace-step-panel h5 {
   margin-top: 0.75rem;
   margin-bottom: 0.45rem;
   color: var(--ct-muted, #667085);
@@ -1261,7 +1282,7 @@
 .code-trace-variable-updates {
   display: grid;
   gap: 0.62rem;
-  margin: 0 0.8rem;
+  margin: 0;
   border: 1px solid color-mix(in srgb, var(--ct-info, #2563eb) 24%, var(--ct-border, #d7e1ef));
   border-radius: 14px;
   background: color-mix(in srgb, var(--ct-info, #2563eb) 6%, var(--ct-panel, #fff));
@@ -1786,39 +1807,39 @@
   font-size: 0.82rem;
 }
 
-.code-trace-state-panel dl {
+.code-trace-step-panel dl {
   display: grid;
   gap: 0.45rem;
   margin-top: 0;
 }
 
-.code-trace-state-panel dl > div {
+.code-trace-step-panel dl > div {
   border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 72%, transparent);
   border-radius: 12px;
   background: var(--ct-panel, #fff);
   padding: 0.52rem;
 }
 
-.code-trace-state-panel dl > div.is-changed {
+.code-trace-step-panel dl > div.is-changed {
   border-color: color-mix(in srgb, #2563eb 45%, var(--ct-border, #d7e1ef));
   background: color-mix(in srgb, #dbeafe 42%, var(--ct-panel, #fff));
   box-shadow: inset 3px 0 0 #2563eb;
 }
 
-.code-trace-state-panel dt {
+.code-trace-step-panel dt {
   color: var(--ct-muted, #667085);
   font-size: 0.72rem;
   font-weight: 850;
 }
 
-.code-trace-state-panel dd {
+.code-trace-step-panel dd {
   margin: 0.2rem 0 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
   overflow-wrap: anywhere;
 }
 
-.code-trace-state-panel dd pre,
+.code-trace-step-panel dd pre,
 .code-trace-result-box pre {
   margin: 0.4rem 0 0;
   max-height: 10rem;
@@ -2211,7 +2232,7 @@ body.coding-dark .code-trace-v2-references em {
   color: #bfd2ea;
 }
 
-/* Trace V2 keeps references as data, but the beginner UI presents them as stable stored list/object summaries. */
+/* Trace V2 keeps references as data, but the beginner UI presents them as stable list/object summaries. */
 .code-trace-v2-references {
   display: none;
 }
@@ -2343,7 +2364,7 @@ body.coding-dark .code-trace-object-pairs .is-more {
   color: #cbd5e1;
 }
 
-body.coding-dark .code-trace-state-panel dl > div.is-changed {
+body.coding-dark .code-trace-step-panel dl > div.is-changed {
   border-color: rgba(96, 165, 250, 0.58);
   background: rgba(37, 99, 235, 0.16);
   box-shadow: inset 3px 0 0 #60a5fa;
@@ -2752,11 +2773,12 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   }
 
   .code-trace-state-panel {
+    max-height: none;
     overflow: visible;
   }
 
   .code-trace-variable-updates {
-    margin-inline: 0.6rem;
+    margin-inline: 0;
     padding: 0.58rem;
   }
 

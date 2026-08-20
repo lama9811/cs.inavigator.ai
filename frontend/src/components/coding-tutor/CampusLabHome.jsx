@@ -445,6 +445,7 @@ function CampusLearningQueue({
   const focusButton = adaptiveReady
     ? `Open ${titleCase(adaptiveDifficulty)} step`
     : focusAction === "practice" ? "Open practice" : "Open topic lesson";
+  const showFocusActions = !(codingRecommendation && currentPlanStep);
   const compactCards = useCompactHomeCards();
   const [expandedMobileCards, setExpandedMobileCards] = useState({});
   const toggleCard = (card) => {
@@ -549,24 +550,26 @@ function CampusLearningQueue({
               {adaptiveReady ? "Ready" : "Review"}
             </small>
           ) : null}
-          <div className="campus-focus-actions">
-            {reviewSignal && !codingRecommendation ? (
+          {showFocusActions ? (
+            <div className="campus-focus-actions">
+              {reviewSignal && !codingRecommendation ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenLessonReview?.(reviewSignal)}
+                >
+                  Review recent errors
+                </button>
+              ) : null}
               <button
                 type="button"
-                onClick={() => onOpenLessonReview?.(reviewSignal)}
+                onClick={focusClick}
               >
-                Review recent errors
+                {codingRecommendation?.actionLabel || (needsStartingCheck
+                  ? "Start Syntax quiz"
+                  : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"))}
               </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={focusClick}
-            >
-              {currentPlanStep?.label || codingRecommendation?.actionLabel || (needsStartingCheck
-                ? "Start Syntax quiz"
-                : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"))}
-            </button>
-          </div>
+            </div>
+          ) : null}
           <MiniPlanList
             items={codingRecommendation?.miniPlan || codingRecommendation?.mini_plan}
             onOpenStep={codingRecommendation ? onOpenMiniPlanStep : null}

@@ -17,8 +17,9 @@ All notable changes to CS Navigator are documented here.
 - **Admin schedule refresh controls.** Admin Dashboard now includes manual schedule refresh/status controls for Planner live section snapshots, with cadence guidance for normal and advising-season use.
 - **Learn guided execution traces.** All existing Learn visualizers now include a reusable trace panel with current operation, input value, state before/after, decision, output, and why-it-matters metadata across 82 visual blocks and 392 authored steps.
 - **Trace My Code V2 frontend.** The Python trace modal now prefers the backend `trace_v2` payload when available, keeps the full source visible, shows current line/output/errors, and renders function variables plus list/object state with V1 trace fallback preserved.
-- **Practice visualizer step-depth pass.** All 151 Practice Library visualizers now expand beyond the old four-step sketch into six-step concept traces with setup, operation, state update, repeated movement, and final-result checks.
-- **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 151 visualizers.
+- **Practice visualizer step-depth pass.** Practice Library visualizers now expand beyond the old four-step sketch into deeper concept traces with setup, operation, state update, repeated movement, and final-result checks.
+- **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 203 visualizers.
+- **Complete Practice visualizer family sweep.** All 203 Coding Tutor Practice questions now route to corresponding concept visualizer families with compact teaching examples, problem-specific side panels, duplicate bottom strips removed where appropriate, broader step traces where needed, and plain-English pseudocode that avoids giving away full solutions. The sweep covers arrays, strings, conditionals, sets, hash maps, stacks, queues, two pointers, sliding window, binary search, matrices, recursion, prefix sums, intervals, dynamic programming, graphs, trees, heaps, tries, linked lists, bit manipulation, and disjoint sets.
 
 ### Changed
 - Adaptive recommendations now use timeline-based cooldowns so dismissed review recommendations stay quiet for 24 hours and skipped starting checks stay quiet for 14 days when the student has other learning signals.
@@ -65,7 +66,7 @@ All notable changes to CS Navigator are documented here.
 - Fixed PR review issues in lesson/question content, including malformed apostrophes, a missing C++ include, unsafe arithmetic-swap guidance, Java lesson mismatches, hidden lesson fields, quiz draft clearing, and concept quiz progress fallback behavior.
 
 ### Verified
-- Practice visualizer audit passes across 189 visualizer definitions.
+- Practice visualizer audit passes across 203 visualizer definitions, with 203 unique question IDs and no missing `visualizer.concept` entries.
 - Advanced Learn/Practice content tests pass, including concept quiz manifest coverage, shared lesson parsing, and advanced topic depth guards.
 - JSON parse checks for edited lesson/question files pass.
 - Backend `py_compile` passes for Coding Tutor touched modules.

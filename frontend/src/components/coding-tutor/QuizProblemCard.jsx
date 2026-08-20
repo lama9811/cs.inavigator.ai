@@ -14,7 +14,7 @@ function statusKey(progress) {
   return "not_started";
 }
 
-export default function QuizProblemCard({ question, progress, onSelect, recommended = false }) {
+export default function QuizProblemCard({ question, progress, onSelect, recommended = false, showTopic = true }) {
   const status = statusKey(progress);
   const meta = STATUS_META[status];
   const className = `quiz-problem-card status-${status}${recommended ? " is-recommended" : ""}`;
@@ -38,7 +38,7 @@ export default function QuizProblemCard({ question, progress, onSelect, recommen
 
       <div className="quiz-problem-foot">
         <span className="quiz-problem-tags">
-          <span className="quiz-tag quiz-tag-topic">{titleCase(question.topic)}</span>
+          {showTopic ? <span className="quiz-tag quiz-tag-topic">{titleCase(question.topic)}</span> : null}
           <span className={`quiz-tag quiz-tag-difficulty diff-${(question.difficulty || "easy").toLowerCase()}`}>{titleCase(question.difficulty)}</span>
         </span>
         <span className="quiz-problem-action">{meta.action}</span>

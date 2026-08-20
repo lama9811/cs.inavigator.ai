@@ -8846,6 +8846,55 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   box-shadow: 0 8px 18px rgba(59, 130, 246, 0.16) !important;
 }
 
+.coding-app .campus-queue-grid.three-up .campus-queue-item.featured,
+.coding-app .campus-queue-grid.three-up .campus-queue-item.warmup {
+  display: flex;
+  flex-direction: column;
+  align-content: stretch;
+}
+
+.coding-app .campus-queue-grid.three-up .campus-queue-item.featured .campus-primary-action,
+.coding-app .campus-queue-grid.three-up .campus-queue-item.warmup > button:not(.campus-card-details-toggle) {
+  align-self: end;
+  justify-self: stretch;
+  width: 100%;
+  margin-top: auto;
+}
+
+.coding-app .campus-queue-grid.three-up .campus-mini-plan-wrap {
+  justify-self: center;
+  justify-items: center;
+  width: min(100%, 430px);
+}
+
+.coding-app .campus-queue-grid.three-up .campus-mini-plan {
+  width: 100%;
+}
+
+.coding-app .campus-queue-grid.three-up .campus-mini-plan li {
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+}
+
+.coding-app .campus-queue-grid.three-up .campus-mini-plan li > span {
+  justify-self: center;
+}
+
+.coding-app .campus-queue-grid.three-up .campus-mini-plan button {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 8%, transparent);
+  padding: 9px 14px;
+  text-align: center;
+  font-weight: 800;
+}
+
+body.coding-dark .coding-app .campus-queue-grid.three-up .campus-mini-plan button {
+  background: rgba(139, 189, 255, 0.10);
+}
+
 /* Real-phone Coding Tutor Home compaction.
    Placed last because several home polish blocks re-declare card/button layout
    late in this file. These rules target 425/375/320 widths from device QA. */
