@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for dynamic-programming.",
+  "concept": "dynamic-programming",
+  "questions": [
+    {
+      "id": "advanced-dp-state",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "DP state",
+      "code": "climb stairs:\ndp[0] = 1\ndp[1] = 1\ndp[2] = 2\n\ndp[i] stores ways to reach step i",
+      "prompt": "What does a DP state usually represent?",
+      "choices": [
+        "One smaller version of the problem",
+        "A random test case",
+        "Only the final answer",
+        "The entire source file"
+      ],
+      "answer_index": 0,
+      "explanation": "A DP state stores the answer to a smaller input shape so later work can reuse it.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dp-base",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Base case",
+      "code": "ways[0] = 1\nways[1] = 1\n\nways[2] = ways[1] + ways[0]",
+      "prompt": "For climb stairs with 1 or 2 steps at a time, why define ways[0] = 1?",
+      "choices": [
+        "There is one way to do nothing before starting",
+        "Zero steps should be impossible",
+        "It makes every answer zero",
+        "It skips the recurrence"
+      ],
+      "answer_index": 0,
+      "explanation": "The empty climb is the starting count that lets the first real states add correctly.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dp-transition",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Transition",
+      "code": null,
+      "prompt": "What is a DP transition?",
+      "choices": [
+        "The rule that builds a state from earlier states",
+        "A print statement after the answer",
+        "A syntax shortcut for loops",
+        "A way to ignore repeated work"
+      ],
+      "answer_index": 0,
+      "explanation": "A transition is the rule for building the current saved answer from smaller saved answers. If the transition is wrong, every later DP cell that depends on it can be wrong too.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dp-order",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Fill order",
+      "code": null,
+      "prompt": "Why does fill order matter in tabulation?",
+      "choices": [
+        "A state must be computed after the states it depends on",
+        "The table must look symmetrical",
+        "Hard tests should run first",
+        "The compiler chooses the order"
+      ],
+      "answer_index": 0,
+      "explanation": "If a state reads earlier states, those earlier values need to exist before the read.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dp-memo",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Memoization",
+      "code": null,
+      "prompt": "What does memoization save?",
+      "choices": [
+        "Results of recursive calls by input state",
+        "Only printed output",
+        "Every failed syntax check",
+        "The largest loop index only"
+      ],
+      "answer_index": 0,
+      "explanation": "Memoization saves the result for a state after it is solved once. The next time code reaches the same state, it can reuse that saved value instead of repeating the recursion.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dp-overlap",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Overlapping work",
+      "code": null,
+      "prompt": "Which sign suggests DP may help?",
+      "choices": [
+        "The same smaller question is solved many times",
+        "Every item is used once independently",
+        "The input is already sorted",
+        "The answer is always a boolean"
+      ],
+      "answer_index": 0,
+      "explanation": "DP helps when the same smaller problem appears more than once. If each subproblem is unique, saving answers may add extra work without much benefit.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dp-space",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Space tradeoff",
+      "code": null,
+      "prompt": "When can a DP table sometimes shrink to a few variables?",
+      "choices": [
+        "When each state only needs a small number of previous states",
+        "When the recurrence uses every older state",
+        "When the input has strings",
+        "When there are no base cases"
+      ],
+      "answer_index": 0,
+      "explanation": "Older table entries can be dropped only when later states no longer read them. If a future transition still needs an old value, removing it breaks the answer.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dp-mistake",
+      "concept": "dynamic-programming",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "DP mistake",
+      "code": null,
+      "prompt": "What is a common DP mistake?",
+      "choices": [
+        "Filling a state before its dependencies are ready",
+        "Writing a base case",
+        "Naming the table clearly",
+        "Testing a tiny input"
+      ],
+      "answer_index": 0,
+      "explanation": "A state built too early reads missing or stale values, which makes the whole table drift.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

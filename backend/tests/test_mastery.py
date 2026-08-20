@@ -234,8 +234,10 @@ def test_mistake_patterns_are_counted_from_real_failures(session):
     assert patterns[0]["topic"] == "Arrays"
     assert patterns[0]["error_class"] == "wrong_answer"
     assert patterns[0]["count"] == 2
-    assert "2 recent Arrays runs ran fine but returned the wrong answer" in patterns[0]["summary"]
-    assert "Trace one failing example by hand" in patterns[0]["next_step"]
+    assert "2 recent Arrays runs finished, but produced the wrong result" in patterns[0]["summary"]
+    assert "update rule or branch condition" in patterns[0]["summary"]
+    assert "skipped, counted twice, or returned too early" in patterns[0]["summary"]
+    assert "Compare the first failing input" in patterns[0]["next_step"]
 
 
 def test_mistake_patterns_do_not_emit_generic_copy_without_failures(session):

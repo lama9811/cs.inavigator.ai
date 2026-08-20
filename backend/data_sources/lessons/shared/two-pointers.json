@@ -61,7 +61,7 @@
           "kind": "visual",
           "title": "Move one pointer for a reason",
           "concept": "two-pointers",
-          "caption": "Watch left and right move in a sorted pair-sum search.",
+          "caption": "Compare left and right in a sorted pair-sum search.",
           "initial_state": {
             "items": [
               1,
@@ -394,7 +394,7 @@
           "kind": "visual",
           "title": "Check a palindrome inward",
           "concept": "two-pointers",
-          "caption": "Watch left and right compare matching characters before moving inward.",
+          "caption": "Compare left and right characters before moving inward.",
           "initial_state": {
             "items": [
               "r",

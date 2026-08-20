@@ -259,6 +259,38 @@ def _trace_bindings_from_pairs(pairs: list[dict[str, Any]] | tuple[dict[str, Any
     return bindings
 
 
+def _compiled_trace_bindings(
+    arg_bindings: list[dict[str, Any]],
+    runtime_vars: list[dict[str, Any]] | None,
+) -> dict[str, dict[str, Any]]:
+    bindings = _trace_bindings_from_pairs(arg_bindings)
+    for item in runtime_vars or []:
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        value = _truncate_text(str(item.get("value", "")), RUN_MAX_VALUE_CHARS)
+        bindings[name] = _trace_scalar_binding(value, value_type="runtime")
+    return bindings
+
+
+def _compiled_trace_binding_changes(
+    frame_name: str,
+    bindings: dict[str, dict[str, Any]],
+    previous_bindings: dict[str, dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    changes: list[dict[str, Any]] = []
+    previous_bindings = previous_bindings or {}
+    for name, binding in bindings.items():
+        previous = previous_bindings.get(name)
+        if previous is None or previous.get("display") != binding.get("display"):
+            changes.append({
+                "frame": frame_name,
+                "name": name,
+                "change": "bound" if previous is None else "updated",
+            })
+    return changes
+
+
 def _normalize_trace_v2_frames(trace_v2: dict[str, Any] | None) -> dict[str, Any]:
     payload = dict(trace_v2 or _empty_trace_v2_payload())
     payload["schema_version"] = "trace_v2"
@@ -1064,13 +1096,38 @@ def build_operation_metadata():
     except Exception:
         return {}
     operations = {}
+    mutating_methods = {
+        "append",
+        "extend",
+        "insert",
+        "pop",
+        "remove",
+        "clear",
+        "sort",
+        "reverse",
+        "update",
+        "setdefault",
+        "add",
+        "discard",
+    }
+    transform_methods = {"lower", "upper", "strip", "split", "join", "replace"}
+
+    def source_for(node):
+        try:
+            return ast.unparse(node)
+        except Exception:
+            return ""
+
     def target_name(node):
         if isinstance(node, ast.Name):
             return node.id
         if isinstance(node, ast.Attribute):
-            return node.attr
+            owner = source_for(node.value)
+            return f"{owner}.{node.attr}" if owner else node.attr
         if isinstance(node, ast.Subscript):
-            return "indexed value"
+            owner = source_for(node.value) or "collection"
+            index = source_for(node.slice) or "index"
+            return f"{owner}[{index}]"
         if isinstance(node, (ast.Tuple, ast.List)):
             return ", ".join(target_name(item) for item in node.elts)
         return ""
@@ -1081,6 +1138,13 @@ def build_operation_metadata():
             if isinstance(node.func, ast.Name):
                 return node.func.id
         return ""
+    def call_owner(node):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            return source_for(node.func.value)
+        return ""
+    def has_subscript(node):
+        return any(isinstance(child, ast.Subscript) for child in ast.walk(node))
+
     for node in ast.walk(tree):
         line_no = getattr(node, "lineno", None)
         if not line_no:
@@ -1088,6 +1152,32 @@ def build_operation_metadata():
         if isinstance(node, ast.Assign):
             target = target_name(node.targets[0]) if node.targets else ""
             value_call = call_name(node.value)
+            if node.targets and isinstance(node.targets[0], ast.Subscript):
+                operations[line_no] = {
+                    "kind": "index_write",
+                    "target": target,
+                    "detail": f"updates the stored value at {target}" if target else "updates one stored item",
+                    "method": value_call,
+                }
+                continue
+            if value_call in transform_methods:
+                kind = "method_call"
+                detail = f"runs {value_call}() and stores the result in {target}" if target else f"runs {value_call}() and stores the result"
+            elif has_subscript(node.value):
+                kind = "index_access"
+                detail = f"reads from a collection and stores the value in {target}" if target else "reads from a collection"
+            else:
+                kind = "assignment"
+                detail = f"stores a value in {target}" if target else "stores a value"
+            operations[line_no] = {
+                "kind": kind,
+                "target": target,
+                "detail": detail,
+                "method": value_call,
+            }
+        elif isinstance(node, ast.AnnAssign):
+            target = target_name(node.target)
+            value_call = call_name(node.value) if node.value else ""
             operations[line_no] = {
                 "kind": "assignment",
                 "target": target,
@@ -1096,8 +1186,9 @@ def build_operation_metadata():
             }
         elif isinstance(node, ast.AugAssign):
             target = target_name(node.target)
+            kind = "index_write" if isinstance(node.target, ast.Subscript) else "update"
             operations[line_no] = {
-                "kind": "update",
+                "kind": kind,
                 "target": target,
                 "detail": f"updates {target} using its old value" if target else "updates a value",
             }
@@ -1116,8 +1207,15 @@ def build_operation_metadata():
             operations[line_no] = {"kind": "condition", "target": "if condition", "detail": "checks which branch should run"}
         elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
             method = call_name(node.value)
-            kind = "output" if method == "print" else "method_call"
-            operations[line_no] = {"kind": kind, "target": method, "detail": f"runs {method}()" if method else "runs a function call", "method": method}
+            owner = call_owner(node.value)
+            kind = "output" if method == "print" else "mutation" if method in mutating_methods else "method_call"
+            if kind == "mutation":
+                detail = f"changes the existing object stored in {owner}" if owner else f"runs {method}() on an existing object"
+            elif kind == "output":
+                detail = "prints a value into the output bucket"
+            else:
+                detail = f"runs {method}()" if method else "runs a function call"
+            operations[line_no] = {"kind": kind, "target": owner or method, "detail": detail, "method": method}
         elif isinstance(node, ast.Subscript):
             operations.setdefault(line_no, {"kind": "index_access", "target": "indexed value", "detail": "reads one item from a collection"})
     return operations
@@ -1289,12 +1387,27 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
     if phase == "after_previous_line":
         changed_names = [change.get("name") for change in binding_changes if change.get("name")]
         mutated_objects = [change for change in object_changes if change.get("change") == "mutated"]
+        method = operation.get("method")
+        target = operation.get("target")
+        kind = operation.get("kind")
         if mutated_objects:
-            return f"Line just ran: {previous_clean}. It changed an existing object, then Python moved to the next line."
+            if method in {"append", "extend", "insert", "add", "update", "setdefault"}:
+                return f"Line just ran: {previous_clean}. It added or updated data inside the existing {target or 'object'}."
+            if method in {"pop", "remove", "discard", "clear"}:
+                return f"Line just ran: {previous_clean}. It removed data from the existing {target or 'object'}."
+            if method in {"sort", "reverse"}:
+                return f"Line just ran: {previous_clean}. It reordered the existing {target or 'object'}."
+            return f"Line just ran: {previous_clean}. It changed an existing object."
         if changed_names:
-            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}, then Python moved to the next line."
+            if kind == "index_access":
+                return f"Line just ran: {previous_clean}. It read one stored item and put it in {', '.join(changed_names[:3])}."
+            if kind == "method_call" and method in {"lower", "upper", "strip", "split", "replace"}:
+                return f"Line just ran: {previous_clean}. It stored the {method}() result in {', '.join(changed_names[:3])}."
+            if kind == "loop_iteration":
+                return f"Line just ran: {previous_clean}. The loop variable is now {', '.join(changed_names[:3])}."
+            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}."
         if stdout_changed:
-            return f"Line just ran: {previous_clean}. It printed output, then Python moved to the next line."
+            return f"Line just ran: {previous_clean}. It printed output."
         if previous_clean:
             return f"Line just ran: {previous_clean}. Python is ready for the next line."
     if not clean:
@@ -1307,8 +1420,31 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
             return f"Python is about to store a lowercase copy in {target}; the original string object is not changed."
         if target:
             return f"Python is about to store the right-side value in {target}."
+    if kind == "method_call":
+        if method in {"lower", "upper", "strip", "replace"}:
+            return f"Python is about to run {method}(); it creates a new string value and leaves the original string unchanged."
+        if method == "split":
+            return "Python is about to run split(); it creates a new list of string pieces."
+        if method == "join":
+            return "Python is about to run join(); it creates one string from the stored pieces."
+        if method:
+            return f"Python is about to run {method}()."
+    if kind == "mutation":
+        if method == "append":
+            return f"Python is about to append a value to the existing {target or 'list'}."
+        if method == "pop":
+            return f"Python is about to pop one value from the existing {target or 'collection'}."
+        if method in {"remove", "discard"}:
+            return f"Python is about to remove a value from the existing {target or 'collection'}."
+        if method in {"sort", "reverse"}:
+            return f"Python is about to reorder the existing {target or 'list'}."
+        if method in {"add", "update", "setdefault"}:
+            return f"Python is about to update the existing {target or 'collection'}."
+        return "Python is about to change an existing object."
     if kind == "update" and target:
         return f"Python is about to update {target} using its current value."
+    if kind == "index_write":
+        return f"Python is about to update one stored item at {target or 'an index/key'}."
     if kind == "loop_iteration":
         if method == "lower":
             return f"Python is about to take the next lowercase character and store it in {target}."
@@ -1337,7 +1473,7 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
         return "Python is about to run this assignment and store a value in a variable name."
     if "[" in clean and "]" in clean:
         return "Python is about to use an index or key to read from a collection."
-    return "Python is ready to run this line. Watch the variables before and after it runs."
+    return "Python is ready to run this line. Check the variables before and after it runs."
 
 def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     global trace_v2_previous_step
@@ -1375,9 +1511,11 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
         references.extend(current_frame.get("references", []))
     stdout_changed = stdout_text != previous_stdout
     operation = TRACE_OPERATION_BY_LINE.get(line_no, {})
+    previous_operation = TRACE_OPERATION_BY_LINE.get(previous_line_no, {}) if previous_line_no else {}
     phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
     if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
         phase = "after_previous_line"
+    summary_operation = previous_operation if phase == "after_previous_line" else operation
     changes = [
         *[{"kind": "binding", **change} for change in binding_changes],
         *[{"kind": "object", **change} for change in object_changes],
@@ -1406,6 +1544,8 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
         "operation_kind": operation.get("kind") or "",
         "operation_target": operation.get("target") or "",
         "operation_detail": operation.get("detail") or "",
+        "line_just_ran_operation_kind": previous_operation.get("kind") if phase == "after_previous_line" else operation.get("kind") if event in {"return", "exception"} else "",
+        "line_just_ran_operation_target": previous_operation.get("target") if phase == "after_previous_line" else operation.get("target") if event in {"return", "exception"} else "",
         "operation_summary": summarize_operation(
             line,
             event,
@@ -1415,7 +1555,7 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
             binding_changes=binding_changes,
             object_changes=object_changes,
             stdout_changed=stdout_changed,
-            operation=operation,
+            operation=summary_operation,
         ),
     }
     step["student_message"] = step["operation_summary"]
@@ -1731,13 +1871,38 @@ def build_operation_metadata():
     except Exception:
         return {}
     operations = {}
+    mutating_methods = {
+        "append",
+        "extend",
+        "insert",
+        "pop",
+        "remove",
+        "clear",
+        "sort",
+        "reverse",
+        "update",
+        "setdefault",
+        "add",
+        "discard",
+    }
+    transform_methods = {"lower", "upper", "strip", "split", "join", "replace"}
+
+    def source_for(node):
+        try:
+            return ast.unparse(node)
+        except Exception:
+            return ""
+
     def target_name(node):
         if isinstance(node, ast.Name):
             return node.id
         if isinstance(node, ast.Attribute):
-            return node.attr
+            owner = source_for(node.value)
+            return f"{owner}.{node.attr}" if owner else node.attr
         if isinstance(node, ast.Subscript):
-            return "indexed value"
+            owner = source_for(node.value) or "collection"
+            index = source_for(node.slice) or "index"
+            return f"{owner}[{index}]"
         if isinstance(node, (ast.Tuple, ast.List)):
             return ", ".join(target_name(item) for item in node.elts)
         return ""
@@ -1748,6 +1913,13 @@ def build_operation_metadata():
             if isinstance(node.func, ast.Name):
                 return node.func.id
         return ""
+    def call_owner(node):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            return source_for(node.func.value)
+        return ""
+    def has_subscript(node):
+        return any(isinstance(child, ast.Subscript) for child in ast.walk(node))
+
     for node in ast.walk(tree):
         line_no = getattr(node, "lineno", None)
         if not line_no:
@@ -1755,6 +1927,32 @@ def build_operation_metadata():
         if isinstance(node, ast.Assign):
             target = target_name(node.targets[0]) if node.targets else ""
             value_call = call_name(node.value)
+            if node.targets and isinstance(node.targets[0], ast.Subscript):
+                operations[line_no] = {
+                    "kind": "index_write",
+                    "target": target,
+                    "detail": f"updates the stored value at {target}" if target else "updates one stored item",
+                    "method": value_call,
+                }
+                continue
+            if value_call in transform_methods:
+                kind = "method_call"
+                detail = f"runs {value_call}() and stores the result in {target}" if target else f"runs {value_call}() and stores the result"
+            elif has_subscript(node.value):
+                kind = "index_access"
+                detail = f"reads from a collection and stores the value in {target}" if target else "reads from a collection"
+            else:
+                kind = "assignment"
+                detail = f"stores a value in {target}" if target else "stores a value"
+            operations[line_no] = {
+                "kind": kind,
+                "target": target,
+                "detail": detail,
+                "method": value_call,
+            }
+        elif isinstance(node, ast.AnnAssign):
+            target = target_name(node.target)
+            value_call = call_name(node.value) if node.value else ""
             operations[line_no] = {
                 "kind": "assignment",
                 "target": target,
@@ -1763,8 +1961,9 @@ def build_operation_metadata():
             }
         elif isinstance(node, ast.AugAssign):
             target = target_name(node.target)
+            kind = "index_write" if isinstance(node.target, ast.Subscript) else "update"
             operations[line_no] = {
-                "kind": "update",
+                "kind": kind,
                 "target": target,
                 "detail": f"updates {target} using its old value" if target else "updates a value",
             }
@@ -1783,8 +1982,15 @@ def build_operation_metadata():
             operations[line_no] = {"kind": "condition", "target": "if condition", "detail": "checks which branch should run"}
         elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
             method = call_name(node.value)
-            kind = "output" if method == "print" else "method_call"
-            operations[line_no] = {"kind": kind, "target": method, "detail": f"runs {method}()" if method else "runs a function call", "method": method}
+            owner = call_owner(node.value)
+            kind = "output" if method == "print" else "mutation" if method in mutating_methods else "method_call"
+            if kind == "mutation":
+                detail = f"changes the existing object stored in {owner}" if owner else f"runs {method}() on an existing object"
+            elif kind == "output":
+                detail = "prints a value into the output bucket"
+            else:
+                detail = f"runs {method}()" if method else "runs a function call"
+            operations[line_no] = {"kind": kind, "target": owner or method, "detail": detail, "method": method}
         elif isinstance(node, ast.Subscript):
             operations.setdefault(line_no, {"kind": "index_access", "target": "indexed value", "detail": "reads one item from a collection"})
     return operations
@@ -1958,12 +2164,27 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
     if phase == "after_previous_line":
         changed_names = [change.get("name") for change in binding_changes if change.get("name")]
         mutated_objects = [change for change in object_changes if change.get("change") == "mutated"]
+        method = operation.get("method")
+        target = operation.get("target")
+        kind = operation.get("kind")
         if mutated_objects:
-            return f"Line just ran: {previous_clean}. It changed an existing object, then Python moved to the next line."
+            if method in {"append", "extend", "insert", "add", "update", "setdefault"}:
+                return f"Line just ran: {previous_clean}. It added or updated data inside the existing {target or 'object'}."
+            if method in {"pop", "remove", "discard", "clear"}:
+                return f"Line just ran: {previous_clean}. It removed data from the existing {target or 'object'}."
+            if method in {"sort", "reverse"}:
+                return f"Line just ran: {previous_clean}. It reordered the existing {target or 'object'}."
+            return f"Line just ran: {previous_clean}. It changed an existing object."
         if changed_names:
-            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}, then Python moved to the next line."
+            if kind == "index_access":
+                return f"Line just ran: {previous_clean}. It read one stored item and put it in {', '.join(changed_names[:3])}."
+            if kind == "method_call" and method in {"lower", "upper", "strip", "split", "replace"}:
+                return f"Line just ran: {previous_clean}. It stored the {method}() result in {', '.join(changed_names[:3])}."
+            if kind == "loop_iteration":
+                return f"Line just ran: {previous_clean}. The loop variable is now {', '.join(changed_names[:3])}."
+            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}."
         if stdout_changed:
-            return f"Line just ran: {previous_clean}. It printed output, then Python moved to the next line."
+            return f"Line just ran: {previous_clean}. It printed output."
         if previous_clean:
             return f"Line just ran: {previous_clean}. Python is ready for the next line."
     if not clean:
@@ -1976,8 +2197,31 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
             return f"Python is about to store a lowercase copy in {target}; the original string object is not changed."
         if target:
             return f"Python is about to store the right-side value in {target}."
+    if kind == "method_call":
+        if method in {"lower", "upper", "strip", "replace"}:
+            return f"Python is about to run {method}(); it creates a new string value and leaves the original string unchanged."
+        if method == "split":
+            return "Python is about to run split(); it creates a new list of string pieces."
+        if method == "join":
+            return "Python is about to run join(); it creates one string from the stored pieces."
+        if method:
+            return f"Python is about to run {method}()."
+    if kind == "mutation":
+        if method == "append":
+            return f"Python is about to append a value to the existing {target or 'list'}."
+        if method == "pop":
+            return f"Python is about to pop one value from the existing {target or 'collection'}."
+        if method in {"remove", "discard"}:
+            return f"Python is about to remove a value from the existing {target or 'collection'}."
+        if method in {"sort", "reverse"}:
+            return f"Python is about to reorder the existing {target or 'list'}."
+        if method in {"add", "update", "setdefault"}:
+            return f"Python is about to update the existing {target or 'collection'}."
+        return "Python is about to change an existing object."
     if kind == "update" and target:
         return f"Python is about to update {target} using its current value."
+    if kind == "index_write":
+        return f"Python is about to update one stored item at {target or 'an index/key'}."
     if kind == "loop_iteration":
         if method == "lower":
             return f"Python is about to take the next lowercase character and store it in {target}."
@@ -2006,7 +2250,7 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
         return "Python is about to run this assignment and store a value in a variable name."
     if "[" in clean and "]" in clean:
         return "Python is about to use an index or key to read from a collection."
-    return "Python is ready to run this line. Watch the variables before and after it runs."
+    return "Python is ready to run this line. Check the variables before and after it runs."
 
 def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     global trace_v2_previous_step
@@ -2044,9 +2288,11 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
         references.extend(current_frame.get("references", []))
     stdout_changed = stdout_text != previous_stdout
     operation = TRACE_OPERATION_BY_LINE.get(line_no, {})
+    previous_operation = TRACE_OPERATION_BY_LINE.get(previous_line_no, {}) if previous_line_no else {}
     phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
     if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
         phase = "after_previous_line"
+    summary_operation = previous_operation if phase == "after_previous_line" else operation
     changes = [
         *[{"kind": "binding", **change} for change in binding_changes],
         *[{"kind": "object", **change} for change in object_changes],
@@ -2075,6 +2321,8 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
         "operation_kind": operation.get("kind") or "",
         "operation_target": operation.get("target") or "",
         "operation_detail": operation.get("detail") or "",
+        "line_just_ran_operation_kind": previous_operation.get("kind") if phase == "after_previous_line" else operation.get("kind") if event in {"return", "exception"} else "",
+        "line_just_ran_operation_target": previous_operation.get("target") if phase == "after_previous_line" else operation.get("target") if event in {"return", "exception"} else "",
         "operation_summary": summarize_operation(
             line,
             event,
@@ -2084,7 +2332,7 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
             binding_changes=binding_changes,
             object_changes=object_changes,
             stdout_changed=stdout_changed,
-            operation=operation,
+            operation=summary_operation,
         ),
     }
     step["student_message"] = step["operation_summary"]
@@ -2675,13 +2923,27 @@ function operationForLine(line) {
   if (/^while\b/.test(clean)) return { kind: "condition", target: "while condition", detail: "checks whether the loop should keep running" };
   if (/^(if|else if)\b/.test(clean)) return { kind: "condition", target: "if condition", detail: "checks which branch should run" };
   if (/console\s*\.\s*log\s*\(/.test(clean)) return { kind: "output", target: "console.log", detail: "prints a value into the output bucket" };
+  const methodCall = clean.match(/([A-Za-z_$][\w$]*)\s*\.\s*([A-Za-z_$][\w$]*)\s*\(/);
+  const mutatingMethods = new Set(["push", "pop", "shift", "unshift", "splice", "sort", "reverse", "set", "delete", "add", "clear"]);
+  const transformMethods = new Set(["toLowerCase", "toUpperCase", "trim", "split", "join", "slice", "map", "filter"]);
   const declaration = clean.match(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/);
+  if (declaration && methodCall && transformMethods.has(methodCall[2])) {
+    return { kind: "method_call", target: declaration[1], detail: `runs ${methodCall[2]}() and stores the result in ${declaration[1]}`, method: methodCall[2], owner: methodCall[1] };
+  }
   if (declaration && /\[[^\]]+\]/.test(clean)) return { kind: "index_access", target: declaration[1], detail: `reads from a collection and stores the value in ${declaration[1]}` };
   if (declaration) return { kind: "assignment", target: declaration[1], detail: `stores a value in ${declaration[1]}` };
-  const assignment = clean.match(/^([A-Za-z_$][\w$]*)(?:\[[^\]]+\]|\.[A-Za-z_$][\w$]*)?\s*(?:=|\+=|-=|\*=|\/=)/);
-  if (assignment) return { kind: clean.includes("[") || clean.includes(".") ? "mutation" : "assignment", target: assignment[1], detail: `updates ${assignment[1]}` };
-  const call = clean.match(/\.([A-Za-z_$][\w$]*)\s*\(/);
-  if (call) return { kind: "method_call", target: call[1], detail: `runs ${call[1]}()` };
+  const indexAssignment = clean.match(/^([A-Za-z_$][\w$]*)\s*\[[^\]]+\]\s*(?:=|\+=|-=|\*=|\/=)/);
+  if (indexAssignment) return { kind: "index_write", target: indexAssignment[1], detail: `updates one item stored in ${indexAssignment[1]}` };
+  const propertyAssignment = clean.match(/^([A-Za-z_$][\w$]*)\s*\.\s*([A-Za-z_$][\w$]*)\s*(?:=|\+=|-=|\*=|\/=)/);
+  if (propertyAssignment) return { kind: "mutation", target: propertyAssignment[1], detail: `updates ${propertyAssignment[2]} inside ${propertyAssignment[1]}` };
+  const assignment = clean.match(/^([A-Za-z_$][\w$]*)\s*(?:=|\+=|-=|\*=|\/=)/);
+  if (assignment) return { kind: clean.includes("+=") || clean.includes("-=") || clean.includes("*=") || clean.includes("/=") ? "update" : "assignment", target: assignment[1], detail: `updates ${assignment[1]}` };
+  if (methodCall) {
+    const method = methodCall[2];
+    const owner = methodCall[1];
+    if (mutatingMethods.has(method)) return { kind: "mutation", target: owner, detail: `changes the existing object stored in ${owner}`, method, owner };
+    return { kind: "method_call", target: owner, detail: `runs ${method}()`, method, owner };
+  }
   if (/\[[^\]]+\]/.test(clean)) return { kind: "index_access", target: "indexed value", detail: "reads one item from a collection" };
   return { kind: "statement", target: "", detail: "runs this line" };
 }
@@ -2692,17 +2954,45 @@ function summarizeStep(event, line, operation, changes, stdoutChanged, exception
   if (event === "return") return "This line just returned a value to the caller.";
   const changedNames = changes.filter((change) => change.kind === "binding").map((change) => change.name);
   const mutated = changes.some((change) => change.kind === "object" && change.change === "mutated");
-  if (changedNames.length) return `Line just ran: ${clean}. It updated ${changedNames.slice(0, 3).join(", ")}.`;
-  if (mutated) return `Line just ran: ${clean}. It changed an existing array or object.`;
+  if (mutated) {
+    if (operation.method === "push" || operation.method === "unshift" || operation.method === "add") {
+      return `Line just ran: ${clean}. It added data inside the existing ${operation.target || "array or object"}.`;
+    }
+    if (operation.method === "pop" || operation.method === "shift" || operation.method === "delete" || operation.method === "clear") {
+      return `Line just ran: ${clean}. It removed data from the existing ${operation.target || "array or object"}.`;
+    }
+    if (operation.method === "sort" || operation.method === "reverse") {
+      return `Line just ran: ${clean}. It reordered the existing ${operation.target || "array"}.`;
+    }
+    return `Line just ran: ${clean}. It changed the existing ${operation.target || "array or object"}.`;
+  }
+  if (changedNames.length) {
+    if (operation.kind === "index_access") return `Line just ran: ${clean}. It read one stored item and put it in ${changedNames.slice(0, 3).join(", ")}.`;
+    if (operation.kind === "method_call" && operation.method) return `Line just ran: ${clean}. It stored the ${operation.method}() result in ${changedNames.slice(0, 3).join(", ")}.`;
+    if (operation.kind === "loop_iteration") return `Line just ran: ${clean}. The loop variable is now ${changedNames.slice(0, 3).join(", ")}.`;
+    return `Line just ran: ${clean}. It updated ${changedNames.slice(0, 3).join(", ")}.`;
+  }
   if (stdoutChanged) return `Line just ran: ${clean}. It printed output.`;
   if (operation.kind === "assignment") return `JavaScript is about to store the right-side value in ${operation.target}.`;
-  if (operation.kind === "mutation") return `JavaScript is about to update ${operation.target} or one of its stored values.`;
+  if (operation.kind === "update") return `JavaScript is about to update ${operation.target} using its current value.`;
+  if (operation.kind === "mutation") {
+    if (operation.method === "push") return `JavaScript is about to push a value into the existing ${operation.target}.`;
+    if (operation.method === "pop") return `JavaScript is about to pop one value from the existing ${operation.target}.`;
+    if (operation.method === "set") return `JavaScript is about to set a key/value pair inside the existing ${operation.target}.`;
+    return `JavaScript is about to update ${operation.target} or one of its stored values.`;
+  }
+  if (operation.kind === "index_write") return `JavaScript is about to update one stored item in ${operation.target}.`;
   if (operation.kind === "loop_iteration") return "JavaScript is about to run the next loop check or loop pass.";
   if (operation.kind === "condition") return "JavaScript is about to check this condition to choose the next path.";
-  if (operation.kind === "method_call") return `JavaScript is about to run ${operation.target}().`;
+  if (operation.kind === "method_call") {
+    if (operation.method === "toLowerCase") return "JavaScript is about to make a lowercase string value; the original string stays unchanged.";
+    if (operation.method === "split") return "JavaScript is about to split the string into a new array.";
+    if (operation.method === "join") return "JavaScript is about to join stored pieces into one string.";
+    return `JavaScript is about to run ${operation.method || operation.target}().`;
+  }
   if (operation.kind === "output") return "JavaScript is about to print a value into the output bucket.";
   if (operation.kind === "index_access") return "JavaScript is about to use an index or key to read one item from a collection.";
-  return "JavaScript is ready to run this line. Watch the variables before and after it runs.";
+  return "JavaScript is ready to run this line. Check the variables before and after it runs.";
 }
 
 function buildStep(event, lineNo, line, snapshotFactory, returnValue, exception) {
@@ -2746,15 +3036,21 @@ function buildStep(event, lineNo, line, snapshotFactory, returnValue, exception)
   ];
   if (stdoutChanged) changes.push({ kind: "stdout", change: "changed" });
   const operation = operationForLine(line);
+  const previousOperation = previousStep ? operationForLine(previousStep.line) : {};
+  const phase = event === "line" && previousStep && changes.length
+    ? "after_previous_line"
+    : event === "line" ? "before_line" : event === "return" ? "line_returned" : "line_errored";
+  const summaryOperation = phase === "after_previous_line" ? previousOperation : operation;
+  const summaryLine = phase === "after_previous_line" ? previousStep.line : line;
   const step = {
     step_index: trace.length,
     event,
-    phase: event === "line" ? "before_line" : event === "return" ? "line_returned" : "line_errored",
+    phase,
     current_line: lineNo,
     previous_line: previousStep?.current_line || null,
     line_about_to_run: event === "line" ? lineNo : null,
-    line_just_ran: event === "line" ? null : lineNo,
-    line_just_ran_text: event === "line" ? "" : line,
+    line_just_ran: phase === "after_previous_line" ? previousStep?.current_line || null : event === "line" ? null : lineNo,
+    line_just_ran_text: phase === "after_previous_line" ? previousStep?.line || "" : event === "line" ? "" : line,
     line,
     function: frameName,
     frames,
@@ -2768,10 +3064,12 @@ function buildStep(event, lineNo, line, snapshotFactory, returnValue, exception)
     operation_kind: operation.kind,
     operation_target: operation.target,
     operation_detail: operation.detail,
+    line_just_ran_operation_kind: phase === "after_previous_line" ? previousOperation.kind || "" : event !== "line" ? operation.kind || "" : "",
+    line_just_ran_operation_target: phase === "after_previous_line" ? previousOperation.target || "" : event !== "line" ? operation.target || "" : "",
   };
   if (event === "return") step.return_value = serializeValue(returnValue, objects);
   if (event === "exception") step.exception = exception;
-  step.operation_summary = summarizeStep(event, line, operation, changes, stdoutChanged, exception);
+  step.operation_summary = summarizeStep(event, summaryLine, summaryOperation, changes, stdoutChanged, exception);
   step.student_message = step.operation_summary;
   trace.push(step);
   previousStep = step;
@@ -3171,27 +3469,94 @@ def _java_trace_operation(line: str) -> tuple[str, str]:
     return "line", "Java is about to run this line."
 
 
+_JAVA_TRACE_DECL_RE = re.compile(
+    r"(?:^|[(;]\s*)(?:final\s+)?(?:int|long|double|float|boolean|String|char|var|"
+    r"int\[\]|long\[\]|double\[\]|String\[\]|boolean\[\]|List<[^>]+>|ArrayList<[^>]+>|"
+    r"Map<[^>]+>|HashMap<[^>]+>|Set<[^>]+>|HashSet<[^>]+>)\s+([A-Za-z_]\w*)\b"
+)
+
+
+def _trace_param_names(params: str) -> list[str]:
+    names: list[str] = []
+    for raw in params.split(","):
+        piece = raw.strip()
+        if not piece:
+            continue
+        piece = piece.split("=")[0].strip()
+        matches = re.findall(r"[A-Za-z_]\w*", piece)
+        if matches:
+            names.append(matches[-1])
+    return names
+
+
+def _trace_declared_names(line: str, decl_re: re.Pattern[str]) -> list[str]:
+    names: list[str] = []
+    for match in decl_re.finditer(line):
+        name = match.group(1)
+        if name and name not in names:
+            names.append(name)
+    return names
+
+
 def _instrument_java_trace_source(code: str) -> str:
     lines = code.splitlines()
     output: list[str] = []
     in_block_comment = False
+    brace_depth = 0
+    function_depth = 0
+    visible_vars: list[tuple[str, int]] = []
     for index, line in enumerate(lines, start=1):
         stripped = line.strip()
+        leading_closes = len(re.match(r"^\s*}*", line).group(0).replace(" ", "").replace("\t", ""))
+        if leading_closes:
+            next_depth = max(0, brace_depth - leading_closes)
+            visible_vars = [(name, depth) for name, depth in visible_vars if depth <= next_depth]
+            if function_depth and next_depth < function_depth:
+                function_depth = 0
+                visible_vars = []
+            brace_depth = next_depth
         if "/*" in stripped:
             in_block_comment = True
+        method_match = re.match(
+            r"^(?:public|private|protected)?\s*(?:static\s+)?[\w<>\[\]]+\s+\w+\s*\(([^)]*)\)\s*\{?\s*$",
+            stripped,
+        )
+        is_method_definition = bool(method_match and " class " not in f" {stripped} ")
+        if not in_block_comment and is_method_definition:
+            function_depth = brace_depth + 1
+            visible_vars = [(name, function_depth) for name in _trace_param_names(method_match.group(1))]
         if not in_block_comment and _java_trace_is_executable_line(stripped):
             indent = line[: len(line) - len(line.lstrip())]
             operation, message = _java_trace_operation(stripped)
+            visible_expr = ", ".join(
+                f"{_java_json_string_expr(name)}, {name}" for name, _ in visible_vars
+            )
+            line_call = "__Trace.lineVars" if visible_expr else "__Trace.line"
+            vars_suffix = f", {visible_expr}" if visible_expr else ""
             output.append(
-                f"{indent}__Trace.line({index}, {_java_json_string_expr(stripped)}, "
-                f"{_java_json_string_expr(operation)}, {_java_json_string_expr(message)}); {stripped}"
+                f"{indent}{line_call}({index}, {_java_json_string_expr(stripped)}, "
+                f"{_java_json_string_expr(operation)}, {_java_json_string_expr(message)}{vars_suffix}); {stripped}"
             )
         else:
             output.append(line)
+        if not in_block_comment and function_depth and not is_method_definition:
+            declaration_depth = brace_depth + stripped.count("{") - stripped.count("}")
+            if stripped.startswith(("for ", "for(")) and "{" in stripped:
+                declaration_depth = max(declaration_depth, brace_depth + 1)
+            for name in _trace_declared_names(stripped, _JAVA_TRACE_DECL_RE):
+                if all(existing != name for existing, _ in visible_vars):
+                    visible_vars.append((name, max(function_depth, declaration_depth)))
         if in_block_comment:
             if "*/" in stripped:
                 in_block_comment = False
             continue
+        opens = stripped.count("{")
+        closes = max(0, stripped.count("}") - leading_closes)
+        brace_depth = max(0, brace_depth + opens - closes)
+        visible_vars = [(name, depth) for name, depth in visible_vars if depth <= brace_depth or depth == function_depth]
+        if function_depth and brace_depth < function_depth:
+            function_depth = 0
+            visible_vars = []
     return "\n".join(output)
 
 
@@ -3269,25 +3634,69 @@ def _cpp_trace_operation(line: str) -> tuple[str, str]:
     return "line", "C++ is about to run this line."
 
 
+_CPP_TRACE_DECL_RE = re.compile(
+    r"(?:^|[(;]\s*)(?:const\s+)?(?:long\s+long|int|double|float|bool|string|std::string|char|auto|size_t|"
+    r"vector\s*<[^>]+>|std::vector\s*<[^>]+>)\s*[&*]*\s*([A-Za-z_]\w*)\b"
+)
+
+
 def _instrument_cpp_trace_source(code: str) -> str:
     lines = code.splitlines()
     output: list[str] = []
     in_block_comment = False
+    brace_depth = 0
+    function_depth = 0
+    visible_vars: list[tuple[str, int]] = []
     for index, line in enumerate(lines, start=1):
         stripped = line.strip()
+        leading_closes = len(re.match(r"^\s*}*", line).group(0).replace(" ", "").replace("\t", ""))
+        if leading_closes:
+            next_depth = max(0, brace_depth - leading_closes)
+            visible_vars = [(name, depth) for name, depth in visible_vars if depth <= next_depth]
+            if function_depth and next_depth < function_depth:
+                function_depth = 0
+                visible_vars = []
+            brace_depth = next_depth
         if "/*" in stripped:
             in_block_comment = True
+        function_match = re.match(r"^[\w:<>,\s*&]+\s+\w+\s*\(([^;]*)\)\s*\{?\s*$", stripped)
+        is_function_definition = bool(
+            function_match and not stripped.startswith(("if", "for", "while", "switch"))
+        )
+        if not in_block_comment and is_function_definition:
+            function_depth = brace_depth + 1
+            visible_vars = [(name, function_depth) for name in _trace_param_names(function_match.group(1))]
         if not in_block_comment and _cpp_trace_is_executable_line(stripped):
             indent = line[: len(line) - len(line.lstrip())]
             operation, message = _cpp_trace_operation(stripped)
+            visible_expr = ", ".join(
+                f"{{{json.dumps(name)}, __Trace::showValue({name})}}" for name, _ in visible_vars
+            )
+            line_call = "lineVars" if visible_expr else "line"
+            vars_suffix = f", {{{visible_expr}}}" if visible_expr else ""
             output.append(
-                f"{indent}__Trace::line({index}, {json.dumps(stripped)}, "
-                f"{json.dumps(operation)}, {json.dumps(message)}); {stripped}"
+                f"{indent}__Trace::{line_call}({index}, {json.dumps(stripped)}, "
+                f"{json.dumps(operation)}, {json.dumps(message)}{vars_suffix}); {stripped}"
             )
         else:
             output.append(line)
+        if not in_block_comment and function_depth and not is_function_definition:
+            declaration_depth = brace_depth + stripped.count("{") - stripped.count("}")
+            if stripped.startswith(("for ", "for(")) and "{" in stripped:
+                declaration_depth = max(declaration_depth, brace_depth + 1)
+            for name in _trace_declared_names(stripped, _CPP_TRACE_DECL_RE):
+                if all(existing != name for existing, _ in visible_vars):
+                    visible_vars.append((name, max(function_depth, declaration_depth)))
         if in_block_comment and "*/" in stripped:
             in_block_comment = False
+            continue
+        opens = stripped.count("{")
+        closes = max(0, stripped.count("}") - leading_closes)
+        brace_depth = max(0, brace_depth + opens - closes)
+        visible_vars = [(name, depth) for name, depth in visible_vars if depth <= brace_depth or depth == function_depth]
+        if function_depth and brace_depth < function_depth:
+            function_depth = 0
+            visible_vars = []
     return "\n".join(output)
 
 
@@ -3686,6 +4095,35 @@ class __Trace {{
             + "\\",\\"operation_kind\\":\\"" + esc(kind)
             + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
     }}
+    static void lineVars(int line, String source, String kind, String message, Object... vars) {{
+        steps.add("{{\\"line\\":" + line
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message)
+            + "\\",\\"vars\\":" + varsJson(vars) + "}}");
+    }}
+    static String showValue(Object value) {{
+        if (value == null) return "null";
+        Class<?> cls = value.getClass();
+        if (!cls.isArray()) return String.valueOf(value);
+        if (value instanceof int[]) return Arrays.toString((int[]) value);
+        if (value instanceof long[]) return Arrays.toString((long[]) value);
+        if (value instanceof double[]) return Arrays.toString((double[]) value);
+        if (value instanceof float[]) return Arrays.toString((float[]) value);
+        if (value instanceof boolean[]) return Arrays.toString((boolean[]) value);
+        if (value instanceof char[]) return Arrays.toString((char[]) value);
+        if (value instanceof Object[]) return Arrays.deepToString((Object[]) value);
+        return String.valueOf(value);
+    }}
+    static String varsJson(Object... vars) {{
+        StringBuilder b = new StringBuilder("[");
+        for (int i = 0; i + 1 < vars.length; i += 2) {{
+            if (i > 0) b.append(",");
+            b.append("{{\\"name\\":\\"").append(esc(String.valueOf(vars[i]))).append("\\",\\"value\\":\\"")
+                .append(esc(showValue(vars[i + 1]))).append("\\"}}");
+        }}
+        return b.append("]").toString();
+    }}
     static String stepsJson() {{
         StringBuilder b = new StringBuilder("[");
         for (int i = 0; i < steps.size(); i++) {{
@@ -3919,8 +4357,11 @@ public class Runner {{
     raw_steps = payload.get("steps") or []
     trace_steps: list[dict[str, Any]] = []
     previous_line = None
+    previous_bindings: dict[str, dict[str, Any]] = {}
     for index, item in enumerate(raw_steps, start=1):
         line_no = item.get("line") or 0
+        bindings = _compiled_trace_bindings(arg_bindings, item.get("vars"))
+        binding_changes = _compiled_trace_binding_changes(function_name, bindings, previous_bindings)
         step = {
             "step": index,
             "current_line": line_no,
@@ -3934,11 +4375,14 @@ public class Runner {{
             "operation_kind": item.get("operation_kind") or "line",
             "operation_summary": item.get("student_message") or "Java is about to run this line.",
             "student_message": item.get("student_message") or "Java is about to run this line.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": bindings, "is_current": True}],
+            "binding_changes": binding_changes,
+            "object_changes": [],
             "objects": {},
             "references": [],
         }
         previous_line = line_no
+        previous_bindings = bindings
         trace_steps.append(step)
 
     if payload.get("error"):
@@ -3960,7 +4404,9 @@ public class Runner {{
             "operation_kind": "exception",
             "operation_summary": f"Java stopped on line {error_line} because an exception was raised.",
             "student_message": f"Java stopped on line {error_line} because an exception was raised.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": previous_bindings or _compiled_trace_bindings(arg_bindings, []), "is_current": True}],
+            "binding_changes": [],
+            "object_changes": [],
             "objects": {},
             "references": [],
         })
@@ -4250,6 +4696,40 @@ struct __Trace {{
             + "\\",\\"operation_kind\\":\\"" + esc(kind)
             + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
     }}
+    template <typename T>
+    static string showValue(const T& value) {{
+        ostringstream out;
+        out << value;
+        return out.str();
+    }}
+    static string showValue(const string& value) {{ return value; }}
+    static string showValue(const char* value) {{ return string(value); }}
+    static string showValue(bool value) {{ return value ? "true" : "false"; }}
+    template <typename T>
+    static string showValue(const vector<T>& values) {{
+        string r = "[";
+        for (size_t i = 0; i < values.size(); i++) {{
+            if (i) r += ", ";
+            r += showValue(values[i]);
+        }}
+        return r + "]";
+    }}
+    static string varsJson(initializer_list<pair<string,string>> vars) {{
+        string r = "[";
+        size_t i = 0;
+        for (const auto& item : vars) {{
+            if (i++) r += ",";
+            r += "{{\\"name\\":\\"" + esc(item.first) + "\\",\\"value\\":\\"" + esc(item.second) + "\\"}}";
+        }}
+        return r + "]";
+    }}
+    static void lineVars(int line, const string& source, const string& kind, const string& message, initializer_list<pair<string,string>> vars) {{
+        steps.push_back("{{\\"line\\":" + to_string(line)
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message)
+            + "\\",\\"vars\\":" + varsJson(vars) + "}}");
+    }}
     static string stepsJson() {{
         string r = "[";
         for (size_t i = 0; i < steps.size(); i++) {{
@@ -4431,8 +4911,11 @@ int main(){{
     raw_steps = payload.get("steps") or []
     trace_steps: list[dict[str, Any]] = []
     previous_line = None
+    previous_bindings: dict[str, dict[str, Any]] = {}
     for index, item in enumerate(raw_steps, start=1):
         line_no = item.get("line") or 0
+        bindings = _compiled_trace_bindings(arg_bindings, item.get("vars"))
+        binding_changes = _compiled_trace_binding_changes(function_name, bindings, previous_bindings)
         step = {
             "step": index,
             "current_line": line_no,
@@ -4446,11 +4929,14 @@ int main(){{
             "operation_kind": item.get("operation_kind") or "line",
             "operation_summary": item.get("student_message") or "C++ is about to run this line.",
             "student_message": item.get("student_message") or "C++ is about to run this line.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": bindings, "is_current": True}],
+            "binding_changes": binding_changes,
+            "object_changes": [],
             "objects": {},
             "references": [],
         }
         previous_line = line_no
+        previous_bindings = bindings
         trace_steps.append(step)
 
     if payload.get("error"):
@@ -4471,7 +4957,9 @@ int main(){{
             "operation_kind": "exception",
             "operation_summary": "C++ stopped because an exception was raised.",
             "student_message": "C++ stopped because an exception was raised.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": previous_bindings or _compiled_trace_bindings(arg_bindings, []), "is_current": True}],
+            "binding_changes": [],
+            "object_changes": [],
             "objects": {},
             "references": [],
         })

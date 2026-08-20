@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "audit:coding-copy": "node scripts/audit-coding-copy.mjs",
     "audit:practice-visualizers": "node scripts/audit-practice-visualizers.mjs",
     "preview": "vite preview"
   },

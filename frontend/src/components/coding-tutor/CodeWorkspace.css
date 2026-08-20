@@ -46,6 +46,10 @@
   flex-direction: column;
 }
 
+.editor-terminal-stack.is-resizing-terminal {
+  touch-action: none;
+}
+
 .editor-terminal-stack .workspace-tab-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -338,7 +342,7 @@ body.ct-guide-resizing * {
   }
 }
 
-@media (max-width: 726px) {
+@media (max-width: 860px) {
   .coding-app.coding-workspace-active .coding-workbench-main {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 10px;
@@ -356,7 +360,7 @@ body.ct-guide-resizing * {
   }
 }
 
-@media (max-width: 726px) {
+@media (max-width: 860px) {
   .coding-app.coding-workspace-active {
     height: auto !important;
     max-height: none !important;
@@ -628,7 +632,11 @@ body.ct-guide-resizing * {
 }
 
 .code-editor-line-no {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: calc(var(--ed-lh) * 1em);
+  line-height: 1;
   min-width: 2ch;
   padding: 0 4px;
   border-radius: 6px;
@@ -679,7 +687,7 @@ body.ct-guide-resizing * {
   position: absolute;
   top: var(--guide-top, 0);
   height: var(--guide-height, 0);
-  left: calc(16px + (var(--guide-level, 0) * 4ch) - 0.75ch);
+  left: calc(16px + (var(--guide-level, 0) * 4ch) - 0.75ch - var(--guide-scroll-left, 0px));
   width: 1px;
   border-radius: 999px;
   background: linear-gradient(
@@ -831,14 +839,14 @@ body.coding-dark .floating-coding-chat ::selection {
   color: #fffaf1;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .code-editor-statusbar { font-size: 0.66rem; gap: 8px; padding: 0 8px; }
   .code-editor-statusbar .status-left,
   .code-editor-statusbar .status-right { gap: 8px; }
   .code-editor-gutter { padding-left: 8px; padding-right: 6px; }
 }
 
-@media (min-width: 641px) {
+@media (min-width: 861px) {
   .workspace-guide-drawer-shell {
     display: contents;
   }
@@ -853,7 +861,125 @@ body.coding-dark .floating-coding-chat ::selection {
   }
 }
 
-@media (max-width: 640px) {
+@media (min-width: 861px) and (max-width: 980px) {
+  .coding-app.coding-workspace-active .coding-workbench-main {
+    grid-template-columns: minmax(210px, 250px) 8px minmax(0, 1fr) !important;
+  }
+
+  .workspace-guide-divider {
+    min-width: 8px;
+  }
+
+  .workspace-guide-divider::before {
+    inset-inline: 2px;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel {
+    padding: 12px;
+    border-radius: 14px !important;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel h2 {
+    font-size: 1rem;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel p,
+  .coding-app.coding-workspace-active .coding-problem-panel li,
+  .coding-app.coding-workspace-active .starter-guidance,
+  .coding-app.coding-workspace-active .problem-examples {
+    font-size: 0.86rem;
+    line-height: 1.42;
+  }
+
+  .coding-app.coding-workspace-active .coding-editor-center {
+    padding: 10px;
+    gap: 8px;
+    border-radius: 14px !important;
+  }
+
+  .coding-pane-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .coding-pane-header h2 {
+    font-size: 1rem;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+
+  .workspace-tabs {
+    gap: 14px;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .workspace-tabs button {
+    flex: 0 0 auto;
+    font-size: 0.88rem;
+  }
+
+  .code-editor-window {
+    --ed-size: 0.8rem;
+    --ed-lh: 1.55;
+    border-radius: 13px;
+  }
+
+  .code-editor-titlebar {
+    gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 6px 8px;
+    scrollbar-width: thin;
+  }
+
+  .code-editor-filename {
+    flex: 1 1 62px;
+    min-width: 42px;
+  }
+
+  .code-editor-titlebar-right,
+  .code-editor-actions,
+  .editor-action-icons {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+
+  .editor-action-icons {
+    padding-right: 5px;
+    margin-right: 2px;
+  }
+
+  .editor-action-btn {
+    width: 27px;
+    height: 27px;
+  }
+
+  .code-trace-button {
+    max-width: 104px;
+    padding-inline: 9px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+  }
+
+  .code-editor-lang-select {
+    max-width: 76px;
+    min-width: 66px;
+    font-size: 0.64rem;
+  }
+
+  .workspace-tab-body--visualize {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 860px) {
   .coding-app.coding-workspace-active,
   .coding-app.coding-workspace-active .coding-app-main,
   .coding-app.coding-workspace-active .coding-app-content,
@@ -1042,16 +1168,22 @@ body.coding-dark .floating-coding-chat ::selection {
 
   .editor-terminal-stack {
     min-height: 0;
-    height: auto;
-    gap: 8px;
+    height: clamp(540px, 78dvh, 760px);
+    gap: 0;
+  }
+
+  .editor-terminal-stack.terminal-docked {
+    height: clamp(540px, 78dvh, 760px);
+    min-height: 540px;
   }
 
   .code-editor-window {
     min-width: 0;
-    min-height: 300px;
+    min-height: 0;
     border-radius: 13px;
     --ed-size: 0.78rem;
-    --ed-lh: 1.62;
+    /* Keep this in sync with EDITOR_LINE_HEIGHT_EM in CodeEditor.jsx. */
+    --ed-lh: 1.55;
   }
 
   .code-editor-titlebar {
@@ -1120,8 +1252,25 @@ body.coding-dark .floating-coding-chat ::selection {
   }
 
   .coding-dock-terminal {
-    height: min(220px, 42dvh) !important;
-    min-height: 150px !important;
+    min-height: 104px;
+    max-height: 52%;
     border-radius: 13px;
+  }
+
+  .editor-terminal-divider {
+    height: 30px;
+    border-radius: 12px;
+    margin-block: 5px;
+    border-inline: 1px solid var(--ct-border, #d7e1ef);
+    background:
+      linear-gradient(180deg, transparent 0 8px, var(--ct-panel-soft, #f1ece2) 8px 22px, transparent 22px 100%);
+  }
+
+  .editor-terminal-divider-grip {
+    width: 74px;
+    height: 5px;
+    box-shadow:
+      0 -8px 0 color-mix(in srgb, var(--ct-text, #2a2118) 10%, transparent),
+      0 8px 0 color-mix(in srgb, var(--ct-text, #2a2118) 10%, transparent);
   }
 }

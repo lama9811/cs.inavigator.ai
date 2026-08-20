@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FaClock,
   FaArrowRight,
@@ -17,6 +17,7 @@ import {
   FaRedo,
 } from "react-icons/fa";
 import { markLessonRead } from "../concept-quiz/conceptQuizProgress";
+import { saveLearnProgress } from "../adaptiveApi";
 import LessonPlayBar from "./LessonPlayBar";
 import useFocusTrap from "../useFocusTrap";
 
@@ -1385,6 +1386,8 @@ export default function LessonView({
   const [error, setError] = useState("");
   const [activeSectionId, setActiveSectionId] = useState("");
   const [checkAnswers, setCheckAnswers] = useState({});
+  const openedProgressKeyRef = useRef("");
+  const completedProgressKeyRef = useRef("");
 
   useEffect(() => {
     let alive = true;
@@ -1414,6 +1417,14 @@ export default function LessonView({
       alive = false;
     };
   }, [apiBase, language, category]);
+
+  useEffect(() => {
+    if (!lesson || !category || !language) return;
+    const progressKey = `${language}:${category}:opened`;
+    if (openedProgressKeyRef.current === progressKey) return;
+    openedProgressKeyRef.current = progressKey;
+    saveLearnProgress(apiBase, { language, category, status: "opened" }).catch(() => {});
+  }, [apiBase, category, language, lesson]);
 
   const sections = useMemo(() => {
     if (!lesson) return [];
@@ -1471,11 +1482,22 @@ export default function LessonView({
       Object.prototype.hasOwnProperty.call(checkAnswers, key)
     ).length;
     if (answeredCount === checkKeys.length) {
-      if (markLessonRead(language, category)) {
+      const progressKey = `${language}:${category}:completed`;
+      if (completedProgressKeyRef.current === progressKey) return;
+      completedProgressKeyRef.current = progressKey;
+      const firstLocalCompletion = markLessonRead(language, category);
+      if (firstLocalCompletion) {
         onPracticeActivity?.();
       }
+      saveLearnProgress(apiBase, { language, category, status: "completed" })
+        .then((saved) => {
+          if (!firstLocalCompletion && saved?.first_completion) {
+            onPracticeActivity?.();
+          }
+        })
+        .catch(() => {});
     }
-  }, [category, checkAnswers, checkKeys, language, lesson, onPracticeActivity]);
+  }, [apiBase, category, checkAnswers, checkKeys, language, lesson, onPracticeActivity]);
 
   if (loading) return <p className="cq-loading">Loading lesson…</p>;
   if (error) return <p className="cq-error">{error}</p>;
@@ -1576,7 +1598,7 @@ export default function LessonView({
               className="is-practice"
               onClick={onPractice}
             >
-              Practice {lesson.title} <FaArrowRight aria-hidden="true" />
+              Check {lesson.title} <FaArrowRight aria-hidden="true" />
             </button>
           ) : (
             <button
@@ -1589,12 +1611,12 @@ export default function LessonView({
         </div>
       ) : null}
 
-      {/* The handoff. Reading without doing doesn't stick, so a lesson always exits
-          into the quiz on the same topic rather than into nothing. */}
+      {/* The handoff. Reading without doing doesn't stick, so a lesson exits into
+          the matching concept check instead of a broad library page. */}
       <footer className={`lesson-foot ${hasMultipleSections ? "is-sectioned" : ""}`}>
-        <p>Ready to check it?</p>
+        <p>Next: answer a few questions on this topic.</p>
         <button type="button" className="lesson-practice-cta" onClick={onPractice}>
-          Practice {lesson.title} <FaArrowRight aria-hidden="true" />
+          Check {lesson.title} <FaArrowRight aria-hidden="true" />
         </button>
       </footer>
     </article>

@@ -230,7 +230,7 @@
             "Use double when decimals matter.",
             "Use **boolean** for decisions.",
             "Use **String** for text.",
-            "Watch **integer division** before assuming the math is wrong."
+            "Check **integer division** before assuming the math is wrong."
           ]
         }
       ]

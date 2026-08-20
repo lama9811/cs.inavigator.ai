@@ -46,7 +46,7 @@
           "kind": "visual",
           "title": "BFS uses a queue and visited set",
           "concept": "graphs",
-          "caption": "Watch BFS mark **nodes** so cycles do not repeat forever.",
+          "caption": "Use BFS to mark **nodes** so cycles do not repeat forever.",
           "initial_state": {},
           "steps": [
             {
@@ -342,7 +342,7 @@
           "kind": "visual",
           "title": "Visited stops a cycle",
           "concept": "graphs",
-          "caption": "Watch DFS avoid looping forever in a **graph** with a cycle.",
+          "caption": "Use DFS with visited checks to avoid looping forever in a **graph** with a cycle.",
           "initial_state": {},
           "steps": [
             {

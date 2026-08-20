@@ -515,6 +515,32 @@ body.coding-dark .floating-coding-chat .floating-chat-input-row textarea {
   margin-bottom: 0 !important;
 }
 
+.floating-coding-chat .floating-mode-bounce-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin-top: 0.6rem !important;
+  padding: 0.48rem 0.85rem !important;
+  border: 1px solid color-mix(in srgb, var(--ct-float-primary) 42%, var(--ct-float-border)) !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--ct-float-primary) 12%, var(--ct-float-panel-base)) !important;
+  color: var(--ct-float-text) !important;
+  font: inherit !important;
+  font-size: 0.82rem !important;
+  font-weight: 750 !important;
+  line-height: 1.1 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+.floating-coding-chat .floating-mode-bounce-btn:hover {
+  border-color: color-mix(in srgb, var(--ct-float-accent) 58%, var(--ct-float-border)) !important;
+  background: var(--ct-float-accent-soft) !important;
+  color: var(--ct-float-accent) !important;
+}
+
 .floating-coding-chat .floating-chat-message p {
   margin: 0 0 0.65rem !important;
   max-width: 100% !important;

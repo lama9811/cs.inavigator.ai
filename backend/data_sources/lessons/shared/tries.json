@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Tries",
+  "summary": "A **trie** stores strings as character paths, which makes prefix searches direct.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A **trie** walks one character per edge. End markers tell whether the path is a complete word, and the subtree below a prefix gives autocomplete choices.",
+  "refresher_code": "words=[cat, car]",
+  "learn_cards": {
+    "advanced-tries-prefix": {
+      "title": "Prefix path",
+      "notice": "Trace words=[cat, car] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "words-become-paths",
+      "body": "A **trie** walks one character per edge. End markers tell whether the path is a complete word, and the subtree below a prefix gives autocomplete choices."
+    },
+    "advanced-tries-end": {
+      "title": "Word ending marker",
+      "notice": "Trace words=[cat, car] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "end-markers-matter",
+      "body": "A **trie** walks one character per edge. End markers tell whether the path is a complete word, and the subtree below a prefix gives autocomplete choices."
+    },
+    "advanced-tries-search": {
+      "title": "Missing edge",
+      "notice": "Trace words=[cat, car] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "prefix-lookup",
+      "body": "A **trie** walks one character per edge. End markers tell whether the path is a complete word, and the subtree below a prefix gives autocomplete choices."
+    },
+    "advanced-tries-autocomplete": {
+      "title": "Autocomplete",
+      "notice": "Trace words=[cat, car] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-tries-help",
+      "body": "A **trie** walks one character per edge. End markers tell whether the path is a complete word, and the subtree below a prefix gives autocomplete choices."
+    }
+  },
+  "sections": [
+    {
+      "id": "words-become-paths",
+      "title": "Words become paths",
+      "summary": "A **trie** stores strings as character paths, which makes prefix searches direct. Use words=[cat, car] because the share",
+      "question_ids": [
+        "advanced-tries-prefix"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **trie** stores strings as character paths, which makes prefix searches direct. Use words=[cat, car] because the shared ca path and the split at the final letter are both visible."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace tries state",
+          "concept": "trie",
+          "caption": "Trace words=[cat, car] until prefix ca finds both words.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "words=[cat, car]",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "tries: load sample",
+              "input_value": "words=[cat, car]",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "words=[cat, car]",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "tries: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "words=[cat, car]",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "tries: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "words=[cat, car]",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "tries: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "words=[cat, car]",
+                "active": "answer state",
+                "changed": "prefix ca finds both words",
+                "result": "prefix ca finds both words"
+              },
+              "code_focus": "tries: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "prefix ca finds both words"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with prefix ca finds both words.",
+              "state": {
+                "sample": "words=[cat, car]",
+                "active": "complete",
+                "result": "prefix ca finds both words",
+                "goal": "prefix ca finds both words"
+              },
+              "code_focus": "tries: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "prefix ca finds both words"
+                }
+              ],
+              "decision": "The compact trace ends with prefix ca finds both words.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "prefix ca finds both words"
+                }
+              ],
+              "output": "prefix ca finds both words",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "end-markers-matter",
+      "title": "End markers matter",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-tries-end"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Trie code changes shape by language, yet the path walk remains the same.",
+          "variants": {
+            "python": {
+              "code": "node = root\nfor ch in word:\n    node = node.children.setdefault(ch, {})\nnode.end = True",
+              "output": ""
+            },
+            "java": {
+              "code": "TrieNode node = root;\nfor (char ch : word.toCharArray()) {\n    node = node.children.computeIfAbsent(ch, k -> new TrieNode());\n}\nnode.end = true;",
+              "output": ""
+            },
+            "javascript": {
+              "code": "let node = root;\nfor (const ch of word) {\n  node.children[ch] ??= { children: {}, end: false };\n  node = node.children[ch];\n}\nnode.end = true;",
+              "output": ""
+            },
+            "cpp": {
+              "code": "TrieNode* node = root;\nfor (char ch : word) {\n    if (!node->child[ch]) node->child[ch] = new TrieNode();\n    node = node->child[ch];\n}\nnode->end = true;",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a trie trace check first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Check the current node and next character first. Prefix bugs usually start at the first missing edge."
+        }
+      ]
+    },
+    {
+      "id": "prefix-lookup",
+      "title": "Prefix lookup",
+      "summary": "In a trie trace, the active state is the current character path. A lookup should stop the moment a needed child edge is ",
+      "question_ids": [
+        "advanced-tries-search"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "In a trie trace, the active state is the current character path. A lookup should stop the moment a needed child edge is missing."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Write the current prefix.",
+            "Move one character edge.",
+            "Check the end marker only after the path exists.",
+            "Explore below the prefix for autocomplete."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-tries-help",
+      "title": "When tries help",
+      "summary": "Use tries when prefixes are first-class: autocomplete, word search, command lookup, or counting words with a shared star",
+      "question_ids": [
+        "advanced-tries-autocomplete"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use tries when prefixes are first-class: autocomplete, word search, command lookup, or counting words with a shared start."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits tries best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "Trie debugging works best one character at a time because a single missing edge explains the whole failed lookup."
+        }
+      ]
+    },
+    {
+      "id": "common-trie-mistakes",
+      "title": "Common trie mistakes",
+      "summary": "Trie code often confuses a prefix path with a complete word. The end marker decides whether the path itself is stored.",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "Trie code often confuses a prefix path with a complete word. The end marker decides whether the path itself is stored."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace words=[cat, car] and show where the ca path splits."
+        }
+      ]
+    }
+  ]
+}

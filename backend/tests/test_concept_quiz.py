@@ -25,6 +25,20 @@ import concept_quiz as cq
 
 
 ALL_LANGUAGES = ("python", "java", "javascript", "cpp")
+QUESTION_PROMPT_IN_CODE_RE = re.compile(
+    r"(^|\n)\s*(question\s*:|what\b|which\b|why\b|how\b|when\b|where\b|can\b)",
+    re.IGNORECASE,
+)
+ADVANCED_ON_RAMP_CATEGORIES = {
+    "bit-manipulation",
+    "disjoint-sets",
+    "dynamic-programming",
+    "heaps",
+    "intervals",
+    "matrices",
+    "prefix-sums",
+    "tries",
+}
 
 
 def all_categories(language):
@@ -90,10 +104,10 @@ def test_categories_are_split_into_small_beginner_and_intermediate_tracks():
             for track in cq.VALID_TRACKS
         }
         expected = {
-            "python": {"beginner": 12, "intermediate": 11, "advanced": 10},
-            "java": {"beginner": 12, "intermediate": 11, "advanced": 10},
-            "javascript": {"beginner": 12, "intermediate": 7, "advanced": 10},
-            "cpp": {"beginner": 12, "intermediate": 7, "advanced": 10},
+            "python": {"beginner": 12, "intermediate": 11, "advanced": 18},
+            "java": {"beginner": 12, "intermediate": 11, "advanced": 18},
+            "javascript": {"beginner": 12, "intermediate": 7, "advanced": 18},
+            "cpp": {"beginner": 12, "intermediate": 7, "advanced": 18},
         }[language]
         assert {track: len(ids) for track, ids in by_track.items()} == expected
         assert set().union(*map(set, by_track.values())) == set(all_categories(language))
@@ -138,6 +152,12 @@ def test_every_registered_category_has_expected_practice_coverage():
         "binary-search",
         "debug",
         "debug-2",
+        "disjoint-sets",
+        "dynamic-programming",
+        "heaps",
+        "intervals",
+        "matrices",
+        "prefix-sums",
         "graphs",
         "hash-maps-sets",
         "linked-lists",
@@ -146,7 +166,9 @@ def test_every_registered_category_has_expected_practice_coverage():
         "sliding-window",
         "stacks",
         "trees",
+        "tries",
         "two-pointers",
+        "bit-manipulation",
     }
     for language in ALL_LANGUAGES:
         underfilled = [
@@ -186,9 +208,42 @@ def authored_questions():
                 yield language, category_id, question
 
 
+def track_for(language, category_id):
+    by_id = {category["id"]: category["track"] for category in cq.categories_for_language(language)}
+    return by_id[category_id]
+
+
 def test_there_is_some_content():
     """Guard against the validation below silently passing on an empty set."""
     assert list(authored_questions()), "no authored questions found at all"
+
+
+def test_intermediate_and_advanced_code_blocks_show_context_not_a_second_question():
+    for language, category, question in authored_questions():
+        if track_for(language, category) not in {"intermediate", "advanced"}:
+            continue
+        code = question.get("code")
+        if not isinstance(code, str) or not code.strip():
+            continue
+        assert not QUESTION_PROMPT_IN_CODE_RE.search(code), (
+            f"{language}/{category}/{question['id']} puts a question prompt inside "
+            "the code/context panel"
+        )
+
+
+def test_advanced_on_ramp_categories_have_applied_question_context():
+    for language in ALL_LANGUAGES:
+        for category in ADVANCED_ON_RAMP_CATEGORIES:
+            questions = cq.questions_for_category(language, category)["questions"]
+            applied = [
+                question
+                for question in questions
+                if question.get("code") or question["kind"] in {"typein", "parsons"}
+            ]
+            assert len(applied) >= 2, (
+                f"{language}/{category} needs at least two applied/code-context "
+                "questions for advanced on-ramping"
+            )
 
 
 def test_every_question_has_a_valid_kind():

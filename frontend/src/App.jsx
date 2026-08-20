@@ -28,6 +28,7 @@ import "./index.css";
 
 import { getApiBase } from "./lib/apiBase";
 import { generateChatTitle, shouldAutoRenameSession } from "./lib/chatTitles";
+import { startChatHistoryNavigationLock } from "./lib/chatHistoryNavigation";
 import { ENABLE_LEGACY_ADVISING_FORM } from "./config/features";
 const API_BASE = getApiBase();
 const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
@@ -400,6 +401,7 @@ export default function App() {
 
   // Always the fresh blank session created above — the app opens on the welcome screen.
   const [activeId, setActiveId] = useState(() => sessions[0]?.id || "");
+  const activeSelectionRef = useRef(activeId);
   const [pendingChatAction, setPendingChatAction] = useState(null);
   
   useEffect(() => {
@@ -408,6 +410,7 @@ export default function App() {
 
   useEffect(() => {
     if (activeId) {
+      activeSelectionRef.current = activeId;
       localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, activeId);
     }
   }, [activeId]);
@@ -483,9 +486,11 @@ export default function App() {
               // Always land on a fresh blank "New Chat" (welcome screen); keep the
               // full server-side history in the sidebar. Never auto-resume a prior
               // conversation on app open — the user opens a new chat every time.
+              const selectedId = activeSelectionRef.current;
+              const shouldPreserveSelection = dbSessions.some((session) => session.id === selectedId);
               const freshId = Date.now().toString();
               setSessions([makeBlankSession(freshId), ...dbSessions]);
-              setActiveId(freshId);
+              setActiveId(shouldPreserveSelection ? selectedId : freshId);
           } else {
               // New account or no history - just the fresh blank session.
               const freshId = Date.now().toString();
@@ -521,6 +526,7 @@ export default function App() {
       mode,
     };
     setSessions((prev) => [...prev, newChat]); // Append to end
+    activeSelectionRef.current = id;
     setActiveId(id);
     if (config.pendingAction) {
       setPendingChatAction({
@@ -530,16 +536,27 @@ export default function App() {
         mode,
       });
     }
+    if (config.navigate === false) return id;
     if (config.replace) navigate(targetRoute, { replace: true });
     else navigate(targetRoute);
     return id;
   };
 
   const handleSelect = (id) => {
-    setActiveId(id);
+    activeSelectionRef.current = id;
     localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, id);
     const selected = sessions.find((s) => s.id === id);
-    navigate(selected?.mode === "coding_tutor" || String(id).startsWith("coding-") ? "/chat/coding" : "/chat");
+    const targetRoute =
+      selected?.mode === "coding_tutor" || String(id).startsWith("coding-")
+        ? "/chat/coding"
+        : "/chat";
+
+    // Sidebar history owns this navigation. Workspace restore/bootstrap effects
+    // check this short lock so they cannot pull the route back while the chat
+    // history view is opening.
+    startChatHistoryNavigationLock(targetRoute);
+    setActiveId(id);
+    navigate(targetRoute);
   };
 
   // Header/brand click: start a fresh regular chat so the student lands on the
@@ -568,9 +585,9 @@ export default function App() {
   };
   
   // 🔥 FIXED: Prevent infinite re-renders by checking if messages actually changed
-  const handleUpdateSession = (msgs) => {
+  const handleUpdateSession = (msgs, sessionId = activeId) => {
     setSessions((prev) => {
-      const currentSession = prev.find((s) => s.id === activeId);
+      const currentSession = prev.find((s) => s.id === sessionId);
 
       // Only update if messages actually changed
       if (currentSession && JSON.stringify(currentSession.messages) === JSON.stringify(msgs)) {
@@ -586,7 +603,7 @@ export default function App() {
       const isNewMessage = msgs.length > prevCount;
 
       return prev.map((s) =>
-        s.id === activeId
+        s.id === sessionId
           ? {
               ...s,
               messages: msgs,

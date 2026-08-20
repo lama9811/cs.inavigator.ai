@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for disjoint-sets.",
+  "concept": "disjoint-sets",
+  "questions": [
+    {
+      "id": "advanced-dsu-group",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Group representative",
+      "code": "parent:\nA -> A\nB -> A\nC -> C\n\nfind(B) follows B -> A",
+      "prompt": "In a disjoint set, what does find(x) return?",
+      "choices": [
+        "The representative for x group",
+        "The smallest value in the whole input",
+        "The number of edges in a graph",
+        "The next item in a queue"
+      ],
+      "answer_index": 0,
+      "explanation": "Find returns the representative used to compare whether two values belong to the same group.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dsu-union",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Union meaning",
+      "code": "Before union(A, C):\ngroup 1: A, B\ngroup 2: C\n\nAfter union(A, C):\none group: A, B, C",
+      "prompt": "What does union(a, b) mean?",
+      "choices": [
+        "Merge the groups containing a and b",
+        "Delete a and b from memory",
+        "Sort all nodes by label",
+        "Create a directed edge from a to b only"
+      ],
+      "answer_index": 0,
+      "explanation": "Union connects the two sets at the group level, even if a and b are not the current representatives.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dsu-same",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Connected check",
+      "code": null,
+      "prompt": "After union(A, B) and union(B, C), what should find(A) == find(C) report?",
+      "choices": [
+        "true",
+        "false",
+        "Only if A equals C",
+        "Only before compression"
+      ],
+      "answer_index": 0,
+      "explanation": "A connects to B and B connects to C, so all three values end up in one component.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dsu-compression",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Path compression",
+      "code": null,
+      "prompt": "Why use path compression after find?",
+      "choices": [
+        "Future finds become shorter",
+        "It removes every group",
+        "It changes connected components incorrectly",
+        "It sorts the input array"
+      ],
+      "answer_index": 0,
+      "explanation": "Path compression points visited nodes closer to the representative without changing which group they are in.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dsu-rank",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Union by size",
+      "code": null,
+      "prompt": "Why attach the smaller group under the larger group?",
+      "choices": [
+        "It keeps trees shallow",
+        "It makes labels alphabetical",
+        "It forces every group size to one",
+        "It prevents find from working"
+      ],
+      "answer_index": 0,
+      "explanation": "Rank or size keeps the parent tree shallow when groups merge. Shallow trees make later find calls reach the representative with fewer steps.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dsu-cycle",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Cycle detection",
+      "code": null,
+      "prompt": "When processing an undirected edge (u, v), what suggests the edge creates a cycle?",
+      "choices": [
+        "u and v already have the same representative",
+        "u and v are different strings",
+        "The graph has no edges yet",
+        "The edge weight is positive"
+      ],
+      "answer_index": 0,
+      "explanation": "If both endpoints are already in one component, adding another edge between them creates a cycle.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dsu-count",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Component count",
+      "code": null,
+      "prompt": "When should the component count decrease?",
+      "choices": [
+        "When union merges two different groups",
+        "Every time find is called",
+        "When a duplicate union is ignored",
+        "Before any nodes exist"
+      ],
+      "answer_index": 0,
+      "explanation": "The component count changes only when two different groups merge. If both values already have the same representative, the link does not reduce the count.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-dsu-mistake",
+      "concept": "disjoint-sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Union mistake",
+      "code": null,
+      "prompt": "What is a common disjoint-set bug?",
+      "choices": [
+        "Comparing parent values before calling find",
+        "Using arrays for parents",
+        "Returning true for same representative",
+        "Initializing each item as its own parent"
+      ],
+      "answer_index": 0,
+      "explanation": "A parent pointer may point to an intermediate node, not the final representative. Calling find first gives the group representative that should be compared.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

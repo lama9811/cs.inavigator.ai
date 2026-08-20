@@ -5,6 +5,10 @@ All notable changes to CS Navigator are documented here.
 ## [Unreleased]
 
 ### Added
+- **Adaptive Learning V3 timeline.** Added a normalized append-only Coding Tutor learning-event stream for lesson opens/completions, starting-check actions, quiz checks/misses/retries, practice runs, hint use, trace use, tutor actions, and frontend recommendation dismissals.
+- **Adaptive "Why this?" and mini-plans.** The backend next-step response now includes explanation evidence, topic/difficulty rationale, advanced-gating notes, cooldowns, and a short 3-5 step learning plan rendered on Home and the Practice Guide.
+- **Advanced V2 Learn coverage.** Added shared Advanced Learn lessons for heaps, tries, disjoint sets, dynamic programming, prefix sums, matrices, intervals, and bit manipulation, with language-specific examples for Python, Java, JavaScript, and C++ plus visual blocks, checks, when-to-use guidance, and common-mistake sections.
+- **Advanced practice depth pass.** Added 38 advanced on-ramp and bridge Practice problems across dynamic programming, prefix sums, tries, matrices, bit manipulation, heaps, disjoint sets, intervals, linked lists, stacks, queues, recursion, and sliding window, each with Python, JavaScript, Java, and C++ answer entries and runner tests.
 - **Concept Quiz read-aloud controls.** Quiz questions, answer choices, immediate feedback, and final review rows can now be read with browser speech synthesis, including a short pause before choices and continuation into revealed feedback.
 - **Planner V2 advising prep.** The Planner now acts as the active pre-advising workspace with an advisor prep checklist, selected-plan advisor packet print view, official Morgan academic calendar link, and a plan-review helper grounded in the selected schedule.
 - **Planner V2 recommendation explanations.** Schedule options now include plan-level advisor readiness, specific review items, course-level requirement reasons, unlock notes, risk flags, and grounded alternatives.
@@ -13,10 +17,13 @@ All notable changes to CS Navigator are documented here.
 - **Admin schedule refresh controls.** Admin Dashboard now includes manual schedule refresh/status controls for Planner live section snapshots, with cadence guidance for normal and advising-season use.
 - **Learn guided execution traces.** All existing Learn visualizers now include a reusable trace panel with current operation, input value, state before/after, decision, output, and why-it-matters metadata across 82 visual blocks and 392 authored steps.
 - **Trace My Code V2 frontend.** The Python trace modal now prefers the backend `trace_v2` payload when available, keeps the full source visible, shows current line/output/errors, and renders function variables plus list/object state with V1 trace fallback preserved.
-- **Practice visualizer step-depth pass.** All 151 Practice Library visualizers now expand beyond the old four-step sketch into six-step concept traces with setup, operation, state update, repeated movement, and final-result checks.
-- **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 151 visualizers.
+- **Practice visualizer step-depth pass.** Practice Library visualizers now expand beyond the old four-step sketch into deeper concept traces with setup, operation, state update, repeated movement, and final-result checks.
+- **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 203 visualizers.
+- **Complete Practice visualizer family sweep.** All 203 Coding Tutor Practice questions now route to corresponding concept visualizer families with compact teaching examples, problem-specific side panels, duplicate bottom strips removed where appropriate, broader step traces where needed, and plain-English pseudocode that avoids giving away full solutions. The sweep covers arrays, strings, conditionals, sets, hash maps, stacks, queues, two pointers, sliding window, binary search, matrices, recursion, prefix sums, intervals, dynamic programming, graphs, trees, heaps, tries, linked lists, bit manipulation, and disjoint sets.
 
 ### Changed
+- Adaptive recommendations now use timeline-based cooldowns so dismissed review recommendations stay quiet for 24 hours and skipped starting checks stay quiet for 14 days when the student has other learning signals.
+- Coding Tutor chat now sends structured workspace debug context into tutor prompts, including the selected language, function contract, latest run status, first failing test, stderr/stdout, trace line/exception, and current variables so Debug and terminal help can diagnose the current attempt instead of paraphrasing the prompt.
 - Coding Tutor mobile Home, Practice Library, and Concept Quiz layouts are denser at 425/375/320px widths, with smaller type, tighter card padding, single-column LeetCode daily actions, compact Practice problem footers/guide cards, and one continuous quiz/review scroll instead of split panes.
 - The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
 - Coding Tutor dark-mode styling now uses a more stable scoped token layer under `body.coding-dark .coding-app`, with clearer dark surface contrast and Coding Tutor-specific legacy dark selectors moved off global `body.dark` / `[data-theme="dark"]` paths.
@@ -24,9 +31,13 @@ All notable changes to CS Navigator are documented here.
 - Practice visualizer workflow rails now use topic-specific labels and pseudocode lines that align with the active step, avoiding duplicate setup/finish beats and generic row-box pacing.
 - The "Visualize this" modal keeps a full-screen-feeling layout with a sticky X close button and an Open in Workspace action, while the Workspace Visualize tab uses a roomier stage-first layout for longer traces.
 - Practice visualizers now use compact teaching samples consistently across visual nodes, pseudocode, state strips, and copy so long examples like `Morgan State` do not leak into short walkthroughs.
+- Advanced Practice visualizers now use concept-depth rules instead of a blanket six-step expansion: dynamic programming, binary search, sliding window, prefix sums, and recursion expand to eight-step traces, while graph/tree/heap/trie/union-find/interval/bit visuals use seven-step traces when needed.
 - Practice visualizer QA now gives arrays a current-item/result tracker, sets a seen-memory/result path, and recursion a call-frame/base-case/return-chain view instead of generic linear boxes.
 - Trace My Code V2 now exposes explicit timing metadata for `before_line`, `after_previous_line`, returns, exceptions, changed bindings, changed objects, and stdout updates so the frontend can distinguish "about to run" from "just ran."
-- Non-Python Trace My Code messaging now clearly explains that execution tracing is Python-first while JavaScript, Java, and C++ can still use Run and concept visualizers.
+- Trace My Code V2 semantic summaries now come from deeper backend metadata for Python and JavaScript assignments, method calls, index reads/writes, object/list mutations, loop iterations, output, returns, and exceptions, reducing frontend source-string guessing.
+- Trace My Code now uses Trace V2 for Python and JavaScript, while Java/C++ return structured practice traces when compiled runners are enabled; freeform Java/C++ tracing remains future work.
+- Trace My Code now keeps the default state panel focused on current scalar/changed variables, moves full collection/object internals behind More trace details, uses friendlier collection labels, and adds compact first/previous/play/next/last controls with speed selection.
+- Advanced content guards now expect 18 Advanced Learn categories and enforce an 8-problem floor across advanced Practice topics before adaptive-learning work starts.
 - Planner course cards now use compact icon actions, clearer seat/time/location/instructor ordering, distinct GenEd styling, concise review status language, sorted class times, and TBA/untimed courses at the bottom.
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
 - Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
@@ -55,6 +66,8 @@ All notable changes to CS Navigator are documented here.
 - Fixed PR review issues in lesson/question content, including malformed apostrophes, a missing C++ include, unsafe arithmetic-swap guidance, Java lesson mismatches, hidden lesson fields, quiz draft clearing, and concept quiz progress fallback behavior.
 
 ### Verified
+- Practice visualizer audit passes across 203 visualizer definitions, with 203 unique question IDs and no missing `visualizer.concept` entries.
+- Advanced Learn/Practice content tests pass, including concept quiz manifest coverage, shared lesson parsing, and advanced topic depth guards.
 - JSON parse checks for edited lesson/question files pass.
 - Backend `py_compile` passes for Coding Tutor touched modules.
 - Frontend `npm run build` passes.

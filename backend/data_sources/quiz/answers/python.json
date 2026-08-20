@@ -6715,6 +6715,2271 @@
           "expected": 1
         }
       ]
+    },
+    {
+      "question_id": "easy-62",
+      "function_name": "climb_small_staircase",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            4
+          ],
+          "expected": 5
+        },
+        {
+          "name": "case 2",
+          "args": [
+            0
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            2
+          ],
+          "expected": 2
+        }
+      ]
+    },
+    {
+      "question_id": "easy-63",
+      "function_name": "tiny_minimum_stair_cost",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              2,
+              5,
+              1
+            ]
+          ],
+          "expected": 3
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              10,
+              1
+            ]
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            []
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-57",
+      "function_name": "non_adjacent_points",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              3,
+              2,
+              7,
+              10
+            ]
+          ],
+          "expected": 13
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              5,
+              1,
+              1,
+              5
+            ]
+          ],
+          "expected": 10
+        },
+        {
+          "name": "case 3",
+          "args": [
+            []
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "easy-64",
+      "function_name": "running_prefix_totals",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              2,
+              4,
+              1
+            ]
+          ],
+          "expected": [
+            2,
+            6,
+            7
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            []
+          ],
+          "expected": []
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              -1,
+              3
+            ]
+          ],
+          "expected": [
+            -1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "easy-65",
+      "function_name": "single_range_sum",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              2,
+              4,
+              1,
+              5
+            ],
+            1,
+            3
+          ],
+          "expected": 10
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              2,
+              4,
+              1,
+              5
+            ],
+            0,
+            0
+          ],
+          "expected": 2
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              -2,
+              5,
+              4
+            ],
+            0,
+            2
+          ],
+          "expected": 7
+        }
+      ]
+    },
+    {
+      "question_id": "medium-58",
+      "function_name": "balanced_prefix_split",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              1,
+              2,
+              3,
+              3
+            ]
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              2,
+              2
+            ]
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-59",
+      "function_name": "subarray_sum_count",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              1,
+              2,
+              1,
+              2
+            ],
+            3
+          ],
+          "expected": 3
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              1,
+              1,
+              1
+            ],
+            2
+          ],
+          "expected": 2
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              -1,
+              1,
+              0
+            ],
+            0
+          ],
+          "expected": 3
+        }
+      ]
+    },
+    {
+      "question_id": "easy-66",
+      "function_name": "any_word_with_prefix",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              "cat",
+              "car",
+              "dog"
+            ],
+            "ca"
+          ],
+          "expected": true
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              "cat"
+            ],
+            "do"
+          ],
+          "expected": false
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              "a"
+            ],
+            ""
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "easy-67",
+      "function_name": "count_prefix_matches",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              "sun",
+              "sum",
+              "cat"
+            ],
+            "su"
+          ],
+          "expected": 2
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              "a",
+              "b"
+            ],
+            ""
+          ],
+          "expected": 2
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              "Cat",
+              "car"
+            ],
+            "ca"
+          ],
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "question_id": "medium-60",
+      "function_name": "first_autocomplete_matches",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              "car",
+              "cat",
+              "dog"
+            ],
+            "ca",
+            2
+          ],
+          "expected": [
+            "car",
+            "cat"
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              "cart",
+              "car",
+              "care"
+            ],
+            "car",
+            2
+          ],
+          "expected": [
+            "car",
+            "care"
+          ]
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              "dog"
+            ],
+            "ca",
+            3
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "medium-61",
+      "function_name": "longest_prefix_word",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              "cart",
+              "car",
+              "care"
+            ],
+            "car"
+          ],
+          "expected": "care"
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              "dog"
+            ],
+            "ca"
+          ],
+          "expected": ""
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              "ape",
+              "apple"
+            ],
+            "ap"
+          ],
+          "expected": "apple"
+        }
+      ]
+    },
+    {
+      "question_id": "easy-68",
+      "function_name": "row_has_target",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            1,
+            4
+          ],
+          "expected": true
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              [
+                1
+              ]
+            ],
+            0,
+            2
+          ],
+          "expected": false
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              [
+                5,
+                6
+              ]
+            ],
+            0,
+            5
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "easy-69",
+      "function_name": "count_matrix_matches",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            1
+          ],
+          "expected": 2
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              [],
+              [
+                1
+              ]
+            ],
+            1
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              [
+                2
+              ]
+            ],
+            1
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-62",
+      "function_name": "transpose_square_grid",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              4
+            ]
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              [
+                5
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              5
+            ]
+          ]
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              [
+                1,
+                2,
+                3
+              ],
+              [
+                4,
+                5,
+                6
+              ],
+              [
+                7,
+                8,
+                9
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              4,
+              7
+            ],
+            [
+              2,
+              5,
+              8
+            ],
+            [
+              3,
+              6,
+              9
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "medium-63",
+      "function_name": "count_zero_sum_rows",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              [
+                1,
+                -1
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ],
+          "expected": 2
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              []
+            ]
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              [
+                1
+              ],
+              [
+                -1
+              ]
+            ]
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "easy-70",
+      "function_name": "odd_from_last_bit",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            7
+          ],
+          "expected": true
+        },
+        {
+          "name": "case 2",
+          "args": [
+            6
+          ],
+          "expected": false
+        },
+        {
+          "name": "case 3",
+          "args": [
+            0
+          ],
+          "expected": false
+        }
+      ]
+    },
+    {
+      "question_id": "easy-71",
+      "function_name": "lowest_bit_value",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            6
+          ],
+          "expected": 0
+        },
+        {
+          "name": "case 2",
+          "args": [
+            7
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            0
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-64",
+      "function_name": "xor_every_number",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              4,
+              1,
+              4
+            ]
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 2",
+          "args": [
+            []
+          ],
+          "expected": 0
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              2,
+              2,
+              3
+            ]
+          ],
+          "expected": 3
+        }
+      ]
+    },
+    {
+      "question_id": "medium-65",
+      "function_name": "alternating_bits",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            10
+          ],
+          "expected": true
+        },
+        {
+          "name": "case 2",
+          "args": [
+            7
+          ],
+          "expected": false
+        },
+        {
+          "name": "case 3",
+          "args": [
+            5
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "medium-66",
+      "function_name": "count_set_bits_small",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            13
+          ],
+          "expected": 3
+        },
+        {
+          "name": "case 2",
+          "args": [
+            0
+          ],
+          "expected": 0
+        },
+        {
+          "name": "case 3",
+          "args": [
+            8
+          ],
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "question_id": "easy-72",
+      "function_name": "highest_priority_name",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              "Ada",
+              "Bo",
+              "Cy"
+            ],
+            [
+              4,
+              9,
+              9
+            ]
+          ],
+          "expected": "Bo"
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [],
+            []
+          ],
+          "expected": ""
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              "Ada",
+              "Bo"
+            ],
+            [
+              5,
+              5
+            ]
+          ],
+          "expected": "Ada"
+        }
+      ]
+    },
+    {
+      "question_id": "easy-73",
+      "function_name": "top_three_scores",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              5,
+              9,
+              7,
+              2
+            ]
+          ],
+          "expected": [
+            9,
+            7,
+            5
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              1
+            ]
+          ],
+          "expected": [
+            1
+          ]
+        },
+        {
+          "name": "case 3",
+          "args": [
+            []
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-74",
+      "function_name": "smallest_two_scores",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              8,
+              3,
+              5
+            ]
+          ],
+          "expected": [
+            3,
+            5
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              9
+            ]
+          ],
+          "expected": [
+            9
+          ]
+        },
+        {
+          "name": "case 3",
+          "args": [
+            []
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-75",
+      "function_name": "same_group_after_links",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            0,
+            2
+          ],
+          "expected": true
+        },
+        {
+          "name": "case 2",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ]
+            ],
+            0,
+            2
+          ],
+          "expected": false
+        },
+        {
+          "name": "case 3",
+          "args": [
+            3,
+            [],
+            1,
+            1
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "easy-76",
+      "function_name": "group_size_of_student",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            5,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            1
+          ],
+          "expected": 3
+        },
+        {
+          "name": "case 2",
+          "args": [
+            3,
+            [],
+            2
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            3
+          ],
+          "expected": 2
+        }
+      ]
+    },
+    {
+      "question_id": "medium-67",
+      "function_name": "component_count_timeline",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            3,
+            2,
+            1
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            3,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ]
+          ],
+          "expected": [
+            2,
+            2
+          ]
+        },
+        {
+          "name": "case 3",
+          "args": [
+            2,
+            []
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-77",
+      "function_name": "two_intervals_overlap",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              1,
+              4
+            ],
+            [
+              3,
+              6
+            ]
+          ],
+          "expected": true
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              1,
+              3
+            ],
+            [
+              4,
+              6
+            ]
+          ],
+          "expected": false
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ]
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "easy-78",
+      "function_name": "gap_between_ranges",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              1,
+              3
+            ],
+            [
+              6,
+              8
+            ]
+          ],
+          "expected": 3
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              6,
+              8
+            ],
+            [
+              1,
+              3
+            ]
+          ],
+          "expected": 3
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              1,
+              4
+            ],
+            [
+              4,
+              6
+            ]
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-68",
+      "function_name": "insert_one_interval",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              [
+                1,
+                3
+              ],
+              [
+                6,
+                8
+              ]
+            ],
+            [
+              2,
+              7
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              8
+            ]
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [],
+            [
+              2,
+              3
+            ]
+          ],
+          "expected": [
+            [
+              2,
+              3
+            ]
+          ]
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                5,
+                6
+              ]
+            ],
+            [
+              3,
+              4
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "easy-79",
+      "function_name": "count_matching_ends",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              1,
+              2,
+              2,
+              1
+            ]
+          ],
+          "expected": 2
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ]
+          ],
+          "expected": 0
+        },
+        {
+          "name": "case 3",
+          "args": [
+            []
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-69",
+      "function_name": "remove_one_target_pair",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              1,
+              2,
+              4,
+              5
+            ],
+            6
+          ],
+          "expected": [
+            2,
+            4
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              1,
+              2
+            ],
+            9
+          ],
+          "expected": [
+            1,
+            2
+          ]
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              1,
+              3,
+              4,
+              5
+            ],
+            6
+          ],
+          "expected": [
+            3,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "easy-80",
+      "function_name": "tail_value_by_links",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              7,
+              8,
+              9
+            ],
+            [
+              1,
+              2,
+              -1
+            ],
+            0
+          ],
+          "expected": 9
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              1
+            ],
+            [
+              -1
+            ],
+            0
+          ],
+          "expected": 1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [],
+            [],
+            -1
+          ],
+          "expected": -1
+        }
+      ]
+    },
+    {
+      "question_id": "medium-70",
+      "function_name": "value_after_k_links",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              4,
+              5,
+              6
+            ],
+            [
+              1,
+              2,
+              -1
+            ],
+            0,
+            2
+          ],
+          "expected": 6
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              4,
+              5
+            ],
+            [
+              1,
+              -1
+            ],
+            0,
+            3
+          ],
+          "expected": -1
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              9
+            ],
+            [
+              -1
+            ],
+            0,
+            0
+          ],
+          "expected": 9
+        }
+      ]
+    },
+    {
+      "question_id": "easy-81",
+      "function_name": "undo_latest_action",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              "open",
+              "type",
+              "undo"
+            ]
+          ],
+          "expected": [
+            "open"
+          ]
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              "undo"
+            ]
+          ],
+          "expected": []
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              "a",
+              "b"
+            ]
+          ],
+          "expected": [
+            "a",
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "medium-71",
+      "function_name": "remove_adjacent_equal_pairs",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            "abbaca"
+          ],
+          "expected": "ca"
+        },
+        {
+          "name": "case 2",
+          "args": [
+            "azxxzy"
+          ],
+          "expected": "ay"
+        },
+        {
+          "name": "case 3",
+          "args": [
+            "aa"
+          ],
+          "expected": ""
+        }
+      ]
+    },
+    {
+      "question_id": "easy-82",
+      "function_name": "front_after_line_commands",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              "join Ana",
+              "join Bo",
+              "serve"
+            ]
+          ],
+          "expected": "Bo"
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              "serve"
+            ]
+          ],
+          "expected": "none"
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              "join Cy"
+            ]
+          ],
+          "expected": "Cy"
+        }
+      ]
+    },
+    {
+      "question_id": "easy-83",
+      "function_name": "recursive_list_sum",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              2,
+              5,
+              1
+            ]
+          ],
+          "expected": 8
+        },
+        {
+          "name": "case 2",
+          "args": [
+            []
+          ],
+          "expected": 0
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              -2,
+              3
+            ]
+          ],
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "question_id": "easy-84",
+      "function_name": "any_calm_two_day_stretch",
+      "runner_tests": [
+        {
+          "name": "case 1",
+          "args": [
+            [
+              40,
+              25,
+              50
+            ],
+            70
+          ],
+          "expected": true
+        },
+        {
+          "name": "case 2",
+          "args": [
+            [
+              40
+            ],
+            70
+          ],
+          "expected": false
+        },
+        {
+          "name": "case 3",
+          "args": [
+            [
+              80,
+              10
+            ],
+            70
+          ],
+          "expected": false
+        }
+      ]
+    },
+    {
+      "question_id": "easy-85",
+      "function_name": "ways_one_three_steps",
+      "runner_tests": [
+        {
+          "name": "four steps",
+          "args": [
+            4
+          ],
+          "expected": 3
+        },
+        {
+          "name": "zero steps",
+          "args": [
+            0
+          ],
+          "expected": 1
+        },
+        {
+          "name": "five steps",
+          "args": [
+            5
+          ],
+          "expected": 4
+        }
+      ]
+    },
+    {
+      "question_id": "easy-86",
+      "function_name": "best_non_adjacent_total",
+      "runner_tests": [
+        {
+          "name": "skip middle",
+          "args": [
+            [
+              4,
+              1,
+              7
+            ]
+          ],
+          "expected": 11
+        },
+        {
+          "name": "single value",
+          "args": [
+            [
+              5
+            ]
+          ],
+          "expected": 5
+        },
+        {
+          "name": "all small choices",
+          "args": [
+            [
+              2,
+              3,
+              2
+            ]
+          ],
+          "expected": 4
+        }
+      ]
+    },
+    {
+      "question_id": "easy-87",
+      "function_name": "all_words_with_prefix",
+      "runner_tests": [
+        {
+          "name": "all match",
+          "args": [
+            [
+              "cat",
+              "car",
+              "camp"
+            ],
+            "ca"
+          ],
+          "expected": true
+        },
+        {
+          "name": "one mismatch",
+          "args": [
+            [
+              "cat",
+              "dog"
+            ],
+            "ca"
+          ],
+          "expected": false
+        },
+        {
+          "name": "empty words",
+          "args": [
+            [],
+            "ca"
+          ],
+          "expected": false
+        }
+      ]
+    },
+    {
+      "question_id": "easy-88",
+      "function_name": "first_word_with_prefix",
+      "runner_tests": [
+        {
+          "name": "first match",
+          "args": [
+            [
+              "cat",
+              "car",
+              "dog"
+            ],
+            "ca"
+          ],
+          "expected": "cat"
+        },
+        {
+          "name": "later match",
+          "args": [
+            [
+              "dog",
+              "cart"
+            ],
+            "car"
+          ],
+          "expected": "cart"
+        },
+        {
+          "name": "no match",
+          "args": [
+            [
+              "sun",
+              "sky"
+            ],
+            "ca"
+          ],
+          "expected": "none"
+        }
+      ]
+    },
+    {
+      "question_id": "easy-89",
+      "function_name": "prefix_sum_at",
+      "runner_tests": [
+        {
+          "name": "middle index",
+          "args": [
+            [
+              2,
+              4,
+              1
+            ],
+            1
+          ],
+          "expected": 6
+        },
+        {
+          "name": "first index",
+          "args": [
+            [
+              5,
+              6
+            ],
+            0
+          ],
+          "expected": 5
+        },
+        {
+          "name": "last index",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            2
+          ],
+          "expected": 6
+        }
+      ]
+    },
+    {
+      "question_id": "easy-90",
+      "function_name": "range_sum_one_query",
+      "runner_tests": [
+        {
+          "name": "middle range",
+          "args": [
+            [
+              2,
+              4,
+              1,
+              3
+            ],
+            1,
+            2
+          ],
+          "expected": 5
+        },
+        {
+          "name": "starts at zero",
+          "args": [
+            [
+              5,
+              1,
+              1
+            ],
+            0,
+            1
+          ],
+          "expected": 6
+        },
+        {
+          "name": "single slot",
+          "args": [
+            [
+              7,
+              8,
+              9
+            ],
+            2,
+            2
+          ],
+          "expected": 9
+        }
+      ]
+    },
+    {
+      "question_id": "easy-91",
+      "function_name": "main_diagonal_values",
+      "runner_tests": [
+        {
+          "name": "two by two",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          ],
+          "expected": [
+            1,
+            4
+          ]
+        },
+        {
+          "name": "three by three",
+          "args": [
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                5,
+                0
+              ],
+              [
+                0,
+                0,
+                9
+              ]
+            ]
+          ],
+          "expected": [
+            1,
+            5,
+            9
+          ]
+        },
+        {
+          "name": "empty matrix",
+          "args": [
+            []
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-92",
+      "function_name": "turn_off_lowest_bit",
+      "runner_tests": [
+        {
+          "name": "turn off four bit",
+          "args": [
+            12
+          ],
+          "expected": 8
+        },
+        {
+          "name": "power of two becomes zero",
+          "args": [
+            8
+          ],
+          "expected": 0
+        },
+        {
+          "name": "zero stays zero",
+          "args": [
+            0
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "easy-93",
+      "function_name": "has_repeated_group_link",
+      "runner_tests": [
+        {
+          "name": "cycle link appears",
+          "args": [
+            3,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                0,
+                2
+              ]
+            ]
+          ],
+          "expected": true
+        },
+        {
+          "name": "no repeated group",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                3
+              ]
+            ]
+          ],
+          "expected": false
+        },
+        {
+          "name": "duplicate direct link",
+          "args": [
+            2,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ]
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "easy-94",
+      "function_name": "members_connected_to_zero",
+      "runner_tests": [
+        {
+          "name": "three members",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "name": "only zero",
+          "args": [
+            3,
+            [
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            0
+          ]
+        },
+        {
+          "name": "all connected",
+          "args": [
+            3,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "easy-95",
+      "function_name": "neighbor_count",
+      "runner_tests": [
+        {
+          "name": "two neighbors",
+          "args": [
+            [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "A",
+                "C"
+              ],
+              [
+                "B",
+                "D"
+              ]
+            ],
+            "A"
+          ],
+          "expected": 2
+        },
+        {
+          "name": "one neighbor",
+          "args": [
+            [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "C",
+                "B"
+              ]
+            ],
+            "C"
+          ],
+          "expected": 1
+        },
+        {
+          "name": "missing node",
+          "args": [
+            [
+              [
+                "A",
+                "B"
+              ]
+            ],
+            "Z"
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-72",
+      "function_name": "coin_change_ways_small",
+      "runner_tests": [
+        {
+          "name": "one and two coins",
+          "args": [
+            [
+              1,
+              2
+            ],
+            4
+          ],
+          "expected": 3
+        },
+        {
+          "name": "single coin type",
+          "args": [
+            [
+              2
+            ],
+            5
+          ],
+          "expected": 0
+        },
+        {
+          "name": "three coin types",
+          "args": [
+            [
+              1,
+              2,
+              5
+            ],
+            5
+          ],
+          "expected": 4
+        }
+      ]
+    },
+    {
+      "question_id": "medium-73",
+      "function_name": "blocked_stair_ways",
+      "runner_tests": [
+        {
+          "name": "blocked middle",
+          "args": [
+            [
+              1,
+              1,
+              0,
+              1
+            ]
+          ],
+          "expected": 2
+        },
+        {
+          "name": "last blocked",
+          "args": [
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "expected": 0
+        },
+        {
+          "name": "all open",
+          "args": [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "expected": 3
+        }
+      ]
+    },
+    {
+      "question_id": "medium-74",
+      "function_name": "largest_group_after_links",
+      "runner_tests": [
+        {
+          "name": "three person group",
+          "args": [
+            5,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          ],
+          "expected": 3
+        },
+        {
+          "name": "no links",
+          "args": [
+            3,
+            []
+          ],
+          "expected": 1
+        },
+        {
+          "name": "all merge",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": 4
+        }
+      ]
     }
   ]
 }

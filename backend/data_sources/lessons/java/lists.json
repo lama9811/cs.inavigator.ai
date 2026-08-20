@@ -24,7 +24,7 @@
           "kind": "visual",
           "title": "Indexes point to positions",
           "concept": "lists",
-          "caption": "Step through an array slot by slot, then watch an ArrayList add claim the next index.",
+          "caption": "Step through an array slot by slot, then add into the next ArrayList index.",
           "initial_state": {},
           "steps": [
             {

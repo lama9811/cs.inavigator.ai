@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaBookOpen, FaArrowRight, FaArrowLeft, FaLock } from "react-icons/fa";
+import { FaBookOpen, FaArrowRight, FaArrowLeft, FaLock, FaSearch } from "react-icons/fa";
 import { LANGUAGE_VISUALS } from "../concept-quiz/languageVisuals";
 import { countReadLessons, hasReadLesson } from "../concept-quiz/conceptQuizProgress";
 import { fetchQuizQuestions } from "../concept-quiz/conceptQuizApi";
@@ -9,9 +9,10 @@ import LessonView from "./LessonView";
 //
 // Four URL-backed views keep the address bar, Back/Forward, and refresh in sync:
 //   languages -> the four language cards
-//   tracks    -> Beginner, Intermediate, and Advanced cards for one language
+//   tracks    -> Beginner, Intermediate, Advanced, and Library cards for one language
 //   lessons   -> the selected track's smaller lesson list
 //   lesson    -> one authored lesson
+//   library   -> a quick language reference, not a graded track
 
 const TRACKS = [
   {
@@ -27,18 +28,26 @@ const TRACKS = [
     label: "Intermediate Track",
     kicker: "Next step",
     description:
-      "Build on Part 1 with multi-step problems and the next concepts that matter most in this language.",
+      "Build on Part 1 with multi-step problems and language-specific concepts.",
     cta: "Explore next steps",
   },
   {
     id: "advanced",
     label: "Advanced Track",
-    kicker: "Interview ready",
+    kicker: "Advanced practice",
     description:
-      "Break down data structures and coding patterns before trying harder practice.",
+      "Study data structures and coding patterns before trying harder practice.",
     cta: "Study advanced patterns",
   },
 ];
+
+const LANGUAGE_LIBRARY_CARD = {
+  label: "Language Library",
+  kicker: "Reference",
+  description:
+    "Look up common syntax, methods, and errors while you work through lessons.",
+  cta: "Open the dictionary",
+};
 
 function trackDefinition(trackId) {
   return TRACKS.find((track) => track.id === trackId) || null;
@@ -52,6 +61,24 @@ function nextTrackDefinition(trackId) {
 function previousTrackDefinition(trackId) {
   const index = TRACKS.findIndex((track) => track.id === trackId);
   return index > 0 ? TRACKS[index - 1] || null : null;
+}
+
+const levelRank = { Beginner: 0, Intermediate: 1, Advanced: 2 };
+
+function sortLibraryEntries(entries) {
+  return [...entries].sort((a, b) => {
+    const methodDiff = String(a.method_name || "").localeCompare(
+      String(b.method_name || ""),
+      undefined,
+      { sensitivity: "base" }
+    );
+    if (methodDiff !== 0) return methodDiff;
+    const levelDiff = (levelRank[a.complexity] ?? 99) - (levelRank[b.complexity] ?? 99);
+    if (levelDiff !== 0) return levelDiff;
+    return String(a.syntax || "").localeCompare(String(b.syntax || ""), undefined, {
+      sensitivity: "base",
+    });
+  });
 }
 
 function LanguageCards({ languages, onPick }) {
@@ -102,7 +129,7 @@ function LanguageCards({ languages, onPick }) {
   );
 }
 
-function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
+function TrackCards({ language, languageLabel, categories, onPick, onBack, onOpenLibrary }) {
   const languageAccent = LANGUAGE_VISUALS[language]?.tint || "#7c3aed";
 
   return (
@@ -178,7 +205,310 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
             </button>
           );
         })}
+        <button
+          type="button"
+          className="learn-track-card learn-library-card"
+          style={{ "--learn-track-accent": "#7c3aed" }}
+          onClick={() => onOpenLibrary(language)}
+        >
+          <span className="learn-track-kicker">{LANGUAGE_LIBRARY_CARD.kicker}</span>
+          <span className="learn-track-title">{LANGUAGE_LIBRARY_CARD.label}</span>
+          <span className="learn-track-description">
+            {LANGUAGE_LIBRARY_CARD.description}
+          </span>
+          <span className="learn-track-topics">
+            <span className="learn-track-topics-label">Covers</span>
+            <span>Built-ins / Strings / Lists / Maps / Sets</span>
+          </span>
+          <span className="learn-track-cta">
+            {LANGUAGE_LIBRARY_CARD.cta} <FaArrowRight aria-hidden="true" />
+          </span>
+        </button>
       </div>
+    </div>
+  );
+}
+
+function LanguageLibraryView({
+  apiBase,
+  language,
+  languageLabel,
+  categoryId,
+  onBack,
+  onOpenCategory,
+  onOpenLesson,
+}) {
+  const [library, setLibrary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [complexity, setComplexity] = useState("all");
+  const [openExamples, setOpenExamples] = useState(() => new Set());
+
+  useEffect(() => {
+    if (!language) return undefined;
+    let alive = true;
+    setLoading(true);
+    setError("");
+    fetch(`${apiBase}/api/coding/language-library/${encodeURIComponent(language)}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not load the language library.");
+        return response.json();
+      })
+      .then((data) => {
+        if (alive) setLibrary(data);
+      })
+      .catch((fetchError) => {
+        if (alive) setError(fetchError.message || "Could not load the language library.");
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [apiBase, language]);
+
+  if (loading) return <p className="cq-loading">Loading language library...</p>;
+  if (error) return <p className="cq-error">{error}</p>;
+
+  const categories = [...(library?.categories || [])].sort((a, b) =>
+    String(a.label || a.id || "").localeCompare(String(b.label || b.id || ""))
+  );
+  const categoryLabel = new Map(categories.map((item) => [item.id, item.label]));
+  const currentCategory = categoryId
+    ? categories.find((item) => item.id === categoryId) || null
+    : null;
+  const complexityOptions = ["Beginner", "Intermediate", "Advanced"];
+  const normalizedQuery = query.trim().toLowerCase();
+  const allEntries = library?.entries || [];
+  const entries = sortLibraryEntries(allEntries.filter((entry) => {
+    if (categoryId && entry.category !== categoryId) return false;
+    const matchesComplexity = complexity === "all" || entry.complexity === complexity;
+    if (!matchesComplexity) return false;
+    if (!normalizedQuery) return true;
+    return [
+      entry.method_name,
+      entry.syntax,
+      entry.description,
+      entry.example,
+      entry.common_mistake,
+      entry.complexity,
+      entry.lesson_link?.label,
+      entry.lesson_link?.category,
+      categoryLabel.get(entry.category),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedQuery);
+  }));
+  const entriesByCategory = new Map();
+  allEntries.forEach((entry) => {
+    const list = entriesByCategory.get(entry.category) || [];
+    list.push(entry);
+    entriesByCategory.set(entry.category, list);
+  });
+  const landingMatches = categories
+    .map((item) => {
+      const categoryEntries = sortLibraryEntries(entriesByCategory.get(item.id) || []);
+      const searchableText = [
+        item.label,
+        item.description,
+        ...(item.preview_methods || []),
+        ...categoryEntries.flatMap((entry) => [
+          entry.method_name,
+          entry.syntax,
+          entry.description,
+          entry.common_mistake,
+        ]),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return {
+        ...item,
+        entries: categoryEntries,
+        matchesQuery: !normalizedQuery || searchableText.includes(normalizedQuery),
+      };
+    })
+    .filter((item) => item.matchesQuery);
+
+  const toggleExample = (entryId) => {
+    setOpenExamples((current) => {
+      const next = new Set(current);
+      if (next.has(entryId)) {
+        next.delete(entryId);
+      } else {
+        next.add(entryId);
+      }
+      return next;
+    });
+  };
+
+  return (
+    <div className="language-library-view">
+      <div className="learn-tracks-toolbar language-library-toolbar">
+        <header className="learn-tracks-head language-library-head">
+          <span className="lesson-kicker">{languageLabel}</span>
+          <h2>{currentCategory ? currentCategory.label : "Language Library"}</h2>
+          <p>
+            {currentCategory
+              ? currentCategory.description
+              : `A quick reference for syntax, common methods, and common mistakes in ${languageLabel}.`}
+          </p>
+        </header>
+        <button type="button" className="learn-back-link" onClick={onBack}>
+          <FaArrowLeft aria-hidden="true" /> {currentCategory ? "All categories" : "Choose track"}
+        </button>
+      </div>
+
+      <div className="language-library-controls">
+        <label className="language-library-search">
+          <FaSearch aria-hidden="true" />
+          <span className="sr-only">Search language library</span>
+          <input
+            type="search"
+            value={query}
+            placeholder={
+              currentCategory
+                ? `Search ${currentCategory.label.toLowerCase()} methods...`
+                : "Search categories or methods..."
+            }
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        {currentCategory ? (
+          <div className="language-library-filter-group">
+            <span className="language-library-filter-label">Level</span>
+            <div className="language-library-chip-row" aria-label="Library levels">
+              <button
+                type="button"
+                className={`language-library-chip ${complexity === "all" ? "active" : ""}`}
+                onClick={() => setComplexity("all")}
+              >
+                All levels
+              </button>
+              {complexityOptions.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={`language-library-chip ${complexity === item ? "active" : ""}`}
+                  onClick={() => setComplexity(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {!currentCategory ? (
+        <>
+          <div className="language-library-count">
+            {landingMatches.length} categor{landingMatches.length === 1 ? "y" : "ies"}
+          </div>
+
+          <div className="language-library-category-grid">
+            {landingMatches.map((item) => {
+              const categoryEntries = item.entries || [];
+              const previewMethods = item.preview_methods?.length
+                ? item.preview_methods
+                : categoryEntries.slice(0, 6).map((entry) => entry.method_name);
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  className="language-library-category-card"
+                  onClick={() => onOpenCategory(language, item.id)}
+                >
+                  <span className="language-library-category-card-head">
+                    <span>{item.label}</span>
+                    <strong>{categoryEntries.length}</strong>
+                  </span>
+                  <span className="language-library-category-card-description">
+                    {item.description}
+                  </span>
+                  <span className="language-library-preview-list">
+                    {previewMethods.slice(0, 8).map((method) => (
+                      <code key={method}>{method}</code>
+                    ))}
+                  </span>
+                  <span className="language-library-category-card-cta">
+                    Open category <FaArrowRight aria-hidden="true" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="language-library-count">
+            {entries.length} reference {entries.length === 1 ? "card" : "cards"}
+          </div>
+
+          <div className="language-library-grid language-library-method-list">
+            {entries.map((entry) => (
+              <article key={entry.id} className="language-library-entry">
+                <div className="language-library-entry-head">
+                  <div className="language-library-entry-tags">
+                    {!currentCategory ? (
+                      <span className="language-library-category">
+                        {categoryLabel.get(entry.category) || entry.category}
+                      </span>
+                    ) : null}
+                    <span className="language-library-complexity">
+                      {entry.complexity}
+                    </span>
+                  </div>
+                  <h3>{entry.method_name}</h3>
+                  <code>{entry.syntax}</code>
+                </div>
+                <p>{entry.description}</p>
+                <button
+                  type="button"
+                  className="language-library-code-toggle"
+                  aria-expanded={openExamples.has(entry.id)}
+                  onClick={() => toggleExample(entry.id)}
+                >
+                  {openExamples.has(entry.id) ? "Hide example" : "View example"}
+                </button>
+                {openExamples.has(entry.id) ? (
+                  <div className="language-library-entry-details">
+                    <div className="language-library-detail-block">
+                      <span>Example</span>
+                      <pre className="language-library-example">
+                        <code>{entry.example}</code>
+                      </pre>
+                    </div>
+                    <div className="language-library-mistake">
+                      <span>Common mistake</span>
+                      <p>{entry.common_mistake}</p>
+                    </div>
+                    {entry.lesson_link?.category ? (
+                      <button
+                        type="button"
+                        className="language-library-related"
+                        onClick={() =>
+                          onOpenLesson(
+                            language,
+                            entry.lesson_link.category,
+                            entry.lesson_link.track || "beginner"
+                          )
+                        }
+                      >
+                        {entry.lesson_link.label || "Open related lesson"}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -280,6 +610,8 @@ export default function LearnMode({
   onNavigateToLanguage,
   onNavigateToTrack,
   onNavigateToLesson,
+  onNavigateToLibrary,
+  onNavigateToLibraryCategory,
   onPracticeCategory,
 }) {
   const [languages, setLanguages] = useState([]);
@@ -370,6 +702,33 @@ export default function LearnMode({
     );
   }
 
+  if (target.view === "library") {
+    return (
+      <LanguageLibraryView
+        apiBase={apiBase}
+        language={target.language}
+        languageLabel={labelFor(target.language)}
+        onBack={() => onNavigateToLanguage(target.language)}
+        onOpenCategory={onNavigateToLibraryCategory}
+        onOpenLesson={onNavigateToLesson}
+      />
+    );
+  }
+
+  if (target.view === "library-category") {
+    return (
+      <LanguageLibraryView
+        apiBase={apiBase}
+        language={target.language}
+        languageLabel={labelFor(target.language)}
+        categoryId={target.category}
+        onBack={() => onNavigateToLibrary(target.language)}
+        onOpenCategory={onNavigateToLibraryCategory}
+        onOpenLesson={onNavigateToLesson}
+      />
+    );
+  }
+
   if (loading) return <p className="cq-loading">Loading lessons…</p>;
   if (error) return <p className="cq-error">{error}</p>;
 
@@ -381,6 +740,7 @@ export default function LearnMode({
         categories={categories}
         onPick={onNavigateToTrack}
         onBack={onNavigateToLanguages}
+        onOpenLibrary={onNavigateToLibrary}
       />
     );
   }

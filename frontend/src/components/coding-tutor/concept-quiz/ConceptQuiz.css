@@ -1212,15 +1212,7 @@ body.coding-dark .cq-question-kind.group-parsons {
   position: relative;
 }
 .cq-runner-full::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  background: var(--ct-border);
-  pointer-events: none;
-  z-index: 1;
+  content: none;
 }
 /* Header bar split to mirror the columns below: tabs (left) | progress (right). */
 .cq-runner-top {
@@ -1242,6 +1234,7 @@ body.coding-dark .cq-question-kind.group-parsons {
   justify-content: center;
   gap: 0.3rem;
   padding: 0.45rem 1.75rem;
+  border-left: 1px solid var(--ct-border);
 }
 @media (max-width: 860px) {
   .cq-runner-top {
@@ -1310,6 +1303,9 @@ body.coding-dark .cq-question-kind.group-parsons {
   display: flex;
   flex-direction: column;
 }
+.cq-runner-right {
+  border-left: 1px solid var(--ct-border);
+}
 /* No per-pane borders — the continuous center line on .cq-runner-full::before
    draws the split, unbroken from header through footer. */
 /* The scrolling content area of each pane. */
@@ -1340,10 +1336,9 @@ body.coding-dark .cq-question-kind.group-parsons {
   }
 }
 
-/* Phones should read as one continuous quiz page, not two split panes. The
-   desktop runner draws a center divider with ::before and gives each pane its
-   own scroll area; both make 320-425px screens feel cut in half. */
-@media (max-width: 640px) {
+/* Narrow and tablet-width quiz screens should read as one continuous page. The
+   desktop divider and independent pane scrolling feel broken between 640-860px. */
+@media (max-width: 860px) {
   .coding-quiz-runner-active .cq-runner-full,
   .cq-runner-full {
     height: auto;
@@ -1358,6 +1353,10 @@ body.coding-dark .cq-question-kind.group-parsons {
     display: flex;
     flex-direction: column;
     border-bottom: 1px solid var(--ct-border);
+  }
+
+  .cq-runner-top-right {
+    border-left: 0;
   }
 
   .cq-runner-top-left,
@@ -1423,6 +1422,9 @@ body.coding-dark .cq-question-kind.group-parsons {
   .cq-question-tools {
     justify-content: flex-start;
   }
+}
+
+@media (max-width: 640px) {
 
   .cq-prompt {
     font-size: clamp(1.05rem, 5.6vw, 1.24rem);
@@ -1962,6 +1964,7 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   border: 1px solid var(--ct-border-strong);
   border-radius: 8px;
   cursor: grab;
+  min-width: 0;
 }
 .cq-parsons-line.locked {
   cursor: default;
@@ -1971,29 +1974,46 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   cursor: grabbing;
 }
 .cq-parsons-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   color: var(--ct-soft);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
 }
 .cq-parsons-line code {
   flex: 1;
+  min-width: 0;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.86rem;
-  white-space: pre;
-  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .cq-parsons-controls {
   display: flex;
   gap: 0.2rem;
+  flex: 0 0 auto;
 }
 .cq-parsons-controls button {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: 999px;
   border: 1px solid var(--ct-border);
   background: var(--ct-panel);
   color: var(--ct-text);
   cursor: pointer;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+}
+.cq-parsons-controls button:not(:disabled):hover {
+  border-color: var(--ct-primary);
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel));
 }
 .cq-parsons-controls button:disabled {
   opacity: 0.35;
@@ -2634,8 +2654,8 @@ body.coding-dark .cq-mistake-review-head > span {
   }
 
   .coding-app .cq-runner-right .cq-pane-body {
-    padding-top: 0.95rem;
-    padding-bottom: 1.25rem;
+    padding-top: 0.65rem;
+    padding-bottom: 0.75rem;
   }
 
   .coding-app .cq-runner-full.cq-tab-learn .cq-runner-left {
@@ -2655,11 +2675,13 @@ body.coding-dark .cq-mistake-review-head > span {
   }
 
   .coding-app .cq-question-panel {
-    display: flow-root;
+    display: block;
+    overflow: visible;
   }
 
   .coding-app .cq-question-tools {
     margin-bottom: 0.8rem;
+    justify-content: flex-end;
   }
 
   .coding-app .cq-prompt {
@@ -2667,6 +2689,7 @@ body.coding-dark .cq-mistake-review-head > span {
     margin: 0 0 0.85rem;
     font-size: clamp(1.05rem, 5.6vw, 1.24rem);
     line-height: 1.25;
+    overflow-wrap: anywhere;
   }
 
   .coding-app .cq-code {
@@ -2686,6 +2709,7 @@ body.coding-dark .cq-mistake-review-head > span {
   }
 
   .coding-app .cq-answer-heading {
+    clear: both;
     margin: 0 0 0.75rem;
     font-size: 0.92rem;
     line-height: 1.35;
@@ -2693,11 +2717,14 @@ body.coding-dark .cq-mistake-review-head > span {
 
   .coding-app .cq-choices {
     gap: 0.65rem;
+    min-width: 0;
   }
 
   .coding-app .cq-choice {
     min-height: 54px;
     padding: 0.78rem 0.9rem;
+    width: 100%;
+    min-width: 0;
   }
 
   .coding-app .cq-immediate-feedback {
@@ -2707,7 +2734,10 @@ body.coding-dark .cq-mistake-review-head > span {
 
   .coding-app .cq-pane-nav {
     position: static;
-    background: color-mix(in srgb, var(--ct-panel) 96%, transparent);
+    margin: 0 1rem 1rem;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--ct-border) 70%, transparent);
+    background: transparent;
     box-shadow: none;
   }
 }

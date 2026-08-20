@@ -23,7 +23,7 @@
           "kind": "visual",
           "title": "Indexes point to positions",
           "concept": "lists",
-          "caption": "Step through a vector slot by slot, then watch push_back claim the next index.",
+          "caption": "Step through a vector slot by slot, then push_back into the next index.",
           "initial_state": {},
           "steps": [
             {

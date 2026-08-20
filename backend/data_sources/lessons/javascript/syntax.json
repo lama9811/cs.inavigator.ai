@@ -134,7 +134,7 @@
         {
           "kind": "callout",
           "tone": "mistake",
-          "title": "Watch this detail",
+          "title": "Check this detail",
           "body": "An **unexpected end of input** often points to an earlier opening symbol that never received its matching closer."
         }
       ]

@@ -23,7 +23,7 @@
           "kind": "visual",
           "title": "Trace a full for loop",
           "concept": "loops",
-          "caption": "Watch setup, condition, body, and update repeat until the final condition fails.",
+          "caption": "Trace setup, condition, body, and update until the final condition fails.",
           "initial_state": {
             "loop_flow": {
               "setup": "total = 0, i = 0",
@@ -667,7 +667,7 @@
           "kind": "visual",
           "title": "Trace a while loop until it stops",
           "concept": "loops",
-          "caption": "Watch the condition, body, and update repeat until the condition finally fails.",
+          "caption": "Trace the condition, body, and update until the condition finally fails.",
           "initial_state": {
             "loop_flow": {
               "setup": "n = 3",
