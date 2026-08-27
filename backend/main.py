@@ -3603,6 +3603,51 @@ async def ripple_effect(user: dict = Depends(get_current_user), db: Session = De
 # ==============================================================================
 # NEXT-SEMESTER PLANNER - suggest 2-3 conflict-free schedules
 # ==============================================================================
+async def _discover_planner_terms_safe() -> tuple[list[dict], str | None]:
+    """Best-effort Banner term discovery; Planner must still work if Banner is down."""
+    try:
+        from banner_scraper import class_search
+        return await class_search.discover_planner_terms(), None
+    except Exception as e:
+        print(f"[SCHEDULE_TERMS] Banner term discovery failed: {e}")
+        return [], str(e)
+
+
+def _cached_live_terms_safe() -> list[str]:
+    try:
+        from services.live_schedule import list_live_terms
+        return list_live_terms()
+    except Exception as e:
+        print(f"[SCHEDULE_TERMS] Live term lookup failed: {e}")
+        return []
+
+
+def _planner_term_detail_map(static_terms: list[str], live_terms: list[str], discovered_terms: list[dict]) -> dict[str, dict]:
+    details: dict[str, dict] = {}
+    for term in static_terms:
+        details[term] = {"term": term, "source": "static", "discovered": False}
+    for term in live_terms:
+        existing = details.setdefault(term, {"term": term, "source": "live_cache", "discovered": False})
+        existing["has_live_cache"] = True
+        if existing.get("source") == "static":
+            existing["source"] = "static+live_cache"
+    for item in discovered_terms:
+        term = item.get("sem_key") or item.get("term")
+        if not term:
+            continue
+        existing = details.setdefault(term, {"term": term})
+        existing.update({
+            "term": term,
+            "term_code": item.get("term_code"),
+            "description": item.get("description"),
+            "view_only": bool(item.get("view_only")),
+            "discovered": True,
+            "source": "banner" if existing.get("source") in (None, "banner") else f"{existing.get('source')}+banner",
+            "needs_refresh": not existing.get("has_live_cache") and term not in static_terms,
+        })
+    return details
+
+
 @app.get("/api/planning/next-semester")
 async def planning_next_semester(
     semester: str = Query(None),
@@ -3641,17 +3686,33 @@ async def planning_next_semester(
         asyncio.to_thread(_fetch_canvas_sync, uid),
     )
 
-    # Chronologically-ordered list of semesters we have schedule data for.
+    # Chronologically-ordered list of semesters Planner can show: static files,
+    # cached live terms, and Banner-discovered future terms.
     from services.schedule_planner import _parse_semester_key
+    discovered_terms, term_discovery_error = await _discover_planner_terms_safe()
+    live_terms = _cached_live_terms_safe()
     available_all = sorted(
-        [k for k in _SCHEDULES.keys() if _parse_semester_key(k)],
+        {
+            k for k in [
+                *_SCHEDULES.keys(),
+                *live_terms,
+                *[item.get("sem_key") or item.get("term") for item in discovered_terms],
+            ]
+            if k and _parse_semester_key(k)
+        },
         key=_parse_semester_key,
     )
     available = future_planner_semesters(available_all)
+    available_details = _planner_term_detail_map(list(_SCHEDULES.keys()), live_terms, discovered_terms)
 
     # DegreeWorks not connected -> can't know remaining requirements/eligibility.
     if not dw_dict:
-        return {"connected": False, "available_semesters": available}
+        return {
+            "connected": False,
+            "available_semesters": available,
+            "available_semester_details": available_details,
+            "term_discovery_error": term_discovery_error,
+        }
 
     graph = build_prerequisite_graph(dw_dict, canvas_dict)
     eligible = eligible_courses(graph)
@@ -3860,6 +3921,8 @@ async def planning_next_semester(
         "connected": True,
         "semester": sem_key,
         "available_semesters": available,
+        "available_semester_details": available_details,
+        "term_discovery_error": term_discovery_error,
         "classification": classification,
         "credits_remaining": dw_dict.get("credits_remaining"),
         "degreeworks_context": _planner_degreeworks_context(dw_dict, registered_courses, registered_term_key),
@@ -4024,19 +4087,8 @@ async def delete_saved_planner_plan(
     return {"deleted": True, "client_id": client_id}
 
 
-async def _run_schedule_refresh(term: str | None = None, subjects: str | None = None, include_geneds: bool = True):
+async def _refresh_schedule_term(sem_key: str, term_code: str, subjects: str | None, include_geneds: bool):
     from banner_scraper import class_search
-
-    if term:
-        term_code = await class_search.resolve_term_code(term)
-        if not term_code:
-            return {"status": "error", "reason": f"could not resolve {term} from Banner"}
-        sem_key = term
-    else:
-        active = await class_search.resolve_active_term()
-        if not active:
-            return {"status": "error", "reason": "could not resolve active term from Banner"}
-        term_code, sem_key = active
 
     counts: dict[str, int] = {}
     skipped: dict[str, int] = {}
@@ -4095,12 +4147,61 @@ async def _run_schedule_refresh(term: str | None = None, subjects: str | None = 
     }
 
 
+async def _run_schedule_refresh(
+    term: str | None = None,
+    subjects: str | None = None,
+    include_geneds: bool = True,
+    terms_limit: int = 1,
+):
+    from banner_scraper import class_search
+
+    if term:
+        term_code = await class_search.resolve_term_code(term)
+        if not term_code:
+            return {"status": "error", "reason": f"could not resolve {term} from Banner"}
+        return await _refresh_schedule_term(term, term_code, subjects, include_geneds)
+
+    discovered = await class_search.discover_planner_terms()
+    refreshable = [item for item in discovered if item.get("sem_key") and item.get("term_code")]
+    limit = max(1, min(int(terms_limit or 1), 4))
+    if not refreshable:
+        active = await class_search.resolve_active_term()
+        if not active:
+            return {"status": "error", "reason": "could not resolve active term from Banner"}
+        term_code, sem_key = active
+        return await _refresh_schedule_term(sem_key, term_code, subjects, include_geneds)
+
+    results = [
+        await _refresh_schedule_term(item["sem_key"], item["term_code"], subjects, include_geneds)
+        for item in refreshable[:limit]
+    ]
+    if len(results) == 1:
+        return results[0]
+
+    errors = [err for result in results for err in result.get("errors", [])]
+    status_text = "partial" if any(result.get("status") == "partial" for result in results) else (
+        "error" if all(result.get("status") == "error" for result in results) else "ok"
+    )
+    return {
+        "status": status_text,
+        "terms": results,
+        "term": results[0].get("term"),
+        "term_code": results[0].get("term_code"),
+        "requested_subjects": results[0].get("requested_subjects", []),
+        "subjects": {result.get("term"): result.get("subjects", {}) for result in results},
+        "skipped_subjects": {result.get("term"): result.get("skipped_subjects", {}) for result in results},
+        "errors": errors,
+        "total_sections": sum(result.get("total_sections", 0) for result in results),
+    }
+
+
 @app.post("/api/internal/schedule/refresh")
 async def internal_schedule_refresh(
     request: Request,
     term: str | None = Query(None),
     subjects: str | None = Query(None),
     include_geneds: bool = Query(True),
+    terms_limit: int = Query(1),
 ):
     """Triggered every ~6h by Cloud Scheduler. Pulls live section + seat data from
     Banner "Browse Classes" (public, no login) for the active registerable term and
@@ -4111,7 +4212,7 @@ async def internal_schedule_refresh(
     a DB write that fails rolls back (delete + insert together) leaving the old
     snapshot in place. One subject never breaks the others."""
     _require_research_secret(request)
-    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds)
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit)
 
 
 @app.get("/api/admin/schedule/status")
@@ -4143,14 +4244,36 @@ async def admin_schedule_status(
             bucket["last_refresh"] = aware_last
 
     from services.live_schedule import FRESH_HOURS
+    from services.schedule_planner import _parse_semester_key
+    discovered_terms, discovery_error = await _discover_planner_terms_safe()
+    discovered_by_key = {item.get("sem_key") or item.get("term"): item for item in discovered_terms}
+    if term:
+        discovered_by_key = {key: value for key, value in discovered_by_key.items() if key == term}
+    for sem_key, item in discovered_by_key.items():
+        if not sem_key:
+            continue
+        bucket = terms.setdefault(sem_key, {"term": sem_key, "subjects": {}, "total_sections": 0, "last_refresh": None})
+        bucket["term_code"] = item.get("term_code")
+        bucket["description"] = item.get("description")
+        bucket["view_only"] = bool(item.get("view_only"))
+        bucket["discovered"] = True
+        bucket["needs_refresh"] = bucket["total_sections"] == 0
+
     now = datetime.now(timezone.utc)
     term_list = []
     for item in terms.values():
         aware_last = item["last_refresh"]
         item["last_refresh"] = aware_last.isoformat() if aware_last else None
         item["fresh"] = bool(aware_last and now - aware_last <= timedelta(hours=FRESH_HOURS))
+        item["needs_refresh"] = bool(item.get("needs_refresh") or not item["fresh"])
         term_list.append(item)
-    return {"status": "ok", "terms": term_list, "fresh_hours": FRESH_HOURS}
+    term_list.sort(key=lambda row: _parse_semester_key(row["term"]) or (9999, 99))
+    return {
+        "status": "ok",
+        "terms": term_list,
+        "fresh_hours": FRESH_HOURS,
+        "term_discovery_error": discovery_error,
+    }
 
 
 @app.post("/api/admin/schedule/refresh")
@@ -4158,11 +4281,12 @@ async def admin_schedule_refresh(
     term: str | None = Query(None),
     subjects: str | None = Query(None),
     include_geneds: bool = Query(True),
+    terms_limit: int = Query(1),
     user: dict = Depends(get_current_user),
 ):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds)
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit)
 
 
 # ==============================================================================

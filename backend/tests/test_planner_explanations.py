@@ -138,6 +138,10 @@ def test_planner_endpoint_returns_explanations_and_future_terms(monkeypatch):
         "fresh_hours": 24,
         "subject_count": 3,
     })
+    async def no_discovered_terms():
+        return [], None
+    monkeypatch.setattr(main, "_discover_planner_terms_safe", no_discovered_terms)
+    monkeypatch.setattr(main, "_cached_live_terms_safe", lambda: [])
     monkeypatch.setattr(main, "_fetch_canvas_sync", lambda _uid: None)
     monkeypatch.setattr(main, "_fetch_dw_sync", lambda _uid: {
         "classification": "Senior",
@@ -206,3 +210,55 @@ def test_planner_endpoint_returns_explanations_and_future_terms(monkeypatch):
     assert course["requirement_match"]
     assert isinstance(course["risk_flags"], list)
     assert isinstance(course["alternatives"], list)
+
+
+def test_planner_endpoint_includes_banner_discovered_future_term(monkeypatch):
+    monkeypatch.setattr(live_schedule, "get_live_sections", lambda _sem: (None, None))
+    monkeypatch.setattr(live_schedule, "get_live_sections_status", lambda _sem: {
+        "status": "static",
+        "as_of": None,
+        "fresh": False,
+        "fresh_hours": 24,
+        "subject_count": 0,
+    })
+    async def discovered_terms():
+        return [{
+            "term": "spring_2027",
+            "sem_key": "spring_2027",
+            "term_code": "202710",
+            "description": "Spring 2027",
+            "view_only": False,
+            "source": "banner",
+        }], None
+    monkeypatch.setattr(main, "_discover_planner_terms_safe", discovered_terms)
+    monkeypatch.setattr(main, "_cached_live_terms_safe", lambda: [])
+    monkeypatch.setattr(main, "_fetch_canvas_sync", lambda _uid: None)
+    monkeypatch.setattr(main, "_fetch_dw_sync", lambda _uid: {
+        "classification": "Senior",
+        "credits_remaining": 60,
+        "courses_completed": "[]",
+        "courses_in_progress": "[]",
+        "minor": "",
+        "banner": {},
+    })
+    monkeypatch.setattr(main, "build_prerequisite_graph", lambda _dw, _canvas: {
+        "nodes": [
+            {"id": "COSC 352", "name": "Organization of Programming Languages", "credits": 3,
+             "category": "Required", "status": "future", "blocked_by": [], "unlocks": [],
+             "sequence": 5},
+        ],
+        "edges": [],
+    })
+
+    result = asyncio.run(main.planning_next_semester(
+        semester=None,
+        time_pref="any",
+        max_credits=15,
+        interests="",
+        variant=0,
+        user={"user_id": 1},
+    ))
+
+    assert "spring_2027" in result["available_semesters"]
+    assert result["available_semester_details"]["spring_2027"]["term_code"] == "202710"
+    assert result["available_semester_details"]["spring_2027"]["needs_refresh"] is True

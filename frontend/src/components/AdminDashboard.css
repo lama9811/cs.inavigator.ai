@@ -1899,7 +1899,7 @@ body.dark .result-match mark {
 
 .schedule-controls {
   display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(220px, 1.4fr) auto auto;
+  grid-template-columns: minmax(170px, 0.9fr) minmax(220px, 1.35fr) minmax(130px, 0.75fr) auto auto;
   gap: 12px;
   align-items: end;
 }
@@ -1913,7 +1913,8 @@ body.dark .result-match mark {
   font-weight: 700;
 }
 
-.schedule-controls input {
+.schedule-controls input,
+.schedule-controls select {
   min-height: 40px;
   padding: 9px 11px;
   border: 1px solid var(--border-color);
