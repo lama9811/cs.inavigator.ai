@@ -666,6 +666,24 @@ class LiveSection(Base):
     fetched_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
 
 
+class ScheduleRefreshRun(Base):
+    """Audit log for manual/admin and Cloud Scheduler live schedule refreshes."""
+    __tablename__ = "schedule_refresh_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source = Column(String(32), nullable=False, default="manual")  # manual | scheduler
+    status = Column(String(32), nullable=False, default="unknown")  # ok | partial | error
+    term = Column(String(32), nullable=True, index=True)
+    terms_json = Column(Text, nullable=True)
+    requested_subjects_json = Column(Text, nullable=True)
+    subject_counts_json = Column(Text, nullable=True)
+    skipped_subjects_json = Column(Text, nullable=True)
+    errors_json = Column(Text, nullable=True)
+    total_sections = Column(Integer, nullable=False, default=0)
+    started_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    finished_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+
 class AdvisingFormDraft(Base):
     """Per-user saved draft of the advising section forms (Internship + Advising).
     One row per user; `forms_json` holds a JSON object of { form_id: {field: value} }.

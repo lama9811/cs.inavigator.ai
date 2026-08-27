@@ -150,7 +150,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, ScheduleRefreshRun, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -4147,19 +4147,107 @@ async def _refresh_schedule_term(sem_key: str, term_code: str, subjects: str | N
     }
 
 
+def _safe_schedule_json(value) -> str:
+    try:
+        return json.dumps(value or [], default=str)
+    except Exception:
+        return "[]"
+
+
+def _serialize_schedule_refresh_run(row: ScheduleRefreshRun | None) -> dict | None:
+    if not row:
+        return None
+
+    def _loads(raw, fallback):
+        if not raw:
+            return fallback
+        try:
+            return json.loads(raw)
+        except Exception:
+            return fallback
+
+    return {
+        "id": row.id,
+        "source": row.source,
+        "status": row.status,
+        "term": row.term,
+        "terms": _loads(row.terms_json, []),
+        "requested_subjects": _loads(row.requested_subjects_json, []),
+        "subjects": _loads(row.subject_counts_json, {}),
+        "skipped_subjects": _loads(row.skipped_subjects_json, {}),
+        "errors": _loads(row.errors_json, []),
+        "total_sections": row.total_sections,
+        "started_at": row.started_at.isoformat() if row.started_at else None,
+        "finished_at": row.finished_at.isoformat() if row.finished_at else None,
+    }
+
+
+def _record_schedule_refresh_run(result: dict, source: str, started_at: datetime):
+    db = SessionLocal()
+    try:
+        term_results = result.get("terms") if isinstance(result.get("terms"), list) else []
+        terms = [
+            {
+                "term": item.get("term"),
+                "term_code": item.get("term_code"),
+                "status": item.get("status"),
+                "total_sections": item.get("total_sections", 0),
+            }
+            for item in term_results
+        ] or ([{
+            "term": result.get("term"),
+            "term_code": result.get("term_code"),
+            "status": result.get("status"),
+            "total_sections": result.get("total_sections", 0),
+        }] if result.get("term") else [])
+        row = ScheduleRefreshRun(
+            source=source,
+            status=result.get("status") or "unknown",
+            term=result.get("term"),
+            terms_json=_safe_schedule_json(terms),
+            requested_subjects_json=_safe_schedule_json(result.get("requested_subjects", [])),
+            subject_counts_json=_safe_schedule_json(result.get("subjects", {})),
+            skipped_subjects_json=_safe_schedule_json(result.get("skipped_subjects", {})),
+            errors_json=_safe_schedule_json(result.get("errors", [])),
+            total_sections=int(result.get("total_sections") or 0),
+            started_at=started_at,
+            finished_at=datetime.now(timezone.utc),
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        result["refresh_run"] = _serialize_schedule_refresh_run(row)
+    except Exception as e:
+        db.rollback()
+        print(f"[SCHEDULE_REFRESH] run summary write failed: {e}")
+    finally:
+        db.close()
+    return result
+
+
 async def _run_schedule_refresh(
     term: str | None = None,
     subjects: str | None = None,
     include_geneds: bool = True,
     terms_limit: int = 1,
+    source: str = "manual",
 ):
     from banner_scraper import class_search
 
+    started_at = datetime.now(timezone.utc)
     if term:
         term_code = await class_search.resolve_term_code(term)
         if not term_code:
-            return {"status": "error", "reason": f"could not resolve {term} from Banner"}
-        return await _refresh_schedule_term(term, term_code, subjects, include_geneds)
+            return _record_schedule_refresh_run(
+                {"status": "error", "term": term, "reason": f"could not resolve {term} from Banner", "errors": [{"term": term, "stage": "resolve", "error": f"could not resolve {term} from Banner"}]},
+                source,
+                started_at,
+            )
+        return _record_schedule_refresh_run(
+            await _refresh_schedule_term(term, term_code, subjects, include_geneds),
+            source,
+            started_at,
+        )
 
     discovered = await class_search.discover_planner_terms()
     refreshable = [item for item in discovered if item.get("sem_key") and item.get("term_code")]
@@ -4167,22 +4255,34 @@ async def _run_schedule_refresh(
     if not refreshable:
         active = await class_search.resolve_active_term()
         if not active:
-            return {"status": "error", "reason": "could not resolve active term from Banner"}
+            return _record_schedule_refresh_run(
+                {"status": "error", "reason": "could not resolve active term from Banner", "errors": [{"stage": "resolve", "error": "could not resolve active term from Banner"}]},
+                source,
+                started_at,
+            )
         term_code, sem_key = active
-        return await _refresh_schedule_term(sem_key, term_code, subjects, include_geneds)
+        return _record_schedule_refresh_run(
+            await _refresh_schedule_term(sem_key, term_code, subjects, include_geneds),
+            source,
+            started_at,
+        )
 
     results = [
         await _refresh_schedule_term(item["sem_key"], item["term_code"], subjects, include_geneds)
         for item in refreshable[:limit]
     ]
     if len(results) == 1:
-        return results[0]
+        return _record_schedule_refresh_run(results[0], source, started_at)
 
     errors = [err for result in results for err in result.get("errors", [])]
-    status_text = "partial" if any(result.get("status") == "partial" for result in results) else (
-        "error" if all(result.get("status") == "error" for result in results) else "ok"
+    status_text = (
+        "error"
+        if all(result.get("status") == "error" for result in results)
+        else "partial"
+        if any(result.get("status") in {"partial", "error"} for result in results)
+        else "ok"
     )
-    return {
+    return _record_schedule_refresh_run({
         "status": status_text,
         "terms": results,
         "term": results[0].get("term"),
@@ -4192,7 +4292,7 @@ async def _run_schedule_refresh(
         "skipped_subjects": {result.get("term"): result.get("skipped_subjects", {}) for result in results},
         "errors": errors,
         "total_sections": sum(result.get("total_sections", 0) for result in results),
-    }
+    }, source, started_at)
 
 
 @app.post("/api/internal/schedule/refresh")
@@ -4212,7 +4312,7 @@ async def internal_schedule_refresh(
     a DB write that fails rolls back (delete + insert together) leaving the old
     snapshot in place. One subject never breaks the others."""
     _require_research_secret(request)
-    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit)
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit, source="scheduler")
 
 
 @app.get("/api/admin/schedule/status")
@@ -4233,6 +4333,19 @@ async def admin_schedule_status(
     if term:
         query = query.filter(LiveSection.term == term)
     rows = query.group_by(LiveSection.term, LiveSection.subject).order_by(LiveSection.term, LiveSection.subject).all()
+    recent_runs = (
+        db.query(ScheduleRefreshRun)
+        .order_by(ScheduleRefreshRun.finished_at.desc())
+        .limit(5)
+        .all()
+    )
+    latest_run = recent_runs[0] if recent_runs else None
+    latest_success = (
+        db.query(ScheduleRefreshRun)
+        .filter(ScheduleRefreshRun.status.in_(["ok", "partial"]), ScheduleRefreshRun.total_sections > 0)
+        .order_by(ScheduleRefreshRun.finished_at.desc())
+        .first()
+    )
 
     terms: dict[str, dict] = {}
     for sem_key, subject, row_count, last_refresh in rows:
@@ -4273,6 +4386,9 @@ async def admin_schedule_status(
         "terms": term_list,
         "fresh_hours": FRESH_HOURS,
         "term_discovery_error": discovery_error,
+        "latest_refresh_run": _serialize_schedule_refresh_run(latest_run),
+        "latest_successful_refresh_run": _serialize_schedule_refresh_run(latest_success),
+        "recent_refresh_runs": [_serialize_schedule_refresh_run(row) for row in recent_runs],
     }
 
 
@@ -4286,7 +4402,7 @@ async def admin_schedule_refresh(
 ):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit)
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit, source="manual")
 
 
 # ==============================================================================

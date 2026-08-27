@@ -56,6 +56,14 @@ const scheduleAge = (iso) => {
   return `${Math.round(hrs / 24)}d ago`;
 };
 
+const scheduleRunLabel = (run) => {
+  if (!run) return "No refresh attempts recorded";
+  const source = run.source === "scheduler" ? "Cloud Scheduler" : "Manual";
+  const status = run.status ? run.status.toUpperCase() : "UNKNOWN";
+  const when = run.finished_at ? scheduleAge(run.finished_at) : "unknown time";
+  return `${source} ${status}: ${when}`;
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -410,7 +418,7 @@ export default function AdminDashboard() {
           total_sections: item.total_sections || 0,
           last_refresh: item.last_refresh || new Date().toISOString(),
           fresh: true,
-        })), errors: payload.errors || [], skipped_subjects: payload.skipped_subjects || [], fresh_hours: 24 });
+        })), errors: payload.errors || [], skipped_subjects: payload.skipped_subjects || [], fresh_hours: 24, latest_refresh_run: payload.refresh_run || null });
       } else {
         toast.error("Schedule refresh failed", { description: payload.detail || payload.reason || "Banner refresh did not complete." });
       }
@@ -2295,6 +2303,35 @@ export default function AdminDashboard() {
                       <FaCalendarPlus size={14} className={scheduleRefreshing ? "spinning" : ""} />
                       {scheduleRefreshing ? "Refreshing..." : "Refresh schedule"}
                     </button>
+                  </div>
+
+                  <div className="schedule-run-summary">
+                    <div>
+                      <span>Latest refresh attempt</span>
+                      <strong>{scheduleRunLabel(scheduleStatus?.latest_refresh_run)}</strong>
+                      {scheduleStatus?.latest_refresh_run?.finished_at && (
+                        <small>{new Date(scheduleStatus.latest_refresh_run.finished_at).toLocaleString()}</small>
+                      )}
+                    </div>
+                    <div>
+                      <span>Latest successful save</span>
+                      <strong>{scheduleRunLabel(scheduleStatus?.latest_successful_refresh_run)}</strong>
+                      {scheduleStatus?.latest_successful_refresh_run?.total_sections ? (
+                        <small>{scheduleStatus.latest_successful_refresh_run.total_sections} sections saved</small>
+                      ) : (
+                        <small>No saved automated snapshot yet</small>
+                      )}
+                    </div>
+                    {(scheduleStatus?.recent_refresh_runs || []).length > 0 && (
+                      <div>
+                        <span>Recent jobs</span>
+                        <div className="schedule-run-list">
+                          {scheduleStatus.recent_refresh_runs.slice(0, 3).map((run) => (
+                            <small key={run.id}>{scheduleRunLabel(run)} - {run.total_sections || 0} sections</small>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="schedule-status-grid">

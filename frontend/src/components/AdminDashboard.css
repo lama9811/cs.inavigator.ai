@@ -1951,6 +1951,45 @@ body.dark .result-match mark {
   line-height: 1.45;
 }
 
+.schedule-run-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.schedule-run-summary > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: rgba(44, 74, 124, 0.06);
+}
+
+.schedule-run-summary span {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.schedule-run-summary strong {
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.schedule-run-summary small {
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+}
+
+.schedule-run-list {
+  display: grid;
+  gap: 4px;
+}
+
 .schedule-status-card {
   padding: 14px;
   border: 1px solid var(--border-color);

@@ -25,6 +25,12 @@ SKIP_PATTERNS = re.compile(
     re.IGNORECASE
 )
 
+HANDLED_BROAD_VALUE_PATTERNS = re.compile(
+    r"\b(?:prospective|future|incoming)\s+students?\b.*\b(?:value|help|offer|benefit|useful)\b|"
+    r"\b(?:value|help|offer|benefit|useful)\b.*\b(?:prospective|future|incoming)\s+students?\b",
+    re.IGNORECASE,
+)
+
 # Lightweight fallback patterns: only used when grounding metadata is unavailable
 # (e.g. legacy non-ADK path). These are deliberately narrow to avoid false positives.
 # Match responses where the agent explicitly says it has NO information.
@@ -62,6 +68,11 @@ def detect_and_log_failed_query(user_query: str, bot_response: str, user_id: int
 
     # Skip short or greeting queries
     if len(query) < 15 or SKIP_PATTERNS.match(query):
+        return False
+
+    # Broad product/advising value questions are answerable from CS Navigator's
+    # existing positioning. They are not evidence that the Morgan KB lacks a fact.
+    if HANDLED_BROAD_VALUE_PATTERNS.search(query):
         return False
 
     # Skip security refusals (not a KB miss, just off-topic/injection)
