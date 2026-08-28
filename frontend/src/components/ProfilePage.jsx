@@ -176,6 +176,9 @@ export default function ProfilePage({ userEmail, onLogout }) {
         const data = await response.json();
         if (data.connected && data.data) {
           setDegreeWorksData(data.data);
+          if (data.data.degree_program) {
+            setProfile(prev => ({ ...prev, major: data.data.degree_program, morganConnected: true }));
+          }
         }
       }
     } catch (error) {
@@ -680,11 +683,9 @@ export default function ProfilePage({ userEmail, onLogout }) {
                 onChange={(e) => setProfile({ ...profile, major: e.target.value })}
                 disabled={!isEditing}
               >
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Systems">Information Systems</option>
-                <option value="Cybersecurity">Cybersecurity</option>
-                <option value="Software Engineering">Software Engineering</option>
-                <option value="Data Science">Data Science</option>
+                <option value="Bachelor of Science in Computer Science">Computer Science</option>
+                <option value="Bachelor of Science in Artificial Intelligence">Artificial Intelligence</option>
+                <option value="Bachelor of Science in Cloud Computing">Cloud Computing</option>
               </select>
             </div>
 

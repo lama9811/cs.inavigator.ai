@@ -121,7 +121,7 @@ def test_gened_candidate_subjects_include_expected_planner_subjects():
 
 def test_refresh_subjects_combines_cs_and_gened_without_duplicates(monkeypatch):
     monkeypatch.setattr(class_search, "gened_candidate_subjects", lambda: ["PHIL", "COSC", "ENGL"])
-    assert class_search.refresh_subjects() == ["COSC", "BIOI", "CLCO", "PHIL", "ENGL"]
+    assert class_search.refresh_subjects() == ["COSC", "BIOI", "CLCO", "MATH", "MGBU", "PHIL", "ENGL"]
     assert class_search.refresh_subjects("phil, soci COSC", include_geneds=False) == ["PHIL", "SOCI", "COSC"]
 
 

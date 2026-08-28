@@ -7,6 +7,7 @@ import json
 import os
 from typing import Optional
 from .course_utils import normalize_course_code, extract_course_codes
+from .degree_profiles import curriculum_for_degree_program, curriculum_for_profile, degree_profile_from_dw
 
 
 # Courses whose prereq lists are OR (alternatives), not AND (all required).
@@ -75,11 +76,32 @@ def parse_prerequisites(prereq_list: list[str], course_code: str = "") -> dict:
     }
 
 
-def load_curriculum(data_dir: str = None) -> list[dict]:
+def load_curriculum(data_dir: str = None, profile_key: str = None) -> list[dict]:
     """Load and parse classes.json curriculum data.
 
     Returns list of course dicts with parsed prerequisites.
     """
+    if profile_key:
+        data = curriculum_for_profile(profile_key)
+        courses = data.get("courses", [])
+        return [
+            {
+                "code": normalize_course_code(c.get("course_code", "")),
+                "name": c.get("course_name", ""),
+                "credits": c.get("credits", 0),
+                "category": c.get("category", ""),
+                "requirement_type": c.get("requirement_type", ""),
+                "offered": c.get("offered", []),
+                "sequence": c.get("sequence"),
+                "prerequisites": parse_prerequisites(
+                    c.get("prerequisites", []),
+                    c.get("course_code", "")
+                ),
+            }
+            for c in courses
+            if normalize_course_code(c.get("course_code", ""))
+        ]
+
     if data_dir is None:
         data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data_sources")
 
@@ -96,6 +118,7 @@ def load_curriculum(data_dir: str = None) -> list[dict]:
             "category": c.get("category", ""),
             "requirement_type": c.get("requirement_type", ""),
             "offered": c.get("offered", []),
+            "sequence": c.get("sequence"),
             "prerequisites": parse_prerequisites(
                 c.get("prerequisites", []),
                 c.get("course_code", "")
@@ -107,16 +130,17 @@ def load_curriculum(data_dir: str = None) -> list[dict]:
 
 
 # Cache the static curriculum (doesn't change at runtime)
-_curriculum_cache = None
+_curriculum_cache = {}
 
-def _get_curriculum() -> list[dict]:
+def _get_curriculum(profile_key: str = None) -> list[dict]:
     global _curriculum_cache
-    if _curriculum_cache is None:
-        _curriculum_cache = load_curriculum()
-    return _curriculum_cache
+    key = profile_key or "__default__"
+    if key not in _curriculum_cache:
+        _curriculum_cache[key] = load_curriculum(profile_key=profile_key)
+    return _curriculum_cache[key]
 
 
-def build_prerequisite_graph(dw_dict: Optional[dict], canvas_dict: Optional[dict]) -> dict:
+def build_prerequisite_graph(dw_dict: Optional[dict], canvas_dict: Optional[dict], profile_key: str = None) -> dict:
     """Build the full prerequisite dependency graph with student status overlay.
 
     Args:
@@ -126,7 +150,18 @@ def build_prerequisite_graph(dw_dict: Optional[dict], canvas_dict: Optional[dict
     Returns:
         {nodes, edges, danger_paths, stats}
     """
-    curriculum = _get_curriculum()
+    profile = degree_profile_from_dw(dw_dict)
+    selected_profile_key = profile_key or profile.get("key")
+    curriculum = _get_curriculum(selected_profile_key)
+    if selected_profile_key:
+        profile_curriculum = curriculum_for_profile(selected_profile_key)
+        profile = profile_curriculum.get("degree_profile", profile)
+    elif dw_dict:
+        profile_curriculum = curriculum_for_degree_program(
+            dw_dict.get("degree_program"),
+            dw_dict.get("catalog_year"),
+        )
+        profile = profile_curriculum.get("degree_profile", profile)
 
     # Build completed/in-progress maps from DegreeWorks
     completed_map = {}  # code -> grade
@@ -190,7 +225,8 @@ def build_prerequisite_graph(dw_dict: Optional[dict], canvas_dict: Optional[dict
             "credits": course["credits"],
             "category": course["category"],
             "offered": course["offered"],
-            "sequence": CURRICULUM_SEQUENCE.get(code),  # curriculum-sequence semester (1-8), or None
+            "sequence": course.get("sequence") or CURRICULUM_SEQUENCE.get(code),
+            "degree_profile_key": selected_profile_key,
             "status": status,
             "current_score": current_score,
             "grade": grade,
@@ -261,6 +297,7 @@ def build_prerequisite_graph(dw_dict: Optional[dict], canvas_dict: Optional[dict
     }
 
     return {
+        "degree_profile": profile,
         "nodes": nodes,
         "edges": edges,
         "danger_paths": danger_paths,

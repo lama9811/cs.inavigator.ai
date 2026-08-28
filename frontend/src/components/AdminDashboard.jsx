@@ -209,10 +209,9 @@ export default function AdminDashboard() {
 
   const loadCourses = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/curriculum`);
+      const res = await fetch(`${API_BASE}/api/admin/courses`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
-        // API returns {degree_info, courses, elective_requirements} - extract just courses array
         setCourses(data.courses || data || []);
       }
     } catch (err) { console.error("Failed to load courses:", err); }

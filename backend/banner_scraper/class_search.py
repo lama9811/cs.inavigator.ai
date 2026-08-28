@@ -30,8 +30,9 @@ BANNER_SSB_BASE = os.getenv("BANNER_SSB_BASE", "https://lbssb1nprod.morgan.edu")
 _REG = f"{BANNER_SSB_BASE}/StudentRegistrationSsb/ssb"
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data_sources"
 
-# Subjects the CS planner cares about.
-CS_SUBJECTS = ["COSC", "BIOI", "CLCO"]
+# Subjects the CS/AI planner cares about by default. GenEd subjects are added
+# separately, and admins can still override this list for a one-off refresh.
+CS_SUBJECTS = ["COSC", "BIOI", "CLCO", "MATH", "MGBU"]
 MIN_PLANNER_SEMESTER = "fall_2026"
 
 _HTTP_TIMEOUT = httpx.Timeout(30.0)

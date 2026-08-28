@@ -1228,9 +1228,26 @@ DATA_DIR       = os.path.join(BACKEND_DIR, "data_sources")
 CLASSES_FILE   = os.path.join(DATA_DIR, "classes.json")
 KB_COURSES_FILE = os.path.join(DATA_DIR, "courses.txt")
 RESOURCES_FILE = os.path.join(DATA_DIR, "academic_resources.json")
+KB_STRUCTURED_DIR = os.path.join(BACKEND_DIR, "kb_structured")
 
 # Cached parsed curriculum from txt source of truth
 _parsed_curriculum = None
+
+def _load_classes_catalog() -> dict:
+    try:
+        data = json.load(open(CLASSES_FILE, encoding="utf-8"))
+    except FileNotFoundError:
+        return {"courses": []}
+    if isinstance(data, dict):
+        data.setdefault("courses", [])
+        return data
+    if isinstance(data, list):
+        return {"courses": data}
+    return {"courses": []}
+
+
+def _save_classes_catalog(data: dict) -> None:
+    json.dump(data, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
 
 def parse_curriculum_from_txt():
     """Parse courses.txt into the structured JSON format the frontend expects.
@@ -2720,6 +2737,7 @@ async def upload_degreeworks_pdf(
 
         # Try to parse specific fields (best effort)
         data = parse_degreeworks_pdf(pdf_text)
+        audit_type = data.pop("_audit_type", None)
 
         # CRITICAL: Always store the raw PDF text - this is used for chat context injection
         data['raw_data'] = pdf_text[:50000]  # Store up to 50k chars
@@ -2727,10 +2745,22 @@ async def upload_degreeworks_pdf(
         # Get or create DegreeWorks record
         db_user = db.query(User).filter(User.id == user["user_id"]).first()
         existing = db.query(DegreeWorksData).filter(DegreeWorksData.user_id == user["user_id"]).first()
+        preserve_course_history = False
 
         if existing:
-            # Update existing - ALWAYS update raw_data
-            existing.raw_data = data['raw_data']
+            # What-If audits can omit prior work, so keep the student's
+            # existing official course history instead of replacing it with a
+            # partial hypothetical view.
+            preserve_course_history = audit_type == "what_if" and (
+                bool(existing.courses_completed) or bool(existing.courses_in_progress)
+            )
+            if preserve_course_history:
+                data.pop("courses_completed", None)
+                data.pop("courses_in_progress", None)
+                data.pop("raw_data", None)
+            else:
+                # Update existing - ALWAYS update raw_data for regular audits.
+                existing.raw_data = data['raw_data']
             for key, value in data.items():
                 if value is not None and hasattr(existing, key):
                     setattr(existing, key, value)
@@ -2747,6 +2777,8 @@ async def upload_degreeworks_pdf(
         # Update user name if found
         if data.get('student_name') and not db_user.name:
             db_user.name = data['student_name']
+        if data.get('degree_program') and hasattr(db_user, 'major'):
+            db_user.major = data['degree_program']
 
         db.commit()
 
@@ -2765,6 +2797,8 @@ async def upload_degreeworks_pdf(
                 "degree_program": data.get('degree_program'),
                 "overall_gpa": data.get('overall_gpa'),
                 "total_credits_earned": data.get('total_credits_earned'),
+                "audit_type": audit_type or "regular",
+                "preserved_existing_courses": preserve_course_history,
                 "pdf_text_length": len(pdf_text),
                 "pdf_stored": True
             }
@@ -2816,6 +2850,7 @@ def parse_degreeworks_pdf(text: str) -> dict:
     clean_text = '\n'.join(clean_lines)
     # Also make a single-line version for multi-line course matching
     collapsed = ' '.join(clean_lines)
+    all_collapsed = ' '.join(line.strip() for line in lines if line.strip())
 
     print("=" * 60)
     print(f"PDF: {len(text)} chars raw -> {len(clean_text)} chars cleaned")
@@ -2868,11 +2903,21 @@ def parse_degreeworks_pdf(text: str) -> dict:
 
     # Degree program: "Degree Bachelor of Science" + "Major Computer Science"
     degree_match = re.search(r'Degree\s+(Bachelor\s+of\s+\w+|Master\s+of\s+\w+)', text)
+    if not degree_match:
+        degree_match = re.search(r'\b(Bachelor\s+of\s+\w+|Master\s+of\s+\w+)\b', clean_text)
     major_match = re.search(r'Major\s+([A-Za-z ]+?)(?:\s{2,}|Program)', text)
     if degree_match and major_match:
         data['degree_program'] = f"{degree_match.group(1)} in {major_match.group(1).strip()}"
     elif degree_match:
         data['degree_program'] = degree_match.group(1)
+    what_if_major_match = re.search(
+        r'\bMajor\s+in\s+([A-Za-z][A-Za-z &/\-]+?)\s+(?:COMPLETE|INCOMPLETE)\b',
+        clean_text,
+        re.IGNORECASE,
+    )
+    if what_if_major_match and degree_match:
+        data['degree_program'] = f"{degree_match.group(1)} in {what_if_major_match.group(1).strip()}"
+        data["_audit_type"] = "what_if"
 
     # Advisor: "Advisor Vojislav Stojkovic" (stop at double-space or end of line)
     advisor_match = re.search(r'Advisor\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)', text)
@@ -2924,6 +2969,43 @@ def parse_degreeworks_pdf(text: str) -> dict:
     completed_courses = []
     ip_courses = []
     seen_codes = set()
+
+    # What-If audits can render each class as stacked fields:
+    # Course COSC 251 / Title INTRODUCTION TO DATA SCIENCE / Grade IP / Credits (3) / Term FALL 2026
+    course_block_pattern = re.compile(
+        r'Course\s+(' + DEPT_PREFIXES + r'\s+\d{3}(?:TR)?)\s+'
+        r'Title\s+(.+?)\s+'
+        r'Grade\s+(' + VALID_GRADES + r')\s+'
+        r'Credits\s+\(?(\d+\.?\d*)\)?\s+'
+        r'Term\s+((?:FALL|SPRING|SUMMER)\s+\d{4})',
+        re.IGNORECASE,
+    )
+
+    for match in course_block_pattern.finditer(all_collapsed):
+        code = match.group(1).upper().strip()
+        name = match.group(2).strip()
+        grade = match.group(3).upper().strip()
+        credits = float(match.group(4))
+        term = match.group(5).strip()
+        if code in seen_codes:
+            continue
+        seen_codes.add(code)
+        if grade == "IP":
+            ip_courses.append({
+                "code": code,
+                "name": name,
+                "credits": int(credits),
+                "status": "in_progress",
+                "term": term
+            })
+        else:
+            completed_courses.append({
+                "code": code,
+                "name": name,
+                "grade": grade,
+                "credits": credits,
+                "term": term
+            })
 
     # First pass: extract in-progress courses (IP pattern is more specific)
     for match in ip_pattern.finditer(collapsed):
@@ -3120,6 +3202,8 @@ async def sync_banner_data(
                     db_user.name = name
                 if sid:
                     db_user.student_id = sid
+                if existing_dw.degree_program:
+                    db_user.major = existing_dw.degree_program
 
                 db_user.morgan_connected = True
                 db_user.morgan_connected_at = datetime.now(timezone.utc)
@@ -3545,6 +3629,8 @@ def _planner_course_rows(value, limit=20):
 
 
 def _planner_degreeworks_context(dw_dict: dict, registered_courses: list, registered_term_key: str | None) -> dict:
+    from services.degree_profiles import degree_profile_from_dw
+
     completed = _planner_course_rows(dw_dict.get("courses_completed"), limit=24)
     in_progress = _planner_course_rows(dw_dict.get("courses_in_progress"), limit=16)
     remaining = _planner_course_rows(dw_dict.get("courses_remaining"), limit=30)
@@ -3559,6 +3645,7 @@ def _planner_degreeworks_context(dw_dict: dict, registered_courses: list, regist
         "connected": True,
         "source": dw_dict.get("data_source") or "manual_entry",
         "synced_at": dw_dict.get("synced_at"),
+        "degree_profile": degree_profile_from_dw(dw_dict),
         "student": {
             "classification": dw_dict.get("classification"),
             "degree_program": dw_dict.get("degree_program"),
@@ -3593,11 +3680,23 @@ def _planner_degreeworks_context(dw_dict: dict, registered_courses: list, regist
 
 
 @app.get("/api/ripple-effect")
-async def ripple_effect(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+async def ripple_effect(
+    profile: str = Query(None),
+    degree_program: str = Query(None),
+    catalog_year: str = Query(None),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get prerequisite dependency graph with student status overlay."""
     dw_dict = await asyncio.to_thread(_fetch_dw_sync, user["user_id"])
     canvas_dict = await asyncio.to_thread(_fetch_canvas_sync, user["user_id"])
-    return build_prerequisite_graph(dw_dict, canvas_dict)
+    if (degree_program or catalog_year) and dw_dict:
+        dw_dict = dict(dw_dict)
+        if degree_program:
+            dw_dict["degree_program"] = degree_program
+        if catalog_year:
+            dw_dict["catalog_year"] = catalog_year
+    return build_prerequisite_graph(dw_dict, canvas_dict, profile_key=profile)
 
 
 # ==============================================================================
@@ -8403,28 +8502,64 @@ async def clear_index(user=Depends(get_current_user)):
 async def add_course(course: Course, user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-    arr = json.load(open(CLASSES_FILE, encoding="utf-8"))
-    arr.append(course.model_dump())
-    json.dump(arr, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
+    data = _load_classes_catalog()
+    data["courses"].append(course.model_dump())
+    _save_classes_catalog(data)
     return {"message": "Course added", "course": course}
 
 @app.delete("/api/curriculum/delete/{code}")
 async def delete_course(code: str, user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-    arr = json.load(open(CLASSES_FILE, encoding="utf-8"))
-    filtered = [c for c in arr if c.get("course_code") != code]
-    json.dump(filtered, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
+    data = _load_classes_catalog()
+    before = len(data["courses"])
+    data["courses"] = [c for c in data["courses"] if c.get("course_code") != code]
+    if len(data["courses"]) == before:
+        raise HTTPException(status_code=404, detail=f"Course {code} not found")
+    _save_classes_catalog(data)
     return {"message": f"{code} deleted"}
 
+
+@app.get("/api/admin/courses")
+async def admin_courses(user: dict = Depends(get_current_user)):
+    """Return the full local course catalog from classes.json for Admin Courses."""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admins only")
+    return {"courses": _load_classes_catalog().get("courses", [])}
+
 @app.get("/api/curriculum")
-async def get_curriculum():
+async def get_curriculum(
+    profile: str = Query(None),
+    degree_program: str = Query(None),
+    catalog_year: str = Query(None),
+):
     """Returns full curriculum data including degree info, courses, and elective requirements.
     Source of truth: courses.txt (KB file). Falls back to classes.json if txt not available."""
+    if profile or degree_program:
+        try:
+            from services.degree_profiles import curriculum_for_degree_program, curriculum_for_profile
+            if profile:
+                return curriculum_for_profile(profile)
+            return curriculum_for_degree_program(degree_program, catalog_year)
+        except Exception as e:
+            print(f"[CURRICULUM] Degree profile lookup failed: {e}")
+
     try:
         # Primary: parse from txt knowledge base (single source of truth)
         if os.path.exists(KB_COURSES_FILE):
-            return parse_curriculum_from_txt()
+            result = parse_curriculum_from_txt()
+            try:
+                from services.degree_profiles import normalize_degree_profile
+                result = dict(result)
+                result["degree_profile"] = normalize_degree_profile("Computer Science")
+                result["degree_info"] = {
+                    **result.get("degree_info", {}),
+                    "profile_key": "computer_science_bs",
+                    "profile_status": "active",
+                }
+            except Exception:
+                pass
+            return result
 
         # Fallback: classes.json (legacy)
         data = json.load(open(CLASSES_FILE, encoding="utf-8"))
@@ -8681,22 +8816,46 @@ async def update_course(code: str, course: Course, user=Depends(get_current_user
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
 
-    arr = json.load(open(CLASSES_FILE, encoding="utf-8"))
+    data = _load_classes_catalog()
     found = False
-    for i, c in enumerate(arr):
+    for i, c in enumerate(data["courses"]):
         if c.get("course_code") == code:
-            arr[i] = course.model_dump()
+            data["courses"][i] = course.model_dump()
             found = True
             break
 
     if not found:
         raise HTTPException(status_code=404, detail=f"Course {code} not found")
 
-    json.dump(arr, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
+    _save_classes_catalog(data)
     return {"message": f"Course {code} updated", "course": course}
 
 # --- Admin: Knowledge Base Management ---
 DATA_SOURCES_DIR = os.path.join(BACKEND_DIR, "data_sources")
+
+
+def _local_kb_sources() -> list[tuple[str, str]]:
+    return [
+        ("data_sources", DATA_SOURCES_DIR),
+        ("kb_structured", KB_STRUCTURED_DIR),
+    ]
+
+
+def _resolve_local_kb_file(filename: str) -> tuple[str, str]:
+    normalized = filename.replace("\\", "/")
+    if "/" in normalized:
+        prefix, leaf = normalized.split("/", 1)
+    else:
+        prefix, leaf = "data_sources", normalized
+    source_map = dict(_local_kb_sources())
+    base_dir = source_map.get(prefix)
+    if not base_dir:
+        raise HTTPException(status_code=400, detail="Invalid KB source")
+    safe_filename = os.path.basename(leaf)
+    filepath = os.path.join(base_dir, safe_filename)
+    if not os.path.realpath(filepath).startswith(os.path.realpath(base_dir)):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return filepath, f"{prefix}/{safe_filename}"
 
 @app.get("/api/admin/knowledge-base/files")
 async def list_kb_files(user: dict = Depends(get_current_user)):
@@ -8705,14 +8864,17 @@ async def list_kb_files(user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     files = []
-    if os.path.exists(DATA_SOURCES_DIR):
-        for f in os.listdir(DATA_SOURCES_DIR):
+    for source, base_dir in _local_kb_sources():
+        if not os.path.exists(base_dir):
+            continue
+        for f in os.listdir(base_dir):
             if f.endswith(".json"):
-                filepath = os.path.join(DATA_SOURCES_DIR, f)
+                filepath = os.path.join(base_dir, f)
                 size = os.path.getsize(filepath)
                 modified = datetime.fromtimestamp(os.path.getmtime(filepath))
                 files.append({
-                    "filename": f,
+                    "filename": f if source == "data_sources" else f"{source}/{f}",
+                    "source": source,
                     "size": size,
                     "modified": modified.isoformat()
                 })
@@ -8731,12 +8893,14 @@ async def search_kb_files(q: str, user: dict = Depends(get_current_user)):
     results = []
     search_term = q.lower()
 
-    if os.path.exists(DATA_SOURCES_DIR):
-        for filename in os.listdir(DATA_SOURCES_DIR):
+    for source, base_dir in _local_kb_sources():
+        if not os.path.exists(base_dir):
+            continue
+        for filename in os.listdir(base_dir):
             if not filename.endswith(".json"):
                 continue
 
-            filepath = os.path.join(DATA_SOURCES_DIR, filename)
+            filepath = os.path.join(base_dir, filename)
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     content = f.read()
@@ -8773,7 +8937,8 @@ async def search_kb_files(q: str, user: dict = Depends(get_current_user)):
                     )
 
                     results.append({
-                        "filename": filename,
+                        "filename": filename if source == "data_sources" else f"{source}/{filename}",
+                        "source": source,
                         "context": "..." + highlighted.strip() + "...",
                         "position": idx,
                         "match_number": match_count
@@ -8793,7 +8958,7 @@ async def search_kb_files(q: str, user: dict = Depends(get_current_user)):
 
     return {"results": results[:50], "total_matches": len(results)}
 
-@app.get("/api/admin/knowledge-base/{filename}")
+@app.get("/api/admin/knowledge-base/{filename:path}")
 async def get_kb_file(filename: str, user: dict = Depends(get_current_user)):
     """Get content of a knowledge base file (admin only)"""
     if user.get("role") != "admin":
@@ -8802,11 +8967,7 @@ async def get_kb_file(filename: str, user: dict = Depends(get_current_user)):
     if not filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="Only JSON files allowed")
 
-    # Prevent path traversal: strip directory components
-    safe_filename = os.path.basename(filename)
-    filepath = os.path.join(DATA_SOURCES_DIR, safe_filename)
-    if not os.path.realpath(filepath).startswith(os.path.realpath(DATA_SOURCES_DIR)):
-        raise HTTPException(status_code=400, detail="Invalid filename")
+    filepath, safe_filename = _resolve_local_kb_file(filename)
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="File not found")
 
@@ -8817,7 +8978,7 @@ async def get_kb_file(filename: str, user: dict = Depends(get_current_user)):
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=500, detail=f"Invalid JSON: {str(e)}")
 
-@app.put("/api/admin/knowledge-base/{filename}")
+@app.put("/api/admin/knowledge-base/{filename:path}")
 async def update_kb_file(filename: str, content: dict, user: dict = Depends(get_current_user)):
     """Update a knowledge base file (admin only)"""
     if user.get("role") != "admin":
@@ -8826,11 +8987,7 @@ async def update_kb_file(filename: str, content: dict, user: dict = Depends(get_
     if not filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="Only JSON files allowed")
 
-    # Prevent path traversal
-    safe_filename = os.path.basename(filename)
-    filepath = os.path.join(DATA_SOURCES_DIR, safe_filename)
-    if not os.path.realpath(filepath).startswith(os.path.realpath(DATA_SOURCES_DIR)):
-        raise HTTPException(status_code=400, detail="Invalid filename")
+    filepath, safe_filename = _resolve_local_kb_file(filename)
 
     # Create backup
     if os.path.exists(filepath):

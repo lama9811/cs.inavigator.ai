@@ -62,44 +62,47 @@ export default function CurriculumPage() {
         setLoading(true);
         const token = localStorage.getItem("token");
 
-        // Fetch curriculum data
+        const applyCurriculum = (curriculumJson) => {
+          console.log("Curriculum API response:", curriculumJson);
+
+          // Extract degree info and elective requirements
+          setDegreeInfo(curriculumJson.degree_info || {});
+          setElectiveRequirements(curriculumJson.elective_requirements || {});
+
+          // Transform courses
+          const courses = curriculumJson.courses || [];
+          const transformedCurriculum = courses.map((course) => ({
+            code: course.course_code || "",
+            name: course.course_name || "",
+            credits: course.credits || 0,
+            category: course.category || "Other",
+            requirement_type: course.requirement_type || "other",
+            prereq: Array.isArray(course.prerequisites) && course.prerequisites.length > 0
+              ? course.prerequisites.join(", ")
+              : "None",
+            offered: Array.isArray(course.offered)
+              ? course.offered.join(", ")
+              : course.offered || "TBD",
+            elective_note: course.elective_note || null,
+            note: course.note || null
+          }));
+
+          // Sort by category order
+          transformedCurriculum.sort((a, b) => {
+            const orderA = categoryOrder[a.category] || 99;
+            const orderB = categoryOrder[b.category] || 99;
+            return orderA - orderB;
+          });
+
+          setCurriculumData(transformedCurriculum);
+        };
+
+        // Fetch default curriculum data first so the page works without DegreeWorks.
         const curriculumResponse = await fetch(`${API_BASE}/api/curriculum`);
         if (!curriculumResponse.ok) {
           throw new Error("Failed to fetch curriculum data");
         }
-        const curriculumJson = await curriculumResponse.json();
-        console.log("Curriculum API response:", curriculumJson);
-
-        // Extract degree info and elective requirements
-        setDegreeInfo(curriculumJson.degree_info || {});
-        setElectiveRequirements(curriculumJson.elective_requirements || {});
-
-        // Transform courses
-        const courses = curriculumJson.courses || [];
-        const transformedCurriculum = courses.map((course) => ({
-          code: course.course_code || "",
-          name: course.course_name || "",
-          credits: course.credits || 0,
-          category: course.category || "Other",
-          requirement_type: course.requirement_type || "other",
-          prereq: Array.isArray(course.prerequisites) && course.prerequisites.length > 0
-            ? course.prerequisites.join(", ")
-            : "None",
-          offered: Array.isArray(course.offered)
-            ? course.offered.join(", ")
-            : course.offered || "TBD",
-          elective_note: course.elective_note || null,
-          note: course.note || null
-        }));
-
-        // Sort by category order
-        transformedCurriculum.sort((a, b) => {
-          const orderA = categoryOrder[a.category] || 99;
-          const orderB = categoryOrder[b.category] || 99;
-          return orderA - orderB;
-        });
-
-        setCurriculumData(transformedCurriculum);
+        applyCurriculum(await curriculumResponse.json());
 
         // Fetch DegreeWorks data if logged in
         if (token) {
@@ -113,6 +116,18 @@ export default function CurriculumPage() {
               if (dwJson.connected && dwJson.data) {
                 console.log("DegreeWorks data:", dwJson.data);
                 setDegreeWorksData(dwJson.data);
+                if (dwJson.data.degree_program) {
+                  const params = new URLSearchParams({
+                    degree_program: dwJson.data.degree_program,
+                  });
+                  if (dwJson.data.catalog_year) {
+                    params.set("catalog_year", dwJson.data.catalog_year);
+                  }
+                  const profiledResponse = await fetch(`${API_BASE}/api/curriculum?${params.toString()}`);
+                  if (profiledResponse.ok) {
+                    applyCurriculum(await profiledResponse.json());
+                  }
+                }
               }
             }
           } catch (dwErr) {
@@ -272,6 +287,11 @@ export default function CurriculumPage() {
             <div>
               <h1>{degreeInfo.program || "Computer Science, B.S."}</h1>
               <p>{degreeInfo.university || "Morgan State University"}</p>
+              {degreeInfo.profile_status && degreeInfo.profile_status !== "active" && (
+                <span className={`degree-profile-badge ${degreeInfo.profile_status}`}>
+                  {degreeInfo.profile_status === "legacy" ? "Legacy/teach-out" : "Draft review"}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -284,7 +304,7 @@ export default function CurriculumPage() {
             <div className="progress-info">
               <FaChartLine size={24} className="progress-icon" />
               <div>
-                <h2>CS Major Progress</h2>
+                <h2>{degreeInfo.program || "Degree"} Progress</h2>
                 <p>Supporting + Major Requirements ({csCreditsRequired} credits)</p>
               </div>
             </div>
@@ -320,6 +340,12 @@ export default function CurriculumPage() {
               <FaListAlt /> <span>{pendingCount} Remaining</span>
             </div>
           </div>
+
+          {degreeInfo.warning && (
+            <div className="degree-warning">
+              {degreeInfo.warning}
+            </div>
+          )}
 
           {/* Degree Requirements Summary */}
           <div className="degree-summary">

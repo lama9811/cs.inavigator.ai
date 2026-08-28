@@ -90,6 +90,13 @@ def build_student_context(dw: dict) -> str:
     """Build the DegreeWorks student context string from a dict of fields."""
     data_source = dw.get("data_source", "manual_entry")
     is_manual = data_source == "manual_entry"
+    try:
+        from services.degree_profiles import curriculum_for_degree_program
+        degree_curriculum = curriculum_for_degree_program(dw.get("degree_program"), dw.get("catalog_year"))
+        degree_profile = degree_curriculum.get("degree_profile", {})
+    except Exception:
+        degree_curriculum = {}
+        degree_profile = {}
 
     # Check if DW data has minimum useful content
     has_gpa = bool(dw.get("overall_gpa"))
@@ -121,6 +128,15 @@ def build_student_context(dw: dict) -> str:
         if val:
             ctx += f"- {label}: {val}\n"
     ctx += "\n"
+    if degree_profile:
+        ctx += "DEGREE PROFILE USED BY CS NAVIGATOR:\n"
+        ctx += f"- Profile: {degree_profile.get('display_name') or degree_profile.get('key')}\n"
+        ctx += f"- Status: {degree_profile.get('status') or 'unknown'}\n"
+        if degree_profile.get("warning"):
+            ctx += f"- Warning: {degree_profile['warning']}\n"
+        if degree_profile.get("needs_confirmation"):
+            ctx += "- Confirm this student's exact major/catalog year before making degree-specific claims.\n"
+        ctx += "\n"
 
     # Completed courses (grouped by semester for historical queries)
     if dw.get("courses_completed"):
@@ -195,7 +211,12 @@ def build_student_context(dw: dict) -> str:
             graph = build_prerequisite_graph(dw, None)
 
             # Count completed per elective group to check if group requirement is already met
-            GROUP_REQS = {"Group A Elective": 3, "Group B Elective": 2, "Group C Elective": 4, "Group D Elective": 1}
+            elective_requirements = degree_curriculum.get("elective_requirements") or {}
+            GROUP_REQS = {
+                f"Group {key[-1].upper()} Elective": int(value.get("required_courses") or 0)
+                for key, value in elective_requirements.items()
+                if key.startswith("group_") and value.get("required_courses")
+            } or {"Group A Elective": 3, "Group B Elective": 2, "Group C Elective": 4, "Group D Elective": 1}
             completed_cats = Counter()
             for n in graph["nodes"]:
                 if n["status"] in ("completed", "in_progress"):
@@ -224,7 +245,8 @@ def build_student_context(dw: dict) -> str:
                 blocked = [n for n in future_nodes if n not in eligible]
 
                 # Build group status summary
-                ctx += "CS DEGREE PROGRESS:\n"
+                profile_name = degree_profile.get("display_name") or "degree"
+                ctx += f"{profile_name.upper()} PROGRESS:\n"
                 for cat, needed in GROUP_REQS.items():
                     have = completed_cats.get(cat, 0)
                     remaining = max(0, needed - have)
@@ -244,9 +266,10 @@ def build_student_context(dw: dict) -> str:
                     ctx += f"  - {n['id']} - {n['name']} ({n['credits']}cr, {n['category']}) [BLOCKED by {', '.join(n['blocked_by'])}]\n"
                 if not eligible and not blocked:
                     ctx += "  (none - all group requirements satisfied)\n"
-                ctx += f"\nMax 18 credits per semester. Only recommend from INCOMPLETE groups above.\n\n"
+                ctx += f"\nMax 18 credits per semester. Only recommend from INCOMPLETE groups above for this student's selected degree profile.\n\n"
             else:
-                ctx += "REMAINING CS COURSES: All CS curriculum group requirements are complete.\n\n"
+                profile_name = degree_profile.get("display_name") or "selected degree"
+                ctx += f"REMAINING DEGREE COURSES: All loaded {profile_name} curriculum group requirements are complete.\n\n"
         except Exception as e:
             ctx += "REMAINING COURSES: Could not compute (search KB for CS degree requirements and subtract completed courses above).\n\n"
 

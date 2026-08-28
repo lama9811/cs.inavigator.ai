@@ -74,6 +74,36 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+.degree-profile-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.degree-profile-badge.draft_review {
+  border-color: rgba(251, 191, 36, 0.7);
+  background: rgba(251, 191, 36, 0.18);
+}
+
+.degree-warning {
+  margin: 0 0 20px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
 /* ========================================
    DEGREE PROGRESS SECTION - GLOWING GRADIENT
    ======================================== */

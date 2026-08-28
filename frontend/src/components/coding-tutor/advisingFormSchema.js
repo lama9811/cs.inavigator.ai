@@ -52,7 +52,7 @@ export const INTERNSHIP_FORM = {
           id: "major", label: "Major", type: "choice", required: true, prefillKey: "major",
           options: [
             "Actuarial Science", "Biology", "Coastal Science and Policy", "Chemistry",
-            "Cloud Computing", "Computer Science", "Engineering Physics", "Mathematics",
+            "Artificial Intelligence", "Cloud Computing", "Computer Science", "Engineering Physics", "Mathematics",
             "Medical Laboratory Science", "Physics",
           ],
         },
@@ -127,7 +127,7 @@ export const INTERNSHIP_FORM = {
 // COURSE_MAJORS: the Major/Minor dropdown list (shared with the internship form's
 // major list, kept here so this file is self-contained).
 const MAJORS = [
-  "Actuarial Science", "Biology", "Chemistry", "Cloud Computing", "Computer Science",
+  "Actuarial Science", "Artificial Intelligence", "Biology", "Chemistry", "Cloud Computing", "Computer Science",
   "Engineering Physics", "Information Technology", "Mathematics",
   "Medical Laboratory Science", "Physics",
 ];
