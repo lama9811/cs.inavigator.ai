@@ -12,7 +12,7 @@ import main
 import services.course_context as course_context
 import services.live_schedule as live_schedule
 import services.requirement_planner as requirement_planner
-from models import Base, LiveSection
+from models import Base, LiveSection, ScheduleRefreshRun
 from banner_scraper import class_search
 
 
@@ -95,6 +95,10 @@ def _live_row(term, crn, subject, code):
 def _patch_planner_basics(monkeypatch):
     monkeypatch.setattr(main, "_fetch_canvas_sync", lambda _uid: None)
     monkeypatch.setattr(main, "_fetch_dw_sync", lambda _uid: _dw_payload())
+    async def no_discovered_terms():
+        return [], None
+    monkeypatch.setattr(main, "_discover_planner_terms_safe", no_discovered_terms)
+    monkeypatch.setattr(main, "_cached_live_terms_safe", lambda: [])
     monkeypatch.setattr(main, "build_prerequisite_graph", lambda _dw, _canvas: _graph())
     monkeypatch.setattr(requirement_planner, "build_requirements", lambda _dw, _minor: _requirements())
     monkeypatch.setattr(course_context, "_SCHEDULES", {
@@ -117,8 +121,28 @@ def test_gened_candidate_subjects_include_expected_planner_subjects():
 
 def test_refresh_subjects_combines_cs_and_gened_without_duplicates(monkeypatch):
     monkeypatch.setattr(class_search, "gened_candidate_subjects", lambda: ["PHIL", "COSC", "ENGL"])
-    assert class_search.refresh_subjects() == ["COSC", "BIOI", "CLCO", "PHIL", "ENGL"]
+    assert class_search.refresh_subjects() == ["COSC", "BIOI", "CLCO", "MATH", "MGBU", "PHIL", "ENGL"]
     assert class_search.refresh_subjects("phil, soci COSC", include_geneds=False) == ["PHIL", "SOCI", "COSC"]
+
+
+def test_normalize_banner_terms_filters_sorts_and_preserves_codes():
+    rows = [
+        {"code": "202650", "description": "Spring 2026"},
+        {"code": "202670", "description": "Fall 2026 (View Only)"},
+        {"code": "202710", "description": "Spring 2027"},
+        {"code": "202680", "description": "Winter 2026"},
+        {"code": "202730", "description": "Summer 2027"},
+        {"code": "202710-dup", "description": "Spring 2027 View Only"},
+        {"code": "", "description": "Fall 2027"},
+    ]
+
+    terms = class_search.normalize_banner_terms(rows)
+
+    assert [item["sem_key"] for item in terms] == ["fall_2026", "spring_2027", "summer_2027"]
+    assert terms[0]["term_code"] == "202670"
+    assert terms[0]["view_only"] is True
+    assert terms[1]["term_code"] == "202710"
+    assert terms[1]["view_only"] is False
 
 
 def test_planner_attaches_live_gened_section(monkeypatch):
@@ -691,3 +715,119 @@ def test_refresh_failure_preserves_previous_subject_rows(monkeypatch):
     assert result["errors"][0]["subject"] == "PHIL"
     assert result["errors"][0]["stage"] == "fetch"
     assert {row.crn for row in rows} == {"71111", "79999"}
+
+
+def test_refresh_without_term_uses_discovered_future_terms(monkeypatch):
+    TestSession = _isolated_session()
+
+    async def fake_discover():
+        return [
+            {"sem_key": "fall_2026", "term_code": "202670", "description": "Fall 2026"},
+            {"sem_key": "spring_2027", "term_code": "202710", "description": "Spring 2027"},
+        ]
+
+    async def fake_fetch(subject, _term_code, sem_key):
+        return [{
+            "term": sem_key,
+            "crn": f"{sem_key}-{subject}",
+            "subject": subject,
+            "course_number": "101",
+            "course_code": f"{subject} 101",
+            "title": "Fresh Row",
+            "credits": 3,
+            "section": "001",
+            "instructor": "B",
+            "campus": "Main",
+            "schedule_type": "Lecture",
+            "time": "TR 1:00PM-2:20PM",
+            "room": "R2",
+            "seats_available": 8,
+            "max_enrollment": 30,
+            "enrollment": 22,
+            "open_section": True,
+            "wait_count": 0,
+            "wait_capacity": 0,
+            "wait_available": 0,
+        }]
+
+    monkeypatch.setattr(main, "SessionLocal", TestSession)
+    monkeypatch.setattr(class_search, "discover_planner_terms", fake_discover)
+    monkeypatch.setattr(class_search, "fetch_sections", fake_fetch)
+
+    result = asyncio.run(main._run_schedule_refresh(
+        term=None,
+        subjects="COSC",
+        include_geneds=False,
+        terms_limit=2,
+    ))
+
+    db = TestSession()
+    rows = db.query(LiveSection).order_by(LiveSection.term).all()
+    db.close()
+
+    assert result["status"] == "ok"
+    assert result["total_sections"] == 2
+    assert result["refresh_run"]["source"] == "manual"
+    assert result["refresh_run"]["status"] == "ok"
+    assert [item["term"] for item in result["terms"]] == ["fall_2026", "spring_2027"]
+    assert [row.term for row in rows] == ["fall_2026", "spring_2027"]
+
+
+def test_schedule_refresh_records_partial_run_for_scheduler(monkeypatch):
+    TestSession = _isolated_session()
+
+    async def fake_discover():
+        return [
+            {"sem_key": "fall_2026", "term_code": "202670", "description": "Fall 2026"},
+            {"sem_key": "spring_2027", "term_code": "202710", "description": "Spring 2027"},
+        ]
+
+    async def fake_fetch(subject, _term_code, sem_key):
+        if sem_key == "spring_2027":
+            raise RuntimeError("Banner timeout")
+        return [{
+            "term": sem_key,
+            "crn": f"{sem_key}-{subject}",
+            "subject": subject,
+            "course_number": "101",
+            "course_code": f"{subject} 101",
+            "title": "Fresh Row",
+            "credits": 3,
+            "section": "001",
+            "instructor": "B",
+            "campus": "Main",
+            "schedule_type": "Lecture",
+            "time": "TR 1:00PM-2:20PM",
+            "room": "R2",
+            "seats_available": 8,
+            "max_enrollment": 30,
+            "enrollment": 22,
+            "open_section": True,
+            "wait_count": 0,
+            "wait_capacity": 0,
+            "wait_available": 0,
+        }]
+
+    monkeypatch.setattr(main, "SessionLocal", TestSession)
+    monkeypatch.setattr(class_search, "discover_planner_terms", fake_discover)
+    monkeypatch.setattr(class_search, "fetch_sections", fake_fetch)
+
+    result = asyncio.run(main._run_schedule_refresh(
+        term=None,
+        subjects="COSC",
+        include_geneds=False,
+        terms_limit=2,
+        source="scheduler",
+    ))
+
+    db = TestSession()
+    runs = db.query(ScheduleRefreshRun).all()
+    rows = db.query(LiveSection).all()
+    db.close()
+
+    assert result["status"] == "partial"
+    assert result["refresh_run"]["source"] == "scheduler"
+    assert result["refresh_run"]["status"] == "partial"
+    assert len(runs) == 1
+    assert runs[0].total_sections == 1
+    assert len(rows) == 1

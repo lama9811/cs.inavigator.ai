@@ -11,6 +11,24 @@
   },
   "courses": [
     {
+      "course_code": "MATH 113",
+      "course_name": "Introduction to Mathematical Analysis I",
+      "credits": 4,
+      "category": "Supporting",
+      "requirement_type": "supporting",
+      "prerequisites": [],
+      "offered": ["Fall", "Spring"]
+    },
+    {
+      "course_code": "MATH 114",
+      "course_name": "Introduction to Mathematical Analysis II",
+      "credits": 4,
+      "category": "Supporting",
+      "requirement_type": "supporting",
+      "prerequisites": ["MATH 113 (Grade C or higher)"],
+      "offered": ["Fall", "Spring"]
+    },
+    {
       "course_code": "MATH 241",
       "course_name": "Calculus I",
       "credits": 4,
@@ -45,6 +63,15 @@
       "category": "Supporting",
       "requirement_type": "supporting",
       "prerequisites": ["MATH 242 (Grade C or higher)"],
+      "offered": ["Fall", "Spring"]
+    },
+    {
+      "course_code": "MGBU 200",
+      "course_name": "Introduction to Business for Non-Business Majors",
+      "credits": 3,
+      "category": "Supporting",
+      "requirement_type": "supporting",
+      "prerequisites": ["ENGL 101 (Grade C or higher)", "ENGL 102 (Grade C or higher)", "Sophomore standing"],
       "offered": ["Fall", "Spring"]
     },
     {
@@ -216,6 +243,44 @@
       "offered": ["Fall", "Spring"]
     },
     {
+      "course_code": "CLCO 312",
+      "course_name": "Data Science for Social Good",
+      "credits": 3,
+      "category": "Group B Elective",
+      "requirement_type": "group_b",
+      "elective_note": "Choose from the applicable degree elective group",
+      "prerequisites": ["COSC 251 (Grade C or higher)"],
+      "offered": ["As Needed"]
+    },
+    {
+      "course_code": "CLCO 341",
+      "course_name": "Machine Learning in the Cloud",
+      "credits": 3,
+      "category": "Required",
+      "requirement_type": "required",
+      "prerequisites": ["COSC 251 (Grade C or higher)"],
+      "offered": ["As Needed"]
+    },
+    {
+      "course_code": "CLCO 401",
+      "course_name": "Cloud Applications",
+      "credits": 3,
+      "category": "Required",
+      "requirement_type": "required",
+      "prerequisites": ["CLCO 261 (Grade C or higher)"],
+      "offered": ["TBD"]
+    },
+    {
+      "course_code": "CLCO 490",
+      "course_name": "Senior Project in Cloud Computing",
+      "credits": 3,
+      "category": "Required",
+      "requirement_type": "required",
+      "prerequisites": ["Department Chair permission", "Senior standing"],
+      "offered": ["As Needed"],
+      "note": "Cross-listed with COSC 490."
+    },
+    {
       "course_code": "COSC 320",
       "course_name": "Algorithm Design and Analysis",
       "credits": 3,
@@ -254,6 +319,26 @@
       "elective_note": "Choose 2 courses from Group B",
       "prerequisites": ["COSC 238 (Grade C or higher)"],
       "offered": ["Fall", "Spring"]
+    },
+    {
+      "course_code": "COSC 345",
+      "course_name": "Introduction to High Performance Computing",
+      "credits": 3,
+      "category": "Group B Elective",
+      "requirement_type": "group_b",
+      "elective_note": "Choose from the applicable degree elective group",
+      "prerequisites": ["COSC 112 (Grade C or higher)", "MATH 241 (Grade C or higher)"],
+      "offered": ["As Needed"]
+    },
+    {
+      "course_code": "COSC 358",
+      "course_name": "Network Security Fundamentals",
+      "credits": 3,
+      "category": "Group B Elective",
+      "requirement_type": "group_b",
+      "elective_note": "Choose from the applicable degree elective group",
+      "prerequisites": ["COSC 349 (Grade C or higher)"],
+      "offered": ["As Needed"]
     },
     {
       "course_code": "COSC 383",
@@ -323,6 +408,16 @@
       "requirement_type": "group_c",
       "elective_note": "Choose 4 courses from Group C (COSC 470 OR COSC 472)",
       "prerequisites": ["COSC 112 (Grade C or higher)", "MATH 312 (Grade C or higher)"],
+      "offered": ["Fall", "Spring"]
+    },
+    {
+      "course_code": "COSC 474",
+      "course_name": "Artificial Intelligence in Cybersecurity",
+      "credits": 3,
+      "category": "Group C Elective",
+      "requirement_type": "group_c",
+      "elective_note": "Choose from the applicable degree elective group",
+      "prerequisites": ["COSC 220 (Grade C or higher)", "MATH 312 (Grade C or higher)"],
       "offered": ["Fall", "Spring"]
     },
     {

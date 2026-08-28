@@ -150,6 +150,11 @@ function RequireAuth({ children, onExpired }) {
   return children;
 }
 
+function RequireAdmin({ role, children }) {
+  if (role !== "admin") return <Forbidden />;
+  return children;
+}
+
 function ChatLayout({
   sessions,
   activeId,
@@ -1004,7 +1009,7 @@ export default function App() {
           }
         />
 
-        {/* protected: next-semester planner with sidebar */}
+        {/* admin-only while Planner V2 and AI degree validation are still under review */}
         <Route
           path="/planner"
           element={
@@ -1025,7 +1030,9 @@ export default function App() {
                 onCollapseSidebar={toggleSidebar}
                 onSidebarResize={handleSidebarResize}
               >
-                <PlannerPage />
+                <RequireAdmin role={role}>
+                  <PlannerPage />
+                </RequireAdmin>
               </SidebarLayout>
             </RequireAuth>
           }
@@ -1058,7 +1065,7 @@ export default function App() {
           }
         />
 
-        {/* protected: scholarships + internships search with sidebar */}
+        {/* admin-only while scholarship search is still under review */}
         <Route
           path="/scholarships"
           element={
@@ -1079,7 +1086,9 @@ export default function App() {
                 onCollapseSidebar={toggleSidebar}
                 onSidebarResize={handleSidebarResize}
               >
-                <ScholarshipsPage />
+                <RequireAdmin role={role}>
+                  <ScholarshipsPage />
+                </RequireAdmin>
               </SidebarLayout>
             </RequireAuth>
           }

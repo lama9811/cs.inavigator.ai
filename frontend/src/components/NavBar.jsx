@@ -140,8 +140,10 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
   ];
   const toolsNav = [
     ...(ENABLE_LEGACY_ADVISING_FORM ? [{ to: "/advising", label: "Legacy Advising Form", Icon: FaClipboardList }] : []),
-    { to: "/scholarships", label: "Scholarships", Icon: FaGraduationCap },
-    { to: "/planner", label: "Planner", Icon: FaCalendarAlt },
+    ...(role === "admin" ? [
+      { to: "/scholarships", label: "Scholarships", Icon: FaGraduationCap },
+      { to: "/planner", label: "Planner", Icon: FaCalendarAlt },
+    ] : []),
     { to: "/curriculum", label: "Curriculum", Icon: FaBook },
     { to: "/ripple-effect", label: "Ripple Effect", Icon: FaProjectDiagram },
   ];

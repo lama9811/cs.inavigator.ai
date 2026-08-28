@@ -173,6 +173,16 @@ def get_live_sections_status(term: str) -> dict:
     }
 
 
+def list_live_terms() -> list[str]:
+    """Return term keys that have at least one cached live section row."""
+    db = SessionLocal()
+    try:
+        rows = db.query(LiveSection.term).distinct().all()
+    finally:
+        db.close()
+    return sorted({row.term for row in rows if row.term})
+
+
 def attach_live_section(course: dict, live_schedule: dict | None, preferences: dict | None = None) -> dict:
     """Return a copy of an untimed planner fill course with the best live section."""
     if not live_schedule or not course.get("untimed"):

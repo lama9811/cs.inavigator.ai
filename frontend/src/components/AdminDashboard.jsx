@@ -56,6 +56,14 @@ const scheduleAge = (iso) => {
   return `${Math.round(hrs / 24)}d ago`;
 };
 
+const scheduleRunLabel = (run) => {
+  if (!run) return "No refresh attempts recorded";
+  const source = run.source === "scheduler" ? "Cloud Scheduler" : "Manual";
+  const status = run.status ? run.status.toUpperCase() : "UNKNOWN";
+  const when = run.finished_at ? scheduleAge(run.finished_at) : "unknown time";
+  return `${source} ${status}: ${when}`;
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -182,6 +190,7 @@ export default function AdminDashboard() {
   const [scheduleTerm, setScheduleTerm] = useState("fall_2026");
   const [scheduleSubjects, setScheduleSubjects] = useState("");
   const [scheduleIncludeGeneds, setScheduleIncludeGeneds] = useState(true);
+  const [scheduleTermsLimit, setScheduleTermsLimit] = useState(1);
 
   // Documentation Viewer State
   const [showDocViewer, setShowDocViewer] = useState(false);
@@ -200,10 +209,9 @@ export default function AdminDashboard() {
 
   const loadCourses = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/curriculum`);
+      const res = await fetch(`${API_BASE}/api/admin/courses`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
-        // API returns {degree_info, courses, elective_requirements} - extract just courses array
         setCourses(data.courses || data || []);
       }
     } catch (err) { console.error("Failed to load courses:", err); }
@@ -383,6 +391,7 @@ export default function AdminDashboard() {
     try {
       const params = new URLSearchParams({
         include_geneds: String(scheduleIncludeGeneds),
+        terms_limit: String(scheduleTermsLimit),
       });
       if (scheduleTerm.trim()) params.set("term", scheduleTerm.trim());
       if (scheduleSubjects.trim()) params.set("subjects", scheduleSubjects.trim());
@@ -392,16 +401,23 @@ export default function AdminDashboard() {
       });
       const payload = await res.json().catch(() => ({}));
       if (res.ok && payload.status !== "error") {
-        toast.success("Schedule refresh finished", {
-          description: `${payload.total_sections || 0} sections saved across ${Object.keys(payload.subjects || {}).length} subjects.`,
-        });
-        setScheduleStatus({ status: "ok", terms: [{
+        const refreshedTerms = payload.terms || [{
           term: payload.term,
           subjects: payload.subjects || {},
           total_sections: payload.total_sections || 0,
           last_refresh: new Date().toISOString(),
           fresh: true,
-        }], errors: payload.errors || [], skipped_subjects: payload.skipped_subjects || [], fresh_hours: 24 });
+        }];
+        toast.success("Schedule refresh finished", {
+          description: `${payload.total_sections || 0} sections saved across ${refreshedTerms.length} term${refreshedTerms.length === 1 ? "" : "s"}.`,
+        });
+        setScheduleStatus({ status: "ok", terms: refreshedTerms.map((item) => ({
+          term: item.term,
+          subjects: item.subjects || {},
+          total_sections: item.total_sections || 0,
+          last_refresh: item.last_refresh || new Date().toISOString(),
+          fresh: true,
+        })), errors: payload.errors || [], skipped_subjects: payload.skipped_subjects || [], fresh_hours: 24, latest_refresh_run: payload.refresh_run || null });
       } else {
         toast.error("Schedule refresh failed", { description: payload.detail || payload.reason || "Banner refresh did not complete." });
       }
@@ -2241,10 +2257,18 @@ export default function AdminDashboard() {
                     <label>
                       <span>Term</span>
                       <input
+                        list="schedule-term-options"
                         value={scheduleTerm}
                         onChange={(e) => setScheduleTerm(e.target.value)}
-                        placeholder="fall_2026"
+                        placeholder="Blank = next discovered term"
                       />
+                      <datalist id="schedule-term-options">
+                        {(scheduleStatus?.terms || []).map((item) => (
+                          <option key={item.term} value={item.term}>
+                            {item.description || item.term}
+                          </option>
+                        ))}
+                      </datalist>
                     </label>
                     <label>
                       <span>Subject override</span>
@@ -2253,6 +2277,18 @@ export default function AdminDashboard() {
                         onChange={(e) => setScheduleSubjects(e.target.value)}
                         placeholder="Optional: COSC, PHIL, SOCI"
                       />
+                    </label>
+                    <label>
+                      <span>Auto terms</span>
+                      <select
+                        value={scheduleTermsLimit}
+                        onChange={(e) => setScheduleTermsLimit(Number(e.target.value))}
+                        disabled={Boolean(scheduleTerm.trim())}
+                      >
+                        <option value={1}>Next term</option>
+                        <option value={2}>Next 2 terms</option>
+                        <option value={3}>Next 3 terms</option>
+                      </select>
                     </label>
                     <label className="schedule-checkbox">
                       <input
@@ -2268,17 +2304,54 @@ export default function AdminDashboard() {
                     </button>
                   </div>
 
+                  <div className="schedule-run-summary">
+                    <div>
+                      <span>Latest refresh attempt</span>
+                      <strong>{scheduleRunLabel(scheduleStatus?.latest_refresh_run)}</strong>
+                      {scheduleStatus?.latest_refresh_run?.finished_at && (
+                        <small>{new Date(scheduleStatus.latest_refresh_run.finished_at).toLocaleString()}</small>
+                      )}
+                    </div>
+                    <div>
+                      <span>Latest successful save</span>
+                      <strong>{scheduleRunLabel(scheduleStatus?.latest_successful_refresh_run)}</strong>
+                      {scheduleStatus?.latest_successful_refresh_run?.total_sections ? (
+                        <small>{scheduleStatus.latest_successful_refresh_run.total_sections} sections saved</small>
+                      ) : (
+                        <small>No saved automated snapshot yet</small>
+                      )}
+                    </div>
+                    {(scheduleStatus?.recent_refresh_runs || []).length > 0 && (
+                      <div>
+                        <span>Recent jobs</span>
+                        <div className="schedule-run-list">
+                          {scheduleStatus.recent_refresh_runs.slice(0, 3).map((run) => (
+                            <small key={run.id}>{scheduleRunLabel(run)} - {run.total_sections || 0} sections</small>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="schedule-status-grid">
                     {(scheduleStatus?.terms || []).length ? (
                       scheduleStatus.terms.map((item) => (
                         <div className={`schedule-status-card ${item.fresh ? "fresh" : "stale"}`} key={item.term}>
                           <div>
                             <strong>{item.term.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}</strong>
-                            <span>{item.fresh ? "Fresh cache" : "Stale or needs refresh"}</span>
+                            <span>
+                              {item.fresh
+                                ? "Fresh cache"
+                                : item.discovered
+                                  ? "Discovered in Banner; refresh needed"
+                                  : "Stale or needs refresh"}
+                            </span>
                           </div>
+                          {item.description && <p>{item.description}{item.term_code ? ` | ${item.term_code}` : ""}</p>}
                           <p>{item.total_sections || 0} cached sections</p>
                           <small>{item.last_refresh ? `Updated ${scheduleAge(item.last_refresh)} (${new Date(item.last_refresh).toLocaleString()})` : "No refresh recorded"}</small>
                           {scheduleStatus?.fresh_hours && <small>Freshness window: {scheduleStatus.fresh_hours} hours</small>}
+                          {item.view_only && <small>Banner marks this term view-only.</small>}
                           <div className="schedule-subjects">
                             {Object.entries(item.subjects || {}).map(([subject, count]) => (
                               <span key={subject}>{subject}: {count}</span>

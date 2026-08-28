@@ -30,11 +30,14 @@ BANNER_SSB_BASE = os.getenv("BANNER_SSB_BASE", "https://lbssb1nprod.morgan.edu")
 _REG = f"{BANNER_SSB_BASE}/StudentRegistrationSsb/ssb"
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data_sources"
 
-# Subjects the CS planner cares about.
-CS_SUBJECTS = ["COSC", "BIOI", "CLCO"]
+# Subjects the CS/AI planner cares about by default. GenEd subjects are added
+# separately, and admins can still override this list for a one-off refresh.
+CS_SUBJECTS = ["COSC", "BIOI", "CLCO", "MATH", "MGBU"]
+MIN_PLANNER_SEMESTER = "fall_2026"
 
 _HTTP_TIMEOUT = httpx.Timeout(30.0)
 _USER_AGENT = "cs-navigator-planner/1.0 (+https://cs.inavigator.ai)"
+_TERM_ORDER = {"spring": 0, "summer": 1, "fall": 2}
 
 # Banner boolean day flag -> single-letter code the schedule engine understands
 # (parse_time_slots reads [MTWRF]; Sat/Sun are rare but carried through).
@@ -224,6 +227,45 @@ def sem_key_from_description(desc: str) -> str | None:
     return f"{m.group(1).lower()}_{m.group(2)}"
 
 
+def _parse_planner_term_key(sem_key: str):
+    """Chronological sort key for planner-supported Banner terms."""
+    m = re.match(r"^(spring|summer|fall)_(20\d{2})$", (sem_key or "").lower())
+    if not m:
+        return None
+    return (int(m.group(2)), _TERM_ORDER[m.group(1)])
+
+
+def normalize_banner_terms(
+    terms: list[dict],
+    min_sem_key: str = MIN_PLANNER_SEMESTER,
+) -> list[dict]:
+    """Normalize Banner getTerms rows into planner-visible term metadata."""
+    floor = _parse_planner_term_key(min_sem_key)
+    seen: set[str] = set()
+    normalized = []
+    for item in terms or []:
+        code = str(item.get("code") or "").strip()
+        description = _clean_text(item.get("description"))
+        sem_key = sem_key_from_description(description)
+        sort_key = _parse_planner_term_key(sem_key or "")
+        if not code or not sem_key or not sort_key:
+            continue
+        if floor and sort_key < floor:
+            continue
+        if sem_key in seen:
+            continue
+        seen.add(sem_key)
+        normalized.append({
+            "term": sem_key,
+            "sem_key": sem_key,
+            "term_code": code,
+            "description": description,
+            "view_only": "view only" in description.lower(),
+            "source": "banner",
+        })
+    return sorted(normalized, key=lambda row: _parse_planner_term_key(row["sem_key"]))
+
+
 def _unique_session_id() -> str:
     """Mimic Banner's client-side uniqueSessionId (5 alnum + epoch ms)."""
     prefix = "".join(random.choices(string.ascii_lowercase + string.digits, k=5))
@@ -254,6 +296,14 @@ async def fetch_terms(max_terms: int = 20) -> list[dict]:
         data = resp.json()
     return [{"code": str(t.get("code")), "description": t.get("description", "")}
             for t in (data or []) if t.get("code")]
+
+
+async def discover_planner_terms(
+    max_terms: int = 30,
+    min_sem_key: str = MIN_PLANNER_SEMESTER,
+) -> list[dict]:
+    """Return future Banner terms that Planner may surface."""
+    return normalize_banner_terms(await fetch_terms(max_terms=max_terms), min_sem_key=min_sem_key)
 
 
 async def resolve_active_term() -> tuple[str, str] | None:

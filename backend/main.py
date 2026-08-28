@@ -155,7 +155,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingLearningEvent, CodingWorkspaceState, CodingLearnProgress, CodingStartingCheckProgress, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingLearningEvent, CodingWorkspaceState, CodingLearnProgress, CodingStartingCheckProgress, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, ScheduleRefreshRun, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -1298,9 +1298,26 @@ DATA_DIR       = os.path.join(BACKEND_DIR, "data_sources")
 CLASSES_FILE   = os.path.join(DATA_DIR, "classes.json")
 KB_COURSES_FILE = os.path.join(DATA_DIR, "courses.txt")
 RESOURCES_FILE = os.path.join(DATA_DIR, "academic_resources.json")
+KB_STRUCTURED_DIR = os.path.join(BACKEND_DIR, "kb_structured")
 
 # Cached parsed curriculum from txt source of truth
 _parsed_curriculum = None
+
+def _load_classes_catalog() -> dict:
+    try:
+        data = json.load(open(CLASSES_FILE, encoding="utf-8"))
+    except FileNotFoundError:
+        return {"courses": []}
+    if isinstance(data, dict):
+        data.setdefault("courses", [])
+        return data
+    if isinstance(data, list):
+        return {"courses": data}
+    return {"courses": []}
+
+
+def _save_classes_catalog(data: dict) -> None:
+    json.dump(data, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
 
 def parse_curriculum_from_txt():
     """Parse courses.txt into the structured JSON format the frontend expects.
@@ -2790,6 +2807,7 @@ async def upload_degreeworks_pdf(
 
         # Try to parse specific fields (best effort)
         data = parse_degreeworks_pdf(pdf_text)
+        audit_type = data.pop("_audit_type", None)
 
         # CRITICAL: Always store the raw PDF text - this is used for chat context injection
         data['raw_data'] = pdf_text[:50000]  # Store up to 50k chars
@@ -2797,10 +2815,22 @@ async def upload_degreeworks_pdf(
         # Get or create DegreeWorks record
         db_user = db.query(User).filter(User.id == user["user_id"]).first()
         existing = db.query(DegreeWorksData).filter(DegreeWorksData.user_id == user["user_id"]).first()
+        preserve_course_history = False
 
         if existing:
-            # Update existing - ALWAYS update raw_data
-            existing.raw_data = data['raw_data']
+            # What-If audits can omit prior work, so keep the student's
+            # existing official course history instead of replacing it with a
+            # partial hypothetical view.
+            preserve_course_history = audit_type == "what_if" and (
+                bool(existing.courses_completed) or bool(existing.courses_in_progress)
+            )
+            if preserve_course_history:
+                data.pop("courses_completed", None)
+                data.pop("courses_in_progress", None)
+                data.pop("raw_data", None)
+            else:
+                # Update existing - ALWAYS update raw_data for regular audits.
+                existing.raw_data = data['raw_data']
             for key, value in data.items():
                 if value is not None and hasattr(existing, key):
                     setattr(existing, key, value)
@@ -2817,6 +2847,8 @@ async def upload_degreeworks_pdf(
         # Update user name if found
         if data.get('student_name') and not db_user.name:
             db_user.name = data['student_name']
+        if data.get('degree_program') and hasattr(db_user, 'major'):
+            db_user.major = data['degree_program']
 
         db.commit()
 
@@ -2835,6 +2867,8 @@ async def upload_degreeworks_pdf(
                 "degree_program": data.get('degree_program'),
                 "overall_gpa": data.get('overall_gpa'),
                 "total_credits_earned": data.get('total_credits_earned'),
+                "audit_type": audit_type or "regular",
+                "preserved_existing_courses": preserve_course_history,
                 "pdf_text_length": len(pdf_text),
                 "pdf_stored": True
             }
@@ -2886,6 +2920,7 @@ def parse_degreeworks_pdf(text: str) -> dict:
     clean_text = '\n'.join(clean_lines)
     # Also make a single-line version for multi-line course matching
     collapsed = ' '.join(clean_lines)
+    all_collapsed = ' '.join(line.strip() for line in lines if line.strip())
 
     print("=" * 60)
     print(f"PDF: {len(text)} chars raw -> {len(clean_text)} chars cleaned")
@@ -2938,11 +2973,21 @@ def parse_degreeworks_pdf(text: str) -> dict:
 
     # Degree program: "Degree Bachelor of Science" + "Major Computer Science"
     degree_match = re.search(r'Degree\s+(Bachelor\s+of\s+\w+|Master\s+of\s+\w+)', text)
+    if not degree_match:
+        degree_match = re.search(r'\b(Bachelor\s+of\s+\w+|Master\s+of\s+\w+)\b', clean_text)
     major_match = re.search(r'Major\s+([A-Za-z ]+?)(?:\s{2,}|Program)', text)
     if degree_match and major_match:
         data['degree_program'] = f"{degree_match.group(1)} in {major_match.group(1).strip()}"
     elif degree_match:
         data['degree_program'] = degree_match.group(1)
+    what_if_major_match = re.search(
+        r'\bMajor\s+in\s+([A-Za-z][A-Za-z &/\-]+?)\s+(?:COMPLETE|INCOMPLETE)\b',
+        clean_text,
+        re.IGNORECASE,
+    )
+    if what_if_major_match and degree_match:
+        data['degree_program'] = f"{degree_match.group(1)} in {what_if_major_match.group(1).strip()}"
+        data["_audit_type"] = "what_if"
 
     # Advisor: "Advisor Vojislav Stojkovic" (stop at double-space or end of line)
     advisor_match = re.search(r'Advisor\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)+)', text)
@@ -2994,6 +3039,43 @@ def parse_degreeworks_pdf(text: str) -> dict:
     completed_courses = []
     ip_courses = []
     seen_codes = set()
+
+    # What-If audits can render each class as stacked fields:
+    # Course COSC 251 / Title INTRODUCTION TO DATA SCIENCE / Grade IP / Credits (3) / Term FALL 2026
+    course_block_pattern = re.compile(
+        r'Course\s+(' + DEPT_PREFIXES + r'\s+\d{3}(?:TR)?)\s+'
+        r'Title\s+(.+?)\s+'
+        r'Grade\s+(' + VALID_GRADES + r')\s+'
+        r'Credits\s+\(?(\d+\.?\d*)\)?\s+'
+        r'Term\s+((?:FALL|SPRING|SUMMER)\s+\d{4})',
+        re.IGNORECASE,
+    )
+
+    for match in course_block_pattern.finditer(all_collapsed):
+        code = match.group(1).upper().strip()
+        name = match.group(2).strip()
+        grade = match.group(3).upper().strip()
+        credits = float(match.group(4))
+        term = match.group(5).strip()
+        if code in seen_codes:
+            continue
+        seen_codes.add(code)
+        if grade == "IP":
+            ip_courses.append({
+                "code": code,
+                "name": name,
+                "credits": int(credits),
+                "status": "in_progress",
+                "term": term
+            })
+        else:
+            completed_courses.append({
+                "code": code,
+                "name": name,
+                "grade": grade,
+                "credits": credits,
+                "term": term
+            })
 
     # First pass: extract in-progress courses (IP pattern is more specific)
     for match in ip_pattern.finditer(collapsed):
@@ -3190,6 +3272,8 @@ async def sync_banner_data(
                     db_user.name = name
                 if sid:
                     db_user.student_id = sid
+                if existing_dw.degree_program:
+                    db_user.major = existing_dw.degree_program
 
                 db_user.morgan_connected = True
                 db_user.morgan_connected_at = datetime.now(timezone.utc)
@@ -3615,6 +3699,8 @@ def _planner_course_rows(value, limit=20):
 
 
 def _planner_degreeworks_context(dw_dict: dict, registered_courses: list, registered_term_key: str | None) -> dict:
+    from services.degree_profiles import degree_profile_from_dw
+
     completed = _planner_course_rows(dw_dict.get("courses_completed"), limit=24)
     in_progress = _planner_course_rows(dw_dict.get("courses_in_progress"), limit=16)
     remaining = _planner_course_rows(dw_dict.get("courses_remaining"), limit=30)
@@ -3629,6 +3715,7 @@ def _planner_degreeworks_context(dw_dict: dict, registered_courses: list, regist
         "connected": True,
         "source": dw_dict.get("data_source") or "manual_entry",
         "synced_at": dw_dict.get("synced_at"),
+        "degree_profile": degree_profile_from_dw(dw_dict),
         "student": {
             "classification": dw_dict.get("classification"),
             "degree_program": dw_dict.get("degree_program"),
@@ -3663,16 +3750,73 @@ def _planner_degreeworks_context(dw_dict: dict, registered_courses: list, regist
 
 
 @app.get("/api/ripple-effect")
-async def ripple_effect(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+async def ripple_effect(
+    profile: str = Query(None),
+    degree_program: str = Query(None),
+    catalog_year: str = Query(None),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Get prerequisite dependency graph with student status overlay."""
     dw_dict = await asyncio.to_thread(_fetch_dw_sync, user["user_id"])
     canvas_dict = await asyncio.to_thread(_fetch_canvas_sync, user["user_id"])
-    return build_prerequisite_graph(dw_dict, canvas_dict)
+    if (degree_program or catalog_year) and dw_dict:
+        dw_dict = dict(dw_dict)
+        if degree_program:
+            dw_dict["degree_program"] = degree_program
+        if catalog_year:
+            dw_dict["catalog_year"] = catalog_year
+    return build_prerequisite_graph(dw_dict, canvas_dict, profile_key=profile)
 
 
 # ==============================================================================
 # NEXT-SEMESTER PLANNER - suggest 2-3 conflict-free schedules
 # ==============================================================================
+async def _discover_planner_terms_safe() -> tuple[list[dict], str | None]:
+    """Best-effort Banner term discovery; Planner must still work if Banner is down."""
+    try:
+        from banner_scraper import class_search
+        return await class_search.discover_planner_terms(), None
+    except Exception as e:
+        print(f"[SCHEDULE_TERMS] Banner term discovery failed: {e}")
+        return [], str(e)
+
+
+def _cached_live_terms_safe() -> list[str]:
+    try:
+        from services.live_schedule import list_live_terms
+        return list_live_terms()
+    except Exception as e:
+        print(f"[SCHEDULE_TERMS] Live term lookup failed: {e}")
+        return []
+
+
+def _planner_term_detail_map(static_terms: list[str], live_terms: list[str], discovered_terms: list[dict]) -> dict[str, dict]:
+    details: dict[str, dict] = {}
+    for term in static_terms:
+        details[term] = {"term": term, "source": "static", "discovered": False}
+    for term in live_terms:
+        existing = details.setdefault(term, {"term": term, "source": "live_cache", "discovered": False})
+        existing["has_live_cache"] = True
+        if existing.get("source") == "static":
+            existing["source"] = "static+live_cache"
+    for item in discovered_terms:
+        term = item.get("sem_key") or item.get("term")
+        if not term:
+            continue
+        existing = details.setdefault(term, {"term": term})
+        existing.update({
+            "term": term,
+            "term_code": item.get("term_code"),
+            "description": item.get("description"),
+            "view_only": bool(item.get("view_only")),
+            "discovered": True,
+            "source": "banner" if existing.get("source") in (None, "banner") else f"{existing.get('source')}+banner",
+            "needs_refresh": not existing.get("has_live_cache") and term not in static_terms,
+        })
+    return details
+
+
 @app.get("/api/planning/next-semester")
 async def planning_next_semester(
     semester: str = Query(None),
@@ -3711,17 +3855,33 @@ async def planning_next_semester(
         asyncio.to_thread(_fetch_canvas_sync, uid),
     )
 
-    # Chronologically-ordered list of semesters we have schedule data for.
+    # Chronologically-ordered list of semesters Planner can show: static files,
+    # cached live terms, and Banner-discovered future terms.
     from services.schedule_planner import _parse_semester_key
+    discovered_terms, term_discovery_error = await _discover_planner_terms_safe()
+    live_terms = _cached_live_terms_safe()
     available_all = sorted(
-        [k for k in _SCHEDULES.keys() if _parse_semester_key(k)],
+        {
+            k for k in [
+                *_SCHEDULES.keys(),
+                *live_terms,
+                *[item.get("sem_key") or item.get("term") for item in discovered_terms],
+            ]
+            if k and _parse_semester_key(k)
+        },
         key=_parse_semester_key,
     )
     available = future_planner_semesters(available_all)
+    available_details = _planner_term_detail_map(list(_SCHEDULES.keys()), live_terms, discovered_terms)
 
     # DegreeWorks not connected -> can't know remaining requirements/eligibility.
     if not dw_dict:
-        return {"connected": False, "available_semesters": available}
+        return {
+            "connected": False,
+            "available_semesters": available,
+            "available_semester_details": available_details,
+            "term_discovery_error": term_discovery_error,
+        }
 
     graph = build_prerequisite_graph(dw_dict, canvas_dict)
     eligible = eligible_courses(graph)
@@ -3930,6 +4090,8 @@ async def planning_next_semester(
         "connected": True,
         "semester": sem_key,
         "available_semesters": available,
+        "available_semester_details": available_details,
+        "term_discovery_error": term_discovery_error,
         "classification": classification,
         "credits_remaining": dw_dict.get("credits_remaining"),
         "degreeworks_context": _planner_degreeworks_context(dw_dict, registered_courses, registered_term_key),
@@ -4094,19 +4256,8 @@ async def delete_saved_planner_plan(
     return {"deleted": True, "client_id": client_id}
 
 
-async def _run_schedule_refresh(term: str | None = None, subjects: str | None = None, include_geneds: bool = True):
+async def _refresh_schedule_term(sem_key: str, term_code: str, subjects: str | None, include_geneds: bool):
     from banner_scraper import class_search
-
-    if term:
-        term_code = await class_search.resolve_term_code(term)
-        if not term_code:
-            return {"status": "error", "reason": f"could not resolve {term} from Banner"}
-        sem_key = term
-    else:
-        active = await class_search.resolve_active_term()
-        if not active:
-            return {"status": "error", "reason": "could not resolve active term from Banner"}
-        term_code, sem_key = active
 
     counts: dict[str, int] = {}
     skipped: dict[str, int] = {}
@@ -4165,12 +4316,161 @@ async def _run_schedule_refresh(term: str | None = None, subjects: str | None = 
     }
 
 
+def _safe_schedule_json(value) -> str:
+    try:
+        return json.dumps(value or [], default=str)
+    except Exception:
+        return "[]"
+
+
+def _serialize_schedule_refresh_run(row: ScheduleRefreshRun | None) -> dict | None:
+    if not row:
+        return None
+
+    def _loads(raw, fallback):
+        if not raw:
+            return fallback
+        try:
+            return json.loads(raw)
+        except Exception:
+            return fallback
+
+    return {
+        "id": row.id,
+        "source": row.source,
+        "status": row.status,
+        "term": row.term,
+        "terms": _loads(row.terms_json, []),
+        "requested_subjects": _loads(row.requested_subjects_json, []),
+        "subjects": _loads(row.subject_counts_json, {}),
+        "skipped_subjects": _loads(row.skipped_subjects_json, {}),
+        "errors": _loads(row.errors_json, []),
+        "total_sections": row.total_sections,
+        "started_at": row.started_at.isoformat() if row.started_at else None,
+        "finished_at": row.finished_at.isoformat() if row.finished_at else None,
+    }
+
+
+def _record_schedule_refresh_run(result: dict, source: str, started_at: datetime):
+    db = SessionLocal()
+    try:
+        term_results = result.get("terms") if isinstance(result.get("terms"), list) else []
+        terms = [
+            {
+                "term": item.get("term"),
+                "term_code": item.get("term_code"),
+                "status": item.get("status"),
+                "total_sections": item.get("total_sections", 0),
+            }
+            for item in term_results
+        ] or ([{
+            "term": result.get("term"),
+            "term_code": result.get("term_code"),
+            "status": result.get("status"),
+            "total_sections": result.get("total_sections", 0),
+        }] if result.get("term") else [])
+        row = ScheduleRefreshRun(
+            source=source,
+            status=result.get("status") or "unknown",
+            term=result.get("term"),
+            terms_json=_safe_schedule_json(terms),
+            requested_subjects_json=_safe_schedule_json(result.get("requested_subjects", [])),
+            subject_counts_json=_safe_schedule_json(result.get("subjects", {})),
+            skipped_subjects_json=_safe_schedule_json(result.get("skipped_subjects", {})),
+            errors_json=_safe_schedule_json(result.get("errors", [])),
+            total_sections=int(result.get("total_sections") or 0),
+            started_at=started_at,
+            finished_at=datetime.now(timezone.utc),
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        result["refresh_run"] = _serialize_schedule_refresh_run(row)
+    except Exception as e:
+        db.rollback()
+        print(f"[SCHEDULE_REFRESH] run summary write failed: {e}")
+    finally:
+        db.close()
+    return result
+
+
+async def _run_schedule_refresh(
+    term: str | None = None,
+    subjects: str | None = None,
+    include_geneds: bool = True,
+    terms_limit: int = 1,
+    source: str = "manual",
+):
+    from banner_scraper import class_search
+
+    started_at = datetime.now(timezone.utc)
+    if term:
+        term_code = await class_search.resolve_term_code(term)
+        if not term_code:
+            return _record_schedule_refresh_run(
+                {"status": "error", "term": term, "reason": f"could not resolve {term} from Banner", "errors": [{"term": term, "stage": "resolve", "error": f"could not resolve {term} from Banner"}]},
+                source,
+                started_at,
+            )
+        return _record_schedule_refresh_run(
+            await _refresh_schedule_term(term, term_code, subjects, include_geneds),
+            source,
+            started_at,
+        )
+
+    discovered = await class_search.discover_planner_terms()
+    refreshable = [item for item in discovered if item.get("sem_key") and item.get("term_code")]
+    limit = max(1, min(int(terms_limit or 1), 4))
+    if not refreshable:
+        active = await class_search.resolve_active_term()
+        if not active:
+            return _record_schedule_refresh_run(
+                {"status": "error", "reason": "could not resolve active term from Banner", "errors": [{"stage": "resolve", "error": "could not resolve active term from Banner"}]},
+                source,
+                started_at,
+            )
+        term_code, sem_key = active
+        return _record_schedule_refresh_run(
+            await _refresh_schedule_term(sem_key, term_code, subjects, include_geneds),
+            source,
+            started_at,
+        )
+
+    results = [
+        await _refresh_schedule_term(item["sem_key"], item["term_code"], subjects, include_geneds)
+        for item in refreshable[:limit]
+    ]
+    if len(results) == 1:
+        return _record_schedule_refresh_run(results[0], source, started_at)
+
+    errors = [err for result in results for err in result.get("errors", [])]
+    status_text = (
+        "error"
+        if all(result.get("status") == "error" for result in results)
+        else "partial"
+        if any(result.get("status") in {"partial", "error"} for result in results)
+        else "ok"
+    )
+    return _record_schedule_refresh_run({
+        "status": status_text,
+        "terms": results,
+        "term": results[0].get("term"),
+        "term_code": results[0].get("term_code"),
+        "requested_subjects": results[0].get("requested_subjects", []),
+        "subjects": {result.get("term"): result.get("subjects", {}) for result in results},
+        "skipped_subjects": {result.get("term"): result.get("skipped_subjects", {}) for result in results},
+        "errors": errors,
+        "total_sections": sum(result.get("total_sections", 0) for result in results),
+    }, source, started_at)
+
+
 @app.post("/api/internal/schedule/refresh")
 async def internal_schedule_refresh(
     request: Request,
     term: str | None = Query(None),
     subjects: str | None = Query(None),
     include_geneds: bool = Query(True),
+    terms_limit: int = Query(1),
 ):
     """Triggered every ~6h by Cloud Scheduler. Pulls live section + seat data from
     Banner "Browse Classes" (public, no login) for the active registerable term and
@@ -4181,7 +4481,7 @@ async def internal_schedule_refresh(
     a DB write that fails rolls back (delete + insert together) leaving the old
     snapshot in place. One subject never breaks the others."""
     _require_research_secret(request)
-    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds)
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit, source="scheduler")
 
 
 @app.get("/api/admin/schedule/status")
@@ -4202,6 +4502,19 @@ async def admin_schedule_status(
     if term:
         query = query.filter(LiveSection.term == term)
     rows = query.group_by(LiveSection.term, LiveSection.subject).order_by(LiveSection.term, LiveSection.subject).all()
+    recent_runs = (
+        db.query(ScheduleRefreshRun)
+        .order_by(ScheduleRefreshRun.finished_at.desc())
+        .limit(5)
+        .all()
+    )
+    latest_run = recent_runs[0] if recent_runs else None
+    latest_success = (
+        db.query(ScheduleRefreshRun)
+        .filter(ScheduleRefreshRun.status.in_(["ok", "partial"]), ScheduleRefreshRun.total_sections > 0)
+        .order_by(ScheduleRefreshRun.finished_at.desc())
+        .first()
+    )
 
     terms: dict[str, dict] = {}
     for sem_key, subject, row_count, last_refresh in rows:
@@ -4213,14 +4526,39 @@ async def admin_schedule_status(
             bucket["last_refresh"] = aware_last
 
     from services.live_schedule import FRESH_HOURS
+    from services.schedule_planner import _parse_semester_key
+    discovered_terms, discovery_error = await _discover_planner_terms_safe()
+    discovered_by_key = {item.get("sem_key") or item.get("term"): item for item in discovered_terms}
+    if term:
+        discovered_by_key = {key: value for key, value in discovered_by_key.items() if key == term}
+    for sem_key, item in discovered_by_key.items():
+        if not sem_key:
+            continue
+        bucket = terms.setdefault(sem_key, {"term": sem_key, "subjects": {}, "total_sections": 0, "last_refresh": None})
+        bucket["term_code"] = item.get("term_code")
+        bucket["description"] = item.get("description")
+        bucket["view_only"] = bool(item.get("view_only"))
+        bucket["discovered"] = True
+        bucket["needs_refresh"] = bucket["total_sections"] == 0
+
     now = datetime.now(timezone.utc)
     term_list = []
     for item in terms.values():
         aware_last = item["last_refresh"]
         item["last_refresh"] = aware_last.isoformat() if aware_last else None
         item["fresh"] = bool(aware_last and now - aware_last <= timedelta(hours=FRESH_HOURS))
+        item["needs_refresh"] = bool(item.get("needs_refresh") or not item["fresh"])
         term_list.append(item)
-    return {"status": "ok", "terms": term_list, "fresh_hours": FRESH_HOURS}
+    term_list.sort(key=lambda row: _parse_semester_key(row["term"]) or (9999, 99))
+    return {
+        "status": "ok",
+        "terms": term_list,
+        "fresh_hours": FRESH_HOURS,
+        "term_discovery_error": discovery_error,
+        "latest_refresh_run": _serialize_schedule_refresh_run(latest_run),
+        "latest_successful_refresh_run": _serialize_schedule_refresh_run(latest_success),
+        "recent_refresh_runs": [_serialize_schedule_refresh_run(row) for row in recent_runs],
+    }
 
 
 @app.post("/api/admin/schedule/refresh")
@@ -4228,11 +4566,12 @@ async def admin_schedule_refresh(
     term: str | None = Query(None),
     subjects: str | None = Query(None),
     include_geneds: bool = Query(True),
+    terms_limit: int = Query(1),
     user: dict = Depends(get_current_user),
 ):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds)
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds, terms_limit=terms_limit, source="manual")
 
 
 # ==============================================================================
@@ -9407,28 +9746,64 @@ async def clear_index(user=Depends(get_current_user)):
 async def add_course(course: Course, user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-    arr = json.load(open(CLASSES_FILE, encoding="utf-8"))
-    arr.append(course.model_dump())
-    json.dump(arr, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
+    data = _load_classes_catalog()
+    data["courses"].append(course.model_dump())
+    _save_classes_catalog(data)
     return {"message": "Course added", "course": course}
 
 @app.delete("/api/curriculum/delete/{code}")
 async def delete_course(code: str, user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-    arr = json.load(open(CLASSES_FILE, encoding="utf-8"))
-    filtered = [c for c in arr if c.get("course_code") != code]
-    json.dump(filtered, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
+    data = _load_classes_catalog()
+    before = len(data["courses"])
+    data["courses"] = [c for c in data["courses"] if c.get("course_code") != code]
+    if len(data["courses"]) == before:
+        raise HTTPException(status_code=404, detail=f"Course {code} not found")
+    _save_classes_catalog(data)
     return {"message": f"{code} deleted"}
 
+
+@app.get("/api/admin/courses")
+async def admin_courses(user: dict = Depends(get_current_user)):
+    """Return the full local course catalog from classes.json for Admin Courses."""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admins only")
+    return {"courses": _load_classes_catalog().get("courses", [])}
+
 @app.get("/api/curriculum")
-async def get_curriculum():
+async def get_curriculum(
+    profile: str = Query(None),
+    degree_program: str = Query(None),
+    catalog_year: str = Query(None),
+):
     """Returns full curriculum data including degree info, courses, and elective requirements.
     Source of truth: courses.txt (KB file). Falls back to classes.json if txt not available."""
+    if profile or degree_program:
+        try:
+            from services.degree_profiles import curriculum_for_degree_program, curriculum_for_profile
+            if profile:
+                return curriculum_for_profile(profile)
+            return curriculum_for_degree_program(degree_program, catalog_year)
+        except Exception as e:
+            print(f"[CURRICULUM] Degree profile lookup failed: {e}")
+
     try:
         # Primary: parse from txt knowledge base (single source of truth)
         if os.path.exists(KB_COURSES_FILE):
-            return parse_curriculum_from_txt()
+            result = parse_curriculum_from_txt()
+            try:
+                from services.degree_profiles import normalize_degree_profile
+                result = dict(result)
+                result["degree_profile"] = normalize_degree_profile("Computer Science")
+                result["degree_info"] = {
+                    **result.get("degree_info", {}),
+                    "profile_key": "computer_science_bs",
+                    "profile_status": "active",
+                }
+            except Exception:
+                pass
+            return result
 
         # Fallback: classes.json (legacy)
         data = json.load(open(CLASSES_FILE, encoding="utf-8"))
@@ -9685,22 +10060,46 @@ async def update_course(code: str, course: Course, user=Depends(get_current_user
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
 
-    arr = json.load(open(CLASSES_FILE, encoding="utf-8"))
+    data = _load_classes_catalog()
     found = False
-    for i, c in enumerate(arr):
+    for i, c in enumerate(data["courses"]):
         if c.get("course_code") == code:
-            arr[i] = course.model_dump()
+            data["courses"][i] = course.model_dump()
             found = True
             break
 
     if not found:
         raise HTTPException(status_code=404, detail=f"Course {code} not found")
 
-    json.dump(arr, open(CLASSES_FILE, "w", encoding="utf-8"), indent=2)
+    _save_classes_catalog(data)
     return {"message": f"Course {code} updated", "course": course}
 
 # --- Admin: Knowledge Base Management ---
 DATA_SOURCES_DIR = os.path.join(BACKEND_DIR, "data_sources")
+
+
+def _local_kb_sources() -> list[tuple[str, str]]:
+    return [
+        ("data_sources", DATA_SOURCES_DIR),
+        ("kb_structured", KB_STRUCTURED_DIR),
+    ]
+
+
+def _resolve_local_kb_file(filename: str) -> tuple[str, str]:
+    normalized = filename.replace("\\", "/")
+    if "/" in normalized:
+        prefix, leaf = normalized.split("/", 1)
+    else:
+        prefix, leaf = "data_sources", normalized
+    source_map = dict(_local_kb_sources())
+    base_dir = source_map.get(prefix)
+    if not base_dir:
+        raise HTTPException(status_code=400, detail="Invalid KB source")
+    safe_filename = os.path.basename(leaf)
+    filepath = os.path.join(base_dir, safe_filename)
+    if not os.path.realpath(filepath).startswith(os.path.realpath(base_dir)):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return filepath, f"{prefix}/{safe_filename}"
 
 @app.get("/api/admin/knowledge-base/files")
 async def list_kb_files(user: dict = Depends(get_current_user)):
@@ -9709,14 +10108,17 @@ async def list_kb_files(user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     files = []
-    if os.path.exists(DATA_SOURCES_DIR):
-        for f in os.listdir(DATA_SOURCES_DIR):
+    for source, base_dir in _local_kb_sources():
+        if not os.path.exists(base_dir):
+            continue
+        for f in os.listdir(base_dir):
             if f.endswith(".json"):
-                filepath = os.path.join(DATA_SOURCES_DIR, f)
+                filepath = os.path.join(base_dir, f)
                 size = os.path.getsize(filepath)
                 modified = datetime.fromtimestamp(os.path.getmtime(filepath))
                 files.append({
-                    "filename": f,
+                    "filename": f if source == "data_sources" else f"{source}/{f}",
+                    "source": source,
                     "size": size,
                     "modified": modified.isoformat()
                 })
@@ -9735,12 +10137,14 @@ async def search_kb_files(q: str, user: dict = Depends(get_current_user)):
     results = []
     search_term = q.lower()
 
-    if os.path.exists(DATA_SOURCES_DIR):
-        for filename in os.listdir(DATA_SOURCES_DIR):
+    for source, base_dir in _local_kb_sources():
+        if not os.path.exists(base_dir):
+            continue
+        for filename in os.listdir(base_dir):
             if not filename.endswith(".json"):
                 continue
 
-            filepath = os.path.join(DATA_SOURCES_DIR, filename)
+            filepath = os.path.join(base_dir, filename)
             try:
                 with open(filepath, "r", encoding="utf-8") as f:
                     content = f.read()
@@ -9777,7 +10181,8 @@ async def search_kb_files(q: str, user: dict = Depends(get_current_user)):
                     )
 
                     results.append({
-                        "filename": filename,
+                        "filename": filename if source == "data_sources" else f"{source}/{filename}",
+                        "source": source,
                         "context": "..." + highlighted.strip() + "...",
                         "position": idx,
                         "match_number": match_count
@@ -9797,7 +10202,7 @@ async def search_kb_files(q: str, user: dict = Depends(get_current_user)):
 
     return {"results": results[:50], "total_matches": len(results)}
 
-@app.get("/api/admin/knowledge-base/{filename}")
+@app.get("/api/admin/knowledge-base/{filename:path}")
 async def get_kb_file(filename: str, user: dict = Depends(get_current_user)):
     """Get content of a knowledge base file (admin only)"""
     if user.get("role") != "admin":
@@ -9806,11 +10211,7 @@ async def get_kb_file(filename: str, user: dict = Depends(get_current_user)):
     if not filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="Only JSON files allowed")
 
-    # Prevent path traversal: strip directory components
-    safe_filename = os.path.basename(filename)
-    filepath = os.path.join(DATA_SOURCES_DIR, safe_filename)
-    if not os.path.realpath(filepath).startswith(os.path.realpath(DATA_SOURCES_DIR)):
-        raise HTTPException(status_code=400, detail="Invalid filename")
+    filepath, safe_filename = _resolve_local_kb_file(filename)
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="File not found")
 
@@ -9821,7 +10222,7 @@ async def get_kb_file(filename: str, user: dict = Depends(get_current_user)):
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=500, detail=f"Invalid JSON: {str(e)}")
 
-@app.put("/api/admin/knowledge-base/{filename}")
+@app.put("/api/admin/knowledge-base/{filename:path}")
 async def update_kb_file(filename: str, content: dict, user: dict = Depends(get_current_user)):
     """Update a knowledge base file (admin only)"""
     if user.get("role") != "admin":
@@ -9830,11 +10231,7 @@ async def update_kb_file(filename: str, content: dict, user: dict = Depends(get_
     if not filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="Only JSON files allowed")
 
-    # Prevent path traversal
-    safe_filename = os.path.basename(filename)
-    filepath = os.path.join(DATA_SOURCES_DIR, safe_filename)
-    if not os.path.realpath(filepath).startswith(os.path.realpath(DATA_SOURCES_DIR)):
-        raise HTTPException(status_code=400, detail="Invalid filename")
+    filepath, safe_filename = _resolve_local_kb_file(filename)
 
     # Create backup
     if os.path.exists(filepath):
