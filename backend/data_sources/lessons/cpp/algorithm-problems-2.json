@@ -10,145 +10,359 @@
   ],
   "refresher": "A multi-step algorithm may remember a best **value** and where it appeared. Write the rule that should remain true after every **loop** pass, decide what happens for empty **input** and ties, then trace a small example.",
   "refresher_code": "std::size_t best = 0;\nfor (std::size_t i = 1; i < values.size(); i++) {\n  if (values[i] > values[best]) best = i;\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A harder algorithm often remembers several related facts. To find the position of the largest **value**, remember the best position found so far and compare every later value with it. Decide the empty-**input** result before reading position zero."
-    },
-    {
-      "kind": "visual",
-      "title": "Track best-so-far state",
-      "concept": "arrays",
-      "caption": "Watch the best index update only when a better value appears.",
-      "initial_state": {},
-      "steps": [
+      "id": "track-related-facts",
+      "title": "Track related facts",
+      "summary": "Keep the saved value and index rule visible while looping.",
+      "blocks": [
         {
-          "title": "Initialize",
-          "body": "Best starts at index 0 because that is the first candidate.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "best": 0
-            },
-            "note": "best value = 4"
-          }
+          "kind": "text",
+          "body": "A harder algorithm often remembers several related facts. To find the position of the largest **value**, remember the best position found so far and compare every later value with it. Decide the empty-**input** result before reading position zero."
         },
         {
-          "title": "Compare index 1",
-          "body": "Nine is larger than four, so best moves to index 1.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 1
+          "kind": "visual",
+          "title": "Track best-so-far state",
+          "concept": "state-trace",
+          "caption": "Trace the invariant from edge-case guard to final returned index.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Guard empty input",
+              "body": "Before using index 0, decide what the algorithm returns for an empty input.",
+              "state": {
+                "active_step": "input",
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "pointers": {
+                  "candidate": 0
+                },
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "empty case checked first",
+                  "comparison": "values empty?",
+                  "decision": "if empty, return the sentinel",
+                  "tracked": "no best index yet",
+                  "result": "safe to choose index 0"
+                },
+                "note": "The edge case is handled before reading a first item."
+              },
+              "code_focus": "input: Guard empty input",
+              "input_value": "candidate -> 4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "candidate: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "input"
+                }
+              ],
+              "decision": "if empty, return the sentinel",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The edge case is handled before reading a first item."
+                }
+              ],
+              "output": "none yet",
+              "why": "Before using index 0, decide what the algorithm returns for an empty input."
             },
-            "note": "best value = 9"
-          }
+            {
+              "title": "Initialize invariant",
+              "body": "Use the first item as the first best candidate, then state what best means.",
+              "animation": "add",
+              "state": {
+                "active_step": "state",
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "best": 0
+                },
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 0 has 4",
+                  "comparison": "no later item checked yet",
+                  "decision": "best starts at index 0",
+                  "tracked": "best = index 0, value 4",
+                  "result": "invariant is ready"
+                },
+                "note": "Invariant: best is the index of the largest checked value."
+              },
+              "code_focus": "state: Initialize invariant",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "state"
+                }
+              ],
+              "decision": "best starts at index 0",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Invariant: best is the index of the largest checked value."
+                }
+              ],
+              "output": "none yet",
+              "why": "Use the first item as the first best candidate, then state what best means."
+            },
+            {
+              "title": "Update when better",
+              "body": "Compare index 1 with the saved best. Since 9 is larger than 4, best must move.",
+              "animation": "slide",
+              "state": {
+                "active_step": "compare",
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 1
+                },
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 1 has 9",
+                  "comparison": "9 > 4 is true",
+                  "decision": "replace best",
+                  "tracked": "best = index 1, value 9",
+                  "result": "keep scanning"
+                },
+                "note": "The saved index and saved meaning stay in sync."
+              },
+              "code_focus": "compare: Update when better",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "replace best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The saved index and saved meaning stay in sync."
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare index 1 with the saved best. Since 9 is larger than 4, best must move."
+            },
+            {
+              "title": "Keep when not better",
+              "body": "Compare index 2 with best. Since 7 is not larger than 9, the invariant says best stays put.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "compare",
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 2
+                },
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 2 has 7",
+                  "comparison": "7 > 9 is false",
+                  "decision": "keep best",
+                  "tracked": "best = index 1, value 9",
+                  "result": "all items checked"
+                },
+                "note": "Not every pass updates the saved state."
+              },
+              "code_focus": "compare: Keep when not better",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "keep best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Not every pass updates the saved state."
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare index 2 with best. Since 7 is not larger than 9, the invariant says best stays put."
+            },
+            {
+              "title": "Return the tracked fact",
+              "body": "After the loop, return the fact the variable promised to track: the best index.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1
+                },
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "loop finished",
+                  "comparison": "no candidates left",
+                  "decision": "use best",
+                  "tracked": "best = index 1, value 9",
+                  "result": "return index 1"
+                },
+                "note": "The trace reaches the final returned index."
+              },
+              "code_focus": "result: Return the tracked fact",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "use best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The trace reaches the final returned index."
+                }
+              ],
+              "output": "return index 1",
+              "why": "After the loop, return the fact the variable promised to track: the best index."
+            }
+          ]
         },
         {
-          "title": "Compare index 2",
-          "body": "Seven is not larger than nine, so best stays put.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 2
-            },
-            "note": "return best index 1"
-          }
+          "kind": "text",
+          "body": "A rule that stays true after every **loop** pass is called an invariant. Here the rule is simple: after checking through position `i`, `best` stores the position of the largest **value** seen so far. Writing that sentence first makes the update easier to verify."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "The algorithm is not C++-specific",
+          "body": "You would keep the same best-so-far rule in Python. C++ adds explicit vector and **index** types, but the reasoning and the small hand trace are identical."
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "A rule that stays true after every **loop** pass is called an invariant. Here the rule is simple: after checking through position `i`, `best` stores the position of the largest **value** seen so far. Writing that sentence first makes the update easier to verify."
+      "id": "candidate-edge-case",
+      "title": "Candidate and edge case",
+      "summary": "Handle empty input before using the first element as a candidate.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The empty case is handled before position zero is used. Each larger **value** replaces the saved best position.",
+          "code": "#include <iostream>\n#include <vector>\n\nint largestIndex(const std::vector<int>& values) {\n  if (values.empty()) {\n    return -1;\n  }\n\n  std::size_t best = 0;\n  for (std::size_t i = 1; i < values.size(); i++) {\n    if (values[i] > values[best]) {\n      best = i;\n    }\n  }\n\n  return static_cast<int>(best);\n}\n\nint main() {\n  std::cout << largestIndex({4, 9, 7}) << \"\\n\";\n}",
+          "output": "1"
+        },
+        {
+          "kind": "compare",
+          "caption": "Handle empty **input** before creating an element-based candidate.",
+          "wrong_label": "Common mistake",
+          "wrong": "std::size_t best = 0;\nreturn values[best];",
+          "right_label": "Clearer version",
+          "right": "if (values.empty()) return -1;\nstd::size_t best = 0;"
+        },
+        {
+          "kind": "text",
+          "body": "For `{4, 9, 7}`, `best` starts at zero, changes to one after nine, and stays one after seven. Using `>` keeps the first position when two maximum **values** tie. Using `>=` would keep the last tied position."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "The algorithm is not C++-specific",
-      "body": "You would keep the same best-so-far rule in Python. C++ adds explicit vector and **index** types, but the reasoning and the small hand trace are identical."
+      "id": "tie-empty-checks",
+      "title": "Tie and empty checks",
+      "summary": "Trace tie behavior and empty-input safety before coding.",
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Handle empty input before choosing a candidate",
+          "body": "Position zero is a valid starting candidate only when the vector contains an element. Check `.empty()` before reading or comparing any element."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why start at **index** one?",
+          "code": "",
+          "choices": [
+            "zero already initialized best",
+            "vectors start at one",
+            "odd indexes lead",
+            "it skips negatives"
+          ],
+          "answer_index": 0,
+          "why": "The first element already supplies the current candidate, so only later positions need comparison."
+        },
+        {
+          "kind": "check",
+          "prompt": "With `>`, which tied maximum remains?",
+          "code": "",
+          "choices": [
+            "the first",
+            "the last",
+            "both",
+            "neither"
+          ],
+          "answer_index": 0,
+          "why": "An equal later **value** does not satisfy greater-than, preserving the earlier **index**."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The empty case is handled before position zero is used. Each larger **value** replaces the saved best position.",
-      "code": "#include <iostream>\n#include <vector>\n\nint largestIndex(const std::vector<int>& values) {\n  if (values.empty()) {\n    return -1;\n  }\n\n  std::size_t best = 0;\n  for (std::size_t i = 1; i < values.size(); i++) {\n    if (values[i] > values[best]) {\n      best = i;\n    }\n  }\n\n  return static_cast<int>(best);\n}\n\nint main() {\n  std::cout << largestIndex({4, 9, 7}) << \"\\n\";\n}",
-      "output": "1"
-    },
-    {
-      "kind": "compare",
-      "caption": "Handle empty **input** before creating an element-based candidate.",
-      "wrong_label": "Common mistake",
-      "wrong": "std::size_t best = 0;\nreturn values[best];",
-      "right_label": "Clearer version",
-      "right": "if (values.empty()) return -1;\nstd::size_t best = 0;"
-    },
-    {
-      "kind": "text",
-      "body": "For `{4, 9, 7}`, `best` starts at zero, changes to one after nine, and stays one after seven. Using `>` keeps the first position when two maximum **values** tie. Using `>=` would keep the last tied position."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Handle empty input before choosing a candidate",
-      "body": "Position zero is a valid starting candidate only when the vector contains an element. Check `.empty()` before reading or comparing any element."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why start at **index** one?",
-      "code": "",
-      "choices": [
-        "zero already initialized best",
-        "vectors start at one",
-        "odd indexes lead",
-        "it skips negatives"
-      ],
-      "answer_index": 0,
-      "why": "The first element already supplies the current candidate, so only later positions need comparison."
-    },
-    {
-      "kind": "check",
-      "prompt": "With `>`, which tied maximum remains?",
-      "code": "",
-      "choices": [
-        "the first",
-        "the last",
-        "both",
-        "neither"
-      ],
-      "answer_index": 0,
-      "why": "An equal later **value** does not satisfy greater-than, preserving the earlier **index**."
-    },
-    {
-      "kind": "list",
-      "title": "Algorithm Problems: Part 2 checklist",
-      "items": [
-        "Define each state **variable**.",
-        "Specify tie behavior.",
-        "Guard empty **input**.",
-        "Trace every update."
+      "id": "algorithm-checklist",
+      "title": "Algorithm Part 2 checklist",
+      "summary": "Review the habits for multi-step C++ algorithms.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Algorithm Problems: Part 2 checklist",
+          "items": [
+            "Define each state **variable**.",
+            "Specify tie behavior.",
+            "Guard empty **input**.",
+            "Trace every update."
+          ]
+        }
       ]
     }
   ],

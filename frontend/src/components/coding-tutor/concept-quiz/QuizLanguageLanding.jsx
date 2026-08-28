@@ -10,10 +10,18 @@ import {
   FaRegCircle,
   FaTrophy,
   FaHourglassHalf,
+  FaRedo,
 } from "react-icons/fa";
-import { fetchQuizCategories, fetchQuizProgress, fetchQuizQuestions } from "./conceptQuizApi";
+import {
+  fetchQuizCategories,
+  fetchQuizProgress,
+  fetchQuizQuestions,
+} from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
-import { readCategoryProgress, readQuizDraftAnswers } from "./conceptQuizProgress";
+import {
+  readCategoryProgress,
+  readQuizDraftAnswers,
+} from "./conceptQuizProgress";
 
 // Language landing page: a progress hero plus an ACCORDION of categories. Each
 // category row expands inline to reveal its question table (name | type | status).
@@ -23,6 +31,7 @@ import { readCategoryProgress, readQuizDraftAnswers } from "./conceptQuizProgres
 // A category counts toward the hero's "complete" tally once its best score
 // passes this bar.
 const PASS_THRESHOLD = 0.7;
+const MISTAKE_BANK_THRESHOLD = 3;
 
 const TOPIC_ALIASES = {
   arrays: "lists",
@@ -260,12 +269,77 @@ function CategoryQuestions({
   );
 }
 
+function mistakeKey(item) {
+  return `${item.category}:${item.question_id || item.id}`;
+}
+
+function MistakeBankQuiz({ mistakes, onOpenMistakeBank }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (mistakes.length < MISTAKE_BANK_THRESHOLD) return null;
+
+  const startQuiz = () => {
+    const first = mistakes[0];
+    onOpenMistakeBank?.(first?.question_id || first?.id || "");
+  };
+
+  return (
+    <section className={"cq-track-group cq-mistake-bank" + (expanded ? " open" : "")}>
+      <button
+        type="button"
+        className="cq-track-toggle"
+        aria-expanded={expanded}
+        aria-controls="cq-mistake-bank-content"
+        onClick={() => setExpanded((value) => !value)}
+      >
+        <span className="cq-track-badge is-mistakes">Wrong answers</span>
+        <span className="cq-track-copy">
+          <strong>Practice a focused wrong-answer quiz</strong>
+          <span>Unlocks after {MISTAKE_BANK_THRESHOLD} unresolved misses in this language.</span>
+        </span>
+        <span className="cq-track-stats">
+          <strong>{mistakes.length}</strong>
+          <small>to retry</small>
+        </span>
+        <FaChevronDown className="cq-track-chevron" aria-hidden="true" />
+      </button>
+
+      {expanded ? (
+        <div className="cq-track-content cq-mistake-bank-content" id="cq-mistake-bank-content">
+          <div className="cq-mistake-bank-intro">
+            <div>
+              <h4>Turn misses into a focused mini-quiz</h4>
+              <p>
+                This pulls missed questions from Beginner, Intermediate, and Advanced into
+                one retry quiz. Fixing them here updates the original question progress too.
+              </p>
+            </div>
+            <button type="button" className="cq-btn cq-btn-primary" onClick={startQuiz}>
+              <FaRedo aria-hidden="true" /> Start wrong-answer quiz
+            </button>
+          </div>
+          <div className="cq-mistake-bank-list" aria-label="Questions included in the wrong-answer quiz">
+            {mistakes.slice(0, 8).map((mistake) => (
+              <article key={mistakeKey(mistake)}>
+                <small>{mistake.category.replaceAll("-", " ")}</small>
+                <strong>{mistake.title}</strong>
+                <span>Included in the wrong-answer quiz</span>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export default function QuizLanguageLanding({
   apiBase,
   language,
   languageLabel,
   mastery,
   onOpenQuestion,
+  onOpenMistakeBank,
 }) {
   const [categories, setCategories] = useState([]);
   const [openId, setOpenId] = useState("");
@@ -313,7 +387,6 @@ export default function QuizLanguageLanding({
         if (alive) setServerProgress(data || { categories: [], mistakes: [] });
       })
       .catch(() => {
-        // Local progress remains available when sync is temporarily offline.
         if (alive) setServerProgress({ categories: [], mistakes: [] });
       });
     return () => {
@@ -501,34 +574,6 @@ export default function QuizLanguageLanding({
         </div>
       </section>
 
-      {mistakes.length ? (
-        <section className="cq-mistake-review">
-          <div className="cq-mistake-review-head">
-            <div>
-              <span className="cq-hero-eyebrow">Review and retry</span>
-              <h3>Questions to look at again</h3>
-            </div>
-            <span>{mistakes.length} unresolved</span>
-          </div>
-          <div className="cq-mistake-grid">
-            {mistakes.slice(0, 5).map((mistake) => (
-              <article key={`${mistake.category}:${mistake.question_id}`}>
-                <small>{mistake.category.replaceAll("-", " ")}</small>
-                <h4>{mistake.title}</h4>
-                <p>{mistake.explanation}</p>
-                <button
-                  type="button"
-                  className="cq-question-link"
-                  onClick={() => onOpenQuestion(mistake.category, mistake.question_id)}
-                >
-                  Try this question again
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
       {error ? <p className="cq-error">{error}</p> : null}
 
       {loadingCats ? (
@@ -679,6 +724,10 @@ export default function QuizLanguageLanding({
               </section>
             );
           })}
+          <MistakeBankQuiz
+            mistakes={mistakes}
+            onOpenMistakeBank={onOpenMistakeBank}
+          />
         </div>
       )}
     </div>

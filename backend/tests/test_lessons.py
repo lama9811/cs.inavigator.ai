@@ -78,6 +78,90 @@ LANGUAGE_SPECIFIC_LEARN_CARD_CATEGORIES = {
     ),
 }
 
+BEGINNER_AUTHORED_SECTION_CATEGORIES = (
+    "strings",
+    "user-input",
+    "conditionals",
+    "loops",
+    "lists",
+    "algorithm-problems",
+    "debug",
+)
+
+INTERMEDIATE_FIRST_PASS_AUTHORED_SECTION_CATEGORIES = {
+    "python": (
+        "algorithm-problems-2",
+        "debug-2",
+        "tuples",
+        "dictionaries",
+        "sets",
+        "file-handling",
+    ),
+    "java": (
+        "algorithm-problems-2",
+        "debug-2",
+        "classes-objects",
+        "maps",
+        "file-io",
+        "exceptions",
+    ),
+    "javascript": (
+        "algorithm-problems-2",
+        "debug-2",
+        "objects",
+        "error-handling",
+    ),
+    "cpp": (
+        "algorithm-problems-2",
+        "debug-2",
+        "pointers",
+        "classes-objects",
+    ),
+}
+
+INTERMEDIATE_FINAL_PASS_AUTHORED_SECTION_CATEGORIES = {
+    "python": (
+        "exceptions",
+        "classes-objects",
+        "modules-imports",
+        "comprehensions",
+        "testing",
+    ),
+    "java": (
+        "inheritance-interfaces",
+        "generics",
+        "enums",
+        "packages-access",
+        "lambdas-streams",
+    ),
+    "javascript": (
+        "modules",
+        "dom-events",
+        "async-promises",
+    ),
+    "cpp": (
+        "file-io",
+        "exceptions",
+        "memory-ownership",
+    ),
+}
+
+ADVANCED_FIRST_PASS_AUTHORED_SECTION_CATEGORIES = (
+    "stacks",
+    "queues",
+    "hash-maps-sets",
+    "linked-lists",
+    "recursion-patterns",
+)
+
+ADVANCED_FINAL_PASS_AUTHORED_SECTION_CATEGORIES = (
+    "binary-search",
+    "two-pointers",
+    "sliding-window",
+    "trees",
+    "graphs",
+)
+
 
 def authored_lessons():
     """Every lesson that actually exists. Grows automatically as content is authored."""
@@ -417,6 +501,88 @@ def test_every_lesson_exposes_reading_sections():
             assert section["id"], f"{language}/{category}: section without id"
             assert section["title"], f"{language}/{category}: section without title"
             assert section["blocks"], f"{language}/{category}: empty section"
+
+
+def test_remaining_beginner_lessons_are_raw_authored_sections():
+    """These lessons used to rely on the loader's broad auto-split fallback.
+
+    The Beginner track should be deliberately paced, so these files must carry real
+    authored section boundaries in JSON instead of depending on runtime grouping.
+    """
+    for language in ALL_LANGUAGES:
+        for category in BEGINNER_AUTHORED_SECTION_CATEGORIES:
+            path = os.path.join(lessons.LESSONS_DIR, language, f"{category}.json")
+            with open(path, "r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+            assert "blocks" not in raw, f"{language}/{category}: still has flat blocks"
+            sections = raw.get("sections")
+            assert isinstance(sections, list), f"{language}/{category}: missing raw sections"
+            assert 4 <= len(sections) <= 6, (
+                f"{language}/{category}: expected 4-6 beginner sections, got {len(sections)}"
+            )
+
+
+def test_intermediate_first_pass_lessons_are_raw_authored_sections():
+    """The first Intermediate sectioning batch should not depend on auto-splitting.
+
+    These topics are the first half of each Intermediate language track in manifest order.
+    They should stay intentionally paced with authored section titles and summaries.
+    """
+    for language, categories in INTERMEDIATE_FIRST_PASS_AUTHORED_SECTION_CATEGORIES.items():
+        for category in categories:
+            path = os.path.join(lessons.LESSONS_DIR, language, f"{category}.json")
+            with open(path, "r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+            assert "blocks" not in raw, f"{language}/{category}: still has flat blocks"
+            sections = raw.get("sections")
+            assert isinstance(sections, list), f"{language}/{category}: missing raw sections"
+            assert 4 <= len(sections) <= 6, (
+                f"{language}/{category}: expected 4-6 intermediate sections, got {len(sections)}"
+            )
+
+
+def test_intermediate_final_pass_lessons_are_raw_authored_sections():
+    """The rest of the Intermediate track should also use authored pacing."""
+    for language, categories in INTERMEDIATE_FINAL_PASS_AUTHORED_SECTION_CATEGORIES.items():
+        for category in categories:
+            path = os.path.join(lessons.LESSONS_DIR, language, f"{category}.json")
+            with open(path, "r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+            assert "blocks" not in raw, f"{language}/{category}: still has flat blocks"
+            sections = raw.get("sections")
+            assert isinstance(sections, list), f"{language}/{category}: missing raw sections"
+            assert 4 <= len(sections) <= 6, (
+                f"{language}/{category}: expected 4-6 intermediate sections, got {len(sections)}"
+            )
+
+
+def test_advanced_first_pass_lessons_are_raw_authored_sections():
+    """The first Advanced audit batch should stay intentionally sectioned."""
+    for category in ADVANCED_FIRST_PASS_AUTHORED_SECTION_CATEGORIES:
+        path = os.path.join(lessons.LESSONS_DIR, "shared", f"{category}.json")
+        with open(path, "r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+        assert "blocks" not in raw, f"shared/{category}: still has flat blocks"
+        sections = raw.get("sections")
+        assert isinstance(sections, list), f"shared/{category}: missing raw sections"
+        assert 4 <= len(sections) <= 6, (
+            f"shared/{category}: expected 4-6 advanced sections, got {len(sections)}"
+        )
+
+
+def test_advanced_final_pass_lessons_are_raw_authored_sections():
+    """The second Advanced audit batch should stay intentionally sectioned."""
+    for category in ADVANCED_FINAL_PASS_AUTHORED_SECTION_CATEGORIES:
+        path = os.path.join(lessons.LESSONS_DIR, "shared", f"{category}.json")
+        with open(path, "r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+
+        assert "blocks" not in raw, f"shared/{category}: still has flat blocks"
+        sections = raw.get("sections")
+        assert isinstance(sections, list), f"shared/{category}: missing raw sections"
+        assert 4 <= len(sections) <= 6, (
+            f"shared/{category}: expected 4-6 advanced sections, got {len(sections)}"
+        )
 
 
 def test_code_blocks_explain_themselves():

@@ -1,13 +1,13 @@
 {
   "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
   "title": "Sliding Window",
-  "summary": "Track one contiguous range as it grows and shrinks.",
-  "minutes": 18,
+  "summary": "Track one **contiguous range** as it grows and shrinks.",
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A **sliding window** is the current range from left to right. As the right side grows, update the window state. When the window breaks a rule, move left and update the state again.",
+  "refresher": "A **sliding window** is the current range from left to right. As the right side grows, update the window **state**. When the window breaks a rule, move left and update the state again.",
   "refresher_code": "left = 0\ntotal = 0\nfor right in range(len(nums)):\n    total += nums[right]",
   "learn_cards": {
     "advanced-window-meaning": {
@@ -79,7 +79,28 @@
                   0
                 ],
                 "note": "total = 2, limit = 5"
-              }
+              },
+              "code_focus": "trace sliding-window: Add 2",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 0"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 0"
+                }
+              ],
+              "decision": "right moves to 0 and total becomes 2.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "total = 2, limit = 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "right moves to 0 and total becomes 2."
             },
             {
               "title": "Add 1",
@@ -97,7 +118,28 @@
                   1
                 ],
                 "note": "total = 3"
-              }
+              },
+              "code_focus": "trace sliding-window: Add 1",
+              "input_value": "1",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 1"
+                }
+              ],
+              "decision": "The window grows to include 2 and 1.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "total = 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "The window grows to include 2 and 1."
             },
             {
               "title": "Add 4",
@@ -115,7 +157,28 @@
                   2
                 ],
                 "note": "total = 7"
-              }
+              },
+              "code_focus": "trace sliding-window: Add 4",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 2"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 2"
+                }
+              ],
+              "decision": "The total is now too large, so the rule is broken.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "total = 7"
+                }
+              ],
+              "output": "none yet",
+              "why": "The total is now too large, so the rule is broken."
             },
             {
               "title": "Shrink left",
@@ -134,7 +197,28 @@
                   2
                 ],
                 "note": "total = 5"
-              }
+              },
+              "code_focus": "trace sliding-window: Shrink left",
+              "input_value": "1, 4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 2"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 2"
+                }
+              ],
+              "decision": "Subtract nums[left] and move left until the window is valid again.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "total = 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "Subtract nums[left] and move left until the window is valid again."
             }
           ]
         },
@@ -144,8 +228,8 @@
           "items": [
             "left is the first **index** in the window.",
             "right is the newest **index** added to the window.",
-            "state is the total, count, or table that describes the current window.",
-            "best is the answer you have found so far."
+            "**State** is the total, count, or table that describes the current window.",
+            "**Best** is the answer you have found so far."
           ]
         },
         {
@@ -163,9 +247,203 @@
       ]
     },
     {
+      "id": "fixed-size-window",
+      "title": "Fixed-size windows",
+      "summary": "Some prompts tell you the window length upfront.",
+      "question_ids": [
+        "advanced-window-fixed-size"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **fixed-size window** keeps the same length after it is full. Add the new right value, remove the old left value, then compare or save the current result."
+        },
+        {
+          "kind": "visual",
+          "title": "Slide a two-item window",
+          "concept": "sliding-window",
+          "caption": "The window length stays at two, so one value enters and one value leaves.",
+          "initial_state": {
+            "items": [
+              20,
+              30,
+              45,
+              10
+            ]
+          },
+          "steps": [
+            {
+              "title": "First full window",
+              "body": "Use 20 and 30 as the first two values.",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  0,
+                  1
+                ],
+                "active": [
+                  0,
+                  1
+                ],
+                "note": "sum = 50"
+              },
+              "code_focus": "trace sliding-window: First full window",
+              "input_value": "20, 30",
+              "variables_before": [
+                {
+                  "name": "range",
+                  "value": "0, 1"
+                }
+              ],
+              "decision": "Use 20 and 30 as the first two values.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 50"
+                }
+              ],
+              "output": "none yet",
+              "why": "Use 20 and 30 as the first two values."
+            },
+            {
+              "title": "Slide right",
+              "body": "45 enters from the right.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  2
+                ],
+                "note": "add 45"
+              },
+              "code_focus": "trace sliding-window: Slide right",
+              "input_value": "45",
+              "variables_before": [
+                {
+                  "name": "range",
+                  "value": "1, 2"
+                }
+              ],
+              "decision": "45 enters from the right.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "add 45"
+                }
+              ],
+              "output": "none yet",
+              "why": "45 enters from the right."
+            },
+            {
+              "title": "Remove left",
+              "body": "20 leaves because the window must stay length two.",
+              "animation": "shrink",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  0
+                ],
+                "note": "subtract 20"
+              },
+              "code_focus": "trace sliding-window: Remove left",
+              "input_value": "20",
+              "variables_before": [
+                {
+                  "name": "range",
+                  "value": "1, 2"
+                }
+              ],
+              "decision": "20 leaves because the window must stay length two.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "subtract 20"
+                }
+              ],
+              "output": "none yet",
+              "why": "20 leaves because the window must stay length two."
+            },
+            {
+              "title": "Save the new state",
+              "body": "The current window is 30 and 45.",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "sum = 75"
+              },
+              "code_focus": "trace sliding-window: Save the new state",
+              "input_value": "30, 45",
+              "variables_before": [
+                {
+                  "name": "range",
+                  "value": "1, 2"
+                }
+              ],
+              "decision": "The current window is 30 and 45.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 75"
+                }
+              ],
+              "output": "none yet",
+              "why": "The current window is 30 and 45."
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "In a fixed-size window, what usually happens when a new right value enters?",
+          "choices": [
+            "The old left value leaves",
+            "The window keeps growing forever",
+            "The array gets sorted",
+            "The best answer resets"
+          ],
+          "answer_index": 0,
+          "why": "The size stays fixed, so adding on the right means removing the value that just fell off the left."
+        }
+      ]
+    },
+    {
       "id": "grow-shrink",
       "title": "Grow right, shrink left",
-      "summary": "Update state every time the window changes.",
+      "summary": "Update **state** every time the window changes.",
       "question_ids": [
         "advanced-window-shrink",
         "advanced-window-trace",
@@ -174,7 +452,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Most sliding-window code has two movements. The right side moves to include a new **value**. The left side moves only when the current window breaks a rule."
+          "body": "Most sliding-window code has two movements. The right side moves to include a new **value**. The left side moves only when the current window breaks a rule. Each move must update the saved state."
         },
         {
           "kind": "code",
@@ -209,6 +487,35 @@
           ],
           "answer_index": 0,
           "why": "Shrinking from the left fixes the broken rule."
+        }
+      ]
+    },
+    {
+      "id": "valid-window-rule",
+      "title": "Variable windows keep a rule true",
+      "summary": "Grow while useful, shrink when the rule breaks.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **variable-size window** changes length. The right side tries to include more data. The left side moves until the saved state follows the prompt rule again."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Name the rule",
+          "body": "Write the rule in plain words before coding: sum at most a limit, no repeated value, at most two absences, or a minimum total."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why might a variable-size window use a while loop to shrink?",
+          "choices": [
+            "One removal may not fix the rule",
+            "The right index is always wrong",
+            "The array must be empty",
+            "The result must be sorted"
+          ],
+          "answer_index": 0,
+          "why": "If the window is still invalid after one removal, the left side needs to keep moving."
         }
       ]
     },
@@ -283,7 +590,28 @@
                   2
                 ],
                 "note": "real total = 7"
-              }
+              },
+              "code_focus": "trace sliding-window: Window is too large",
+              "input_value": "2, 1, 4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 2"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 2"
+                }
+              ],
+              "decision": "The code must shrink from the left.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "real total = 7"
+                }
+              ],
+              "output": "none yet",
+              "why": "The window [2, 1, 4] has total 7, over the limit 5."
             },
             {
               "title": "Buggy move",
@@ -305,7 +633,28 @@
                   2
                 ],
                 "note": "saved total is stale: 7"
-              }
+              },
+              "code_focus": "trace sliding-window: Buggy move",
+              "input_value": "1, 4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 2"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 2"
+                }
+              ],
+              "decision": "The real window is [1, 4], but the saved total still describes [2, 1, 4].",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "saved total is stale: 7"
+                }
+              ],
+              "output": "none yet",
+              "why": "If left moves but total stays 7, the code is now lying to itself."
             },
             {
               "title": "Correct move",
@@ -327,7 +676,28 @@
                   2
                 ],
                 "note": "saved total = 5"
-              }
+              },
+              "code_focus": "trace sliding-window: Correct move",
+              "input_value": "1, 4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 2"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 2"
+                }
+              ],
+              "decision": "The saved total becomes 5, matching the real window [1, 4].",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "saved total = 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "Subtract nums[left], then move left."
             },
             {
               "title": "Decide from honest state",
@@ -349,7 +719,28 @@
                   2
                 ],
                 "note": "window is valid"
-              }
+              },
+              "code_focus": "trace sliding-window: Decide from honest state",
+              "input_value": "1, 4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 2"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 2"
+                }
+              ],
+              "decision": "**Sliding window** only works when the state and pointers describe the same slice.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "window is valid"
+                }
+              ],
+              "output": "none yet",
+              "why": "Now the next decision uses the actual current window."
             }
           ]
         }

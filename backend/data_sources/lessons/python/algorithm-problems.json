@@ -9,182 +9,355 @@
   ],
   "refresher": "Before you write any code, do four things. Read the problem twice. Say it back in your own words. Work one small example by hand and write down every step. Then look for the pattern you just used. Most beginner problems are one of four shapes: an accumulator that builds a running total, a search that looks through items for one that matches, a counter that tallies how many, and a max or min tracker that keeps the best **value** seen so far. All four share one skeleton. **Set** something up before the **loop**, update it inside the loop, use it after the loop.",
   "refresher_code": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)\n# 27",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Most people freeze on a programming problem for a reason that has nothing to do with Python. They read the problem, then immediately start typing. There is no plan yet, so every line is a guess. This lesson is not about new syntax. It is about what you do in the two minutes before you touch the keyboard."
-    },
-    {
-      "kind": "visual",
-      "title": "Track best-so-far state",
-      "concept": "arrays",
-      "caption": "Watch the best index update only when a better value appears.",
-      "initial_state": {},
-      "steps": [
+      "id": "read-trace",
+      "title": "Read and trace first",
+      "summary": "Say the problem back and work a small example by hand.",
+      "blocks": [
         {
-          "title": "Initialize",
-          "body": "Best starts at index 0 because that is the first candidate.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "best": 0
-            },
-            "note": "best value = 4"
-          }
+          "kind": "text",
+          "body": "Most people freeze on a programming problem for a reason that has nothing to do with Python. They read the problem, then immediately start typing. There is no plan yet, so every line is a guess. This lesson is not about new syntax. It is about what you do in the two minutes before you touch the keyboard."
         },
         {
-          "title": "Compare index 1",
-          "body": "Nine is larger than four, so best moves to index 1.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 1
+          "kind": "visual",
+          "title": "Track best-so-far state",
+          "concept": "state-trace",
+          "caption": "Watch the active item, the comparison, and the best-so-far state move together.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Initialize",
+              "body": "Start with the first value as the best-so-far because it is the only candidate seen.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "best": 0
+                },
+                "active_step": "state",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 0 has 4",
+                  "comparison": "No comparison yet",
+                  "decision": "Initialize best",
+                  "tracked": "best = 4 at index 0",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 4"
+              },
+              "code_focus": "state: Initialize",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "state"
+                }
+              ],
+              "decision": "Initialize best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 4"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start with the first value as the best-so-far because it is the only candidate seen."
             },
-            "note": "best value = 9"
-          }
+            {
+              "title": "Compare index 1",
+              "body": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 1
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 1 has 9",
+                  "comparison": "9 > 4 is true",
+                  "decision": "Update best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 9"
+              },
+              "code_focus": "compare: Compare index 1",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Update best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1."
+            },
+            {
+              "title": "Compare index 2",
+              "body": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 2
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 2 has 7",
+                  "comparison": "7 > 9 is false",
+                  "decision": "Keep best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "ready to return"
+                },
+                "note": "best still points at index 1"
+              },
+              "code_focus": "compare: Compare index 2",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Keep best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best still points at index 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1."
+            },
+            {
+              "title": "Return best",
+              "body": "After every item has been checked, return or use the stored best value.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1
+                },
+                "active_step": "result",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "no items left",
+                  "comparison": "loop is finished",
+                  "decision": "Use best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "return 9"
+                },
+                "note": "return the best value 9"
+              },
+              "code_focus": "result: Return best",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "Use best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "return the best value 9"
+                }
+              ],
+              "output": "return 9",
+              "why": "After every item has been checked, return or use the stored best value."
+            }
+          ]
         },
         {
-          "title": "Compare index 2",
-          "body": "Seven is not larger than nine, so best stays put.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 2
-            },
-            "note": "return best index 1"
-          }
+          "kind": "list",
+          "title": "Four steps, in this order",
+          "items": [
+            "Read it. Twice. Slowly. Notice what goes in and what should come out.",
+            "Restate it in your own words, out loud or on paper. If you cannot, you have not understood it yet.",
+            "Do one small example by hand. Actually write the numbers down.",
+            "Find the pattern. Look at what your hand just did, and name the shape."
+          ]
         }
       ]
     },
     {
-      "kind": "list",
-      "title": "Four steps, in this order",
-      "items": [
-        "Read it. Twice. Slowly. Notice what goes in and what should come out.",
-        "Restate it in your own words, out loud or on paper. If you cannot, you have not understood it yet.",
-        "Do one small example by hand. Actually write the numbers down.",
-        "Find the pattern. Look at what your hand just did, and name the shape."
+      "id": "paper-to-code",
+      "title": "Move from paper to code",
+      "summary": "Turn the hand trace into setup, loop, update, and return.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Step three is the one people skip, and it is the one that does the work. Take the problem \"add up all the numbers in a **list**\" with the list 4, 8, 15. On paper you would write 0, then 4, then 12, then 27. You kept one running number and updated it each time you looked at a new item. That is the whole algorithm. You found it with a pencil."
+        },
+        {
+          "kind": "code",
+          "caption": "The paper version turns straight into code. `total` is the running number you kept, the **loop** is you looking at each item, and the **print** is you reading off the final answer.",
+          "code": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)",
+          "output": "27"
+        }
       ]
     },
     {
-      "kind": "text",
-      "body": "Step three is the one people skip, and it is the one that does the work. Take the problem \"add up all the numbers in a **list**\" with the list 4, 8, 15. On paper you would write 0, then 4, then 12, then 27. You kept one running number and updated it each time you looked at a new item. That is the whole algorithm. You found it with a pencil."
-    },
-    {
-      "kind": "code",
-      "caption": "The paper version turns straight into code. `total` is the running number you kept, the **loop** is you looking at each item, and the **print** is you reading off the final answer.",
-      "code": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)",
-      "output": "27"
-    },
-    {
-      "kind": "text",
-      "body": "That shape has a name. It is called an accumulator: a **variable** you **set** up before the **loop**, add to inside the loop, and read after the loop. Once you can see it, you will see it everywhere. Three more shapes cover most of what a first-year problem asks for."
-    },
-    {
-      "kind": "list",
-      "title": "The four shapes you will keep meeting",
-      "items": [
-        "Accumulator: a running total. Start at 0, add each item, **print** at the end.",
-        "Search: look through the items for one that matches, and stop when you find it.",
-        "Counter: how many items match a rule. Start at 0, add 1 each time the rule is true.",
-        "Max or min: keep the best **value** you have seen so far, and replace it when you see better."
+      "id": "patterns",
+      "title": "Recognize common patterns",
+      "summary": "Choose accumulator, counter, search, max, or min state.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "That shape has a name. It is called an accumulator: a **variable** you **set** up before the **loop**, add to inside the loop, and read after the loop. Once you can see it, you will see it everywhere. Three more shapes cover most of what a first-year problem asks for."
+        },
+        {
+          "kind": "list",
+          "title": "The four shapes you will keep meeting",
+          "items": [
+            "Accumulator: a running total. Start at 0, add each item, **print** at the end.",
+            "Search: look through the items for one that matches, and stop when you find it.",
+            "Counter: how many items match a rule. Start at 0, add 1 each time the rule is true.",
+            "Max or min: keep the best **value** you have seen so far, and replace it when you see better."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "A counter is an accumulator that adds 1 instead of adding the item. The `if` decides which items count, so the shape barely changes even though the question does.",
+          "code": "scores = [88, 45, 92, 61]\npasses = 0\nfor s in scores:\n    if s >= 60:\n        passes += 1\nprint(passes)",
+          "output": "3"
+        },
+        {
+          "kind": "code",
+          "caption": "A max tracker starts with the first item as the current best, then replaces it whenever it meets something bigger. Starting at 0 instead would break the moment the **list** holds only negative numbers, as it does here.",
+          "code": "temps = [-4, -9, -1, -7]\nbiggest = temps[0]\nfor t in temps:\n    if t > biggest:\n        biggest = t\nprint(biggest)",
+          "output": "-1"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "All four shapes have the same skeleton",
+          "body": "**Set** something up before the loop. Update it inside the loop. Use it after the loop. If you can answer \"what am I keeping track of, and what makes it change?\", you already know where every line goes. That one question is worth more than memorizing any of the four shapes."
+        }
       ]
     },
     {
-      "kind": "code",
-      "caption": "A counter is an accumulator that adds 1 instead of adding the item. The `if` decides which items count, so the shape barely changes even though the question does.",
-      "code": "scores = [88, 45, 92, 61]\npasses = 0\nfor s in scores:\n    if s >= 60:\n        passes += 1\nprint(passes)",
-      "output": "3"
+      "id": "line-order",
+      "title": "Order the lines carefully",
+      "summary": "Place setup, loop updates, print, and return in the right positions.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "You are asked: \"Given a **list** of words, how many of them are longer than 4 letters?\" Which shape is that?",
+          "code": "words = [\"cat\", \"tiger\", \"ox\", \"zebra\"]\n# what shape goes here?",
+          "choices": [
+            "A counter, starting at 0 and adding 1 when the rule is true",
+            "An accumulator, adding each word's length to a running total",
+            "A max tracker, keeping the longest word seen so far",
+            "A search, stopping at the first word longer than 4 letters"
+          ],
+          "answer_index": 0,
+          "why": "The question asks how many, so you are tallying, and a tally is a counter. Adding each word's length answers a different question: how many letters in total. That is the tempting choice, because both versions add something and both reach for `len`. The difference is what you add. A counter adds 1, an accumulator adds the **value**."
+        },
+        {
+          "kind": "text",
+          "body": "The Practice questions for this topic hand you the lines already written and ask you to drag them into the right order. That sounds easier than writing code from scratch, and in one way it is. But it tests the exact thing that trips people up, which is knowing what belongs before the **loop**, what belongs inside it, and what belongs after."
+        },
+        {
+          "kind": "compare",
+          "caption": "Both versions use the same four lines. Only the order changed, and that alone turns 15 into 27. Setting up `total` inside the **loop** wipes it on every pass, so the only thing that survives is the last number.",
+          "wrong_label": "Prints 15",
+          "wrong": "for n in [4, 8, 15]:\n    total = 0\n    total += n\nprint(total)\n# total is wiped\n# on every pass",
+          "right_label": "Prints 27",
+          "right": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)\n# total is set up\n# once, before the loop"
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Printing inside the loop instead of after it",
+          "body": "If `print(total)` is indented, it runs on every pass and you get 4, then 12, then 27. Three lines where you wanted one. The code is not broken, exactly. It answers a question you were not asked. Decide whether you want one answer at the end or a report of every step, then indent to match."
+        },
+        {
+          "kind": "check",
+          "prompt": "This is meant to find the largest number, but it prints the wrong answer. Why?",
+          "code": "nums = [12, 30, 7]\nfor n in nums:\n    biggest = 0\n    if n > biggest:\n        biggest = n\nprint(biggest)",
+          "choices": [
+            "`biggest = 0` sits inside the loop, so it resets every pass and only the last number survives",
+            "The `if` should use `>=` instead of `>`",
+            "`print(biggest)` should be indented inside the loop",
+            "The list has to be sorted before the loop runs"
+          ],
+          "answer_index": 0,
+          "why": "The setup line belongs before the **loop**. Where it sits now, `biggest` is knocked back to 0 at the start of every pass. So each comparison only ever sees the current number, and the final answer is 7, the last item. Sorting the **list** is the tempting answer, because it does happen to give the right number here. But it swaps in a different algorithm instead of fixing this one, and the reset bug would still be sitting there. Move the setup line above the `for` and the code works as written."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "A max tracker starts with the first item as the current best, then replaces it whenever it meets something bigger. Starting at 0 instead would break the moment the **list** holds only negative numbers, as it does here.",
-      "code": "temps = [-4, -9, -1, -7]\nbiggest = temps[0]\nfor t in temps:\n    if t > biggest:\n        biggest = t\nprint(biggest)",
-      "output": "-1"
-    },
-    {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "All four shapes have the same skeleton",
-      "body": "**Set** something up before the loop. Update it inside the loop. Use it after the loop. If you can answer \"what am I keeping track of, and what makes it change?\", you already know where every line goes. That one question is worth more than memorizing any of the four shapes."
-    },
-    {
-      "kind": "check",
-      "prompt": "You are asked: \"Given a **list** of words, how many of them are longer than 4 letters?\" Which shape is that?",
-      "code": "words = [\"cat\", \"tiger\", \"ox\", \"zebra\"]\n# what shape goes here?",
-      "choices": [
-        "A counter, starting at 0 and adding 1 when the rule is true",
-        "An accumulator, adding each word's length to a running total",
-        "A max tracker, keeping the longest word seen so far",
-        "A search, stopping at the first word longer than 4 letters"
-      ],
-      "answer_index": 0,
-      "why": "The question asks how many, so you are tallying, and a tally is a counter. Adding each word's length answers a different question: how many letters in total. That is the tempting choice, because both versions add something and both reach for `len`. The difference is what you add. A counter adds 1, an accumulator adds the **value**."
-    },
-    {
-      "kind": "text",
-      "body": "The Practice questions for this topic hand you the lines already written and ask you to drag them into the right order. That sounds easier than writing code from scratch, and in one way it is. But it tests the exact thing that trips people up, which is knowing what belongs before the **loop**, what belongs inside it, and what belongs after."
-    },
-    {
-      "kind": "compare",
-      "caption": "Both versions use the same four lines. Only the order changed, and that alone turns 15 into 27. Setting up `total` inside the **loop** wipes it on every pass, so the only thing that survives is the last number.",
-      "wrong_label": "Prints 15",
-      "wrong": "for n in [4, 8, 15]:\n    total = 0\n    total += n\nprint(total)\n# total is wiped\n# on every pass",
-      "right_label": "Prints 27",
-      "right": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)\n# total is set up\n# once, before the loop"
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Printing inside the loop instead of after it",
-      "body": "If `print(total)` is indented, it runs on every pass and you get 4, then 12, then 27. Three lines where you wanted one. The code is not broken, exactly. It answers a question you were not asked. Decide whether you want one answer at the end or a report of every step, then indent to match."
-    },
-    {
-      "kind": "check",
-      "prompt": "This is meant to find the largest number, but it prints the wrong answer. Why?",
-      "code": "nums = [12, 30, 7]\nfor n in nums:\n    biggest = 0\n    if n > biggest:\n        biggest = n\nprint(biggest)",
-      "choices": [
-        "`biggest = 0` sits inside the loop, so it resets every pass and only the last number survives",
-        "The `if` should use `>=` instead of `>`",
-        "`print(biggest)` should be indented inside the loop",
-        "The list has to be sorted before the loop runs"
-      ],
-      "answer_index": 0,
-      "why": "The setup line belongs before the **loop**. Where it sits now, `biggest` is knocked back to 0 at the start of every pass. So each comparison only ever sees the current number, and the final answer is 7, the last item. Sorting the **list** is the tempting answer, because it does happen to give the right number here. But it swaps in a different algorithm instead of fixing this one, and the reset bug would still be sitting there. Move the setup line above the `for` and the code works as written."
-    },
-    {
-      "kind": "list",
-      "title": "When you are stuck on a problem",
-      "items": [
-        "Say what goes in and what comes out. One sentence each.",
-        "Do the smallest example by hand, and write down what you keep track of at each step.",
-        "Name that thing. It is usually a total, a count, a best-so-far, or a match you are hunting for.",
-        "Write the setup line first, then the **loop**, then the line that uses the result.",
-        "If your answer is only ever the last item, your setup line is probably inside the **loop**."
+      "id": "stuck",
+      "title": "When you are stuck",
+      "summary": "Use the rescue checklist before guessing.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "When you are stuck on a problem",
+          "items": [
+            "Say what goes in and what comes out. One sentence each.",
+            "Do the smallest example by hand, and write down what you keep track of at each step.",
+            "Name that thing. It is usually a total, a count, a best-so-far, or a match you are hunting for.",
+            "Write the setup line first, then the **loop**, then the line that uses the result.",
+            "If your answer is only ever the last item, your setup line is probably inside the **loop**."
+          ]
+        }
       ]
     }
   ],

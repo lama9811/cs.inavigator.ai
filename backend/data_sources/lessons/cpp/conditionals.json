@@ -9,79 +9,250 @@
   ],
   "refresher": "C++ checks `if`, then any `else if` **branches**, and finally `else`. Only the first true branch runs. Put braces around each branch so its beginning and end are easy to see.",
   "refresher_code": "if(score>=90){ grade=\"A\"; }\nelse { grade=\"Below A\"; }",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A **conditional** lets the program choose. C++ tests the expression inside `if (...)`. If it is true, that block runs. Otherwise, the program tries the next `else if` or uses the final `else`."
+      "id": "if-shape",
+      "title": "The if statement shape",
+      "summary": "Use comparisons and braces to make the branch body clear.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **conditional** lets the program choose. C++ tests the expression inside `if (...)`. If it is true, that block runs. Otherwise, the program tries the next `else if` or uses the final `else`."
+        },
+        {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: ask a condition, then run only the matching **body**. The examples after this show the exact punctuation for this language.",
+          "code": "if condition is true:\n    body for the true case\notherwise:\n    body for the backup case"
+        },
+        {
+          "kind": "text",
+          "body": "Write comparisons that clearly show the rule, such as `score >= 60`. Put the most specific overlapping rule first because only the first true branch runs. Braces make it clear which statements belong to each choice."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Braces do the job indentation does in Python",
+          "body": "Python uses indentation to show which statements belong to an `if`. C++ uses braces. Indentation still helps people read C++, but the braces are what the compiler follows."
+        },
+        {
+          "kind": "code",
+          "caption": "A score of 92 satisfies the first **condition**, so C++ prints A and skips the remaining **branches**.",
+          "code": "#include <iostream>\n\nint main() {\n  int score = 92;\n\n  if (score >= 90) {\n    std::cout << \"A\\n\";\n  } else if (score >= 80) {\n    std::cout << \"B\\n\";\n  } else {\n    std::cout << \"C or below\\n\";\n  }\n}",
+          "output": "A"
+        },
+        {
+          "kind": "visual",
+          "title": "Follow an else-if chain",
+          "concept": "conditionals",
+          "caption": "Trace the score through the first condition and into the branch that prints the grade.",
+          "initial_state": {
+            "condition_flow": {
+              "start": "Begin the grade check",
+              "input": "score = 92",
+              "condition": "score >= 90?",
+              "true_branch": "Print A",
+              "false_branch": "Try score >= 80",
+              "result": "Output A",
+              "true_label": "True",
+              "false_label": "False"
+            }
+          },
+          "steps": [
+            {
+              "title": "Start with input",
+              "body": "The program begins with score set to 92.",
+              "state": {
+                "active_step": "input",
+                "condition_flow": {
+                  "input": "score = 92"
+                },
+                "note": "The input is the value C++ tests."
+              },
+              "code_focus": "input: Start with input",
+              "input_value": "score = 92",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "input"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The input is the value C++ tests."
+                }
+              ],
+              "output": "none yet",
+              "why": "The program begins with score set to 92."
+            },
+            {
+              "title": "Ask the condition",
+              "body": "C++ checks whether score is at least 90. For 92, the answer is true.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "path": "true",
+                "condition_flow": {
+                  "condition": "92 >= 90?"
+                },
+                "note": "True means enter this branch."
+              },
+              "code_focus": "condition: Ask the condition",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "92 >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "True means enter this branch."
+                }
+              ],
+              "output": "none yet",
+              "why": "C++ checks whether score is at least 90. For 92, the answer is true."
+            },
+            {
+              "title": "Follow the true path",
+              "body": "Because the first condition is true, C++ runs the A branch and skips the rest of the chain.",
+              "animation": "branch",
+              "state": {
+                "active_step": "true_branch",
+                "path": "true",
+                "condition_flow": {
+                  "true_branch": "std::cout prints A"
+                },
+                "note": "The score >= 80 branch is not checked."
+              },
+              "code_focus": "true_branch: Follow the true path",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "true_branch"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The score >= 80 branch is not checked."
+                }
+              ],
+              "output": "none yet",
+              "why": "Because the first condition is true, C++ runs the A branch and skips the rest of the chain."
+            },
+            {
+              "title": "Use the chosen result",
+              "body": "The chosen branch produces the output A.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "path": "true",
+                "condition_flow": {
+                  "result": "prints A"
+                },
+                "note": "Only the first true branch runs."
+              },
+              "code_focus": "result: Use the chosen result",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Only the first true branch runs."
+                }
+              ],
+              "output": "prints A",
+              "why": "The chosen branch produces the output A."
+            }
+          ]
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "Write comparisons that clearly show the rule, such as `score >= 60`. Put the most specific overlapping rule first because only the first true branch runs. Braces make it clear which statements belong to each choice."
+      "id": "semicolon-trap",
+      "title": "The semicolon trap",
+      "summary": "Keep the if line attached to the block that should be controlled.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "Remove the stray semicolon so the block belongs to the **condition**.",
+          "wrong_label": "Common mistake",
+          "wrong": "if (score >= 60); {\n  passed = true;\n}",
+          "right_label": "Clearer version",
+          "right": "if (score >= 60) {\n  passed = true;\n}"
+        },
+        {
+          "kind": "text",
+          "body": "The semicolon in the first version finishes the `if` immediately. The block below it is separate and runs every time. Remove that semicolon so the block runs only when the score is at least sixty."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Do not end the if line with a semicolon",
+          "body": "Write `if (condition) {`, not `if (condition); {`. That extra semicolon creates an empty branch and makes the following block run on its own."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Braces do the job indentation does in Python",
-      "body": "Python uses indentation to show which statements belong to an `if`. C++ uses braces. Indentation still helps people read C++, but the braces are what the compiler follows."
+      "id": "check",
+      "title": "Check branch reasoning",
+      "summary": "Practice tracing which branch runs.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "What is printed?",
+          "code": "int n=0;\nif(n) std::cout<<\"yes\"; else std::cout<<\"no\";",
+          "choices": [
+            "no",
+            "yes",
+            "0",
+            "an error"
+          ],
+          "answer_index": 0,
+          "why": "Zero converts to false in the **condition**, so the else branch runs."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why test 90 before 60?",
+          "code": "",
+          "choices": [
+            "95 satisfies both thresholds",
+            "C++ sorts conditions",
+            "else requires equality",
+            "it changes score"
+          ],
+          "answer_index": 0,
+          "why": "Only the first true branch runs, so the broader rule would hide the narrower grade."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "A score of 92 satisfies the first **condition**, so C++ prints A and skips the remaining **branches**.",
-      "code": "#include <iostream>\n\nint main() {\n  int score = 92;\n\n  if (score >= 90) {\n    std::cout << \"A\\n\";\n  } else if (score >= 80) {\n    std::cout << \"B\\n\";\n  } else {\n    std::cout << \"C or below\\n\";\n  }\n}",
-      "output": "A"
-    },
-    {
-      "kind": "compare",
-      "caption": "Remove the stray semicolon so the block belongs to the **condition**.",
-      "wrong_label": "Common mistake",
-      "wrong": "if (score >= 60); {\n  passed = true;\n}",
-      "right_label": "Clearer version",
-      "right": "if (score >= 60) {\n  passed = true;\n}"
-    },
-    {
-      "kind": "text",
-      "body": "The semicolon in the first version finishes the `if` immediately. The block below it is separate and runs every time. Remove that semicolon so the block runs only when the score is at least sixty."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Do not end the if line with a semicolon",
-      "body": "Write `if (condition) {`, not `if (condition); {`. That extra semicolon creates an empty branch and makes the following block run on its own."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is printed?",
-      "code": "int n=0;\nif(n) std::cout<<\"yes\"; else std::cout<<\"no\";",
-      "choices": [
-        "no",
-        "yes",
-        "0",
-        "an error"
-      ],
-      "answer_index": 0,
-      "why": "Zero converts to false in the **condition**, so the else branch runs."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why test 90 before 60?",
-      "code": "",
-      "choices": [
-        "95 satisfies both thresholds",
-        "C++ sorts conditions",
-        "else requires equality",
-        "it changes score"
-      ],
-      "answer_index": 0,
-      "why": "Only the first true branch runs, so the broader rule would hide the narrower grade."
-    },
-    {
-      "kind": "list",
-      "title": "Conditionals checklist",
-      "items": [
-        "Order overlapping rules.",
-        "Use visible braces.",
-        "Remove stray semicolons.",
-        "Test each boundary."
+      "id": "habits",
+      "title": "Conditional habits",
+      "summary": "Use the checklist before coding conditionals.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Conditionals checklist",
+          "items": [
+            "Order overlapping rules.",
+            "Use visible braces.",
+            "Remove stray semicolons.",
+            "Test each boundary."
+          ]
+        }
       ]
     }
   ],

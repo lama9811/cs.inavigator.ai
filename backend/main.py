@@ -6846,15 +6846,22 @@ def _concept_correct_answer(question: dict[str, Any]) -> Any:
 
 def _stored_concept_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Strip answers before persistence; quiz analytics never stores typed code/text."""
-    return [
-        {
+    stored: list[dict[str, Any]] = []
+    for result in results:
+        if not result.get("question_id"):
+            continue
+        item = {
             "question_id": str(result.get("question_id") or "")[:120],
             "kind": str(result.get("kind") or "")[:30],
             "correct": bool(result.get("correct")),
         }
-        for result in results
-        if result.get("question_id")
-    ]
+        source_category = str(
+            result.get("category") or result.get("original_category") or ""
+        ).strip()
+        if source_category:
+            item["category"] = source_category[:80]
+        stored.append(item)
+    return stored
 
 
 def _save_concept_attempt(
@@ -6918,13 +6925,35 @@ def _serialize_concept_progress(rows: list[CodingConceptQuizAttempt]) -> dict[st
         return stamp, item.id or 0
 
     for row in sorted(rows, key=attempt_sort_key):
-        key = (row.language, row.category)
         attempt = {
             "correct": row.correct,
             "total": row.total,
             "score": row.score,
             "at": row.created_at.isoformat() if row.created_at else None,
         }
+        results = _concept_attempt_results(row)
+
+        if row.category == "mistake-bank":
+            for result in results:
+                question_id = str(result.get("question_id") or "")
+                source_category = str(result.get("category") or "").strip()
+                if not question_id or not source_category or source_category == "placement":
+                    continue
+                status_value = "correct" if result.get("correct") else "incorrect"
+                existing = categories.get((row.language, source_category))
+                if existing is not None:
+                    existing["questions"][question_id] = status_value
+                latest_questions[(row.language, source_category, question_id)] = {
+                    "language": row.language,
+                    "category": source_category,
+                    "question_id": question_id,
+                    "kind": result.get("kind"),
+                    "status": status_value,
+                    "at": attempt["at"],
+                }
+            continue
+
+        key = (row.language, row.category)
         record = categories.setdefault(key, {
             "language": row.language,
             "category": row.category,
@@ -6938,7 +6967,7 @@ def _serialize_concept_progress(rows: list[CodingConceptQuizAttempt]) -> dict[st
         if record["best"] is None or row.score > record["best"]["score"]:
             record["best"] = attempt
 
-        for result in _concept_attempt_results(row):
+        for result in results:
             question_id = str(result.get("question_id") or "")
             if not question_id:
                 continue
@@ -6955,7 +6984,7 @@ def _serialize_concept_progress(rows: list[CodingConceptQuizAttempt]) -> dict[st
 
     mistakes: list[dict[str, Any]] = []
     for item in latest_questions.values():
-        if item["status"] != "incorrect" or item["category"] == "placement":
+        if item["status"] != "incorrect" or item["category"] in {"placement", "mistake-bank"}:
             continue
         try:
             question = concept_quiz.find_question(
@@ -6973,7 +7002,7 @@ def _serialize_concept_progress(rows: list[CodingConceptQuizAttempt]) -> dict[st
 
     mistakes.sort(key=lambda item: item.get("at") or "", reverse=True)
     visible_categories = [
-        value for key, value in categories.items() if key[1] != "placement"
+        value for key, value in categories.items() if key[1] not in {"placement", "mistake-bank"}
     ]
     visible_categories.sort(key=lambda item: (item["language"], item["category"]))
     placement = [
@@ -7150,6 +7179,15 @@ class ConceptQuizGradeRequest(BaseModel):
     answers: list[ConceptQuizAnswer]
 
 
+class ConceptQuizMistakeAnswer(ConceptQuizAnswer):
+    category: str
+
+
+class ConceptQuizMistakeGradeRequest(BaseModel):
+    language: str
+    answers: list[ConceptQuizMistakeAnswer]
+
+
 class ConceptQuizPlacementRequest(BaseModel):
     language: str
     answers: list[ConceptQuizAnswer]
@@ -7319,6 +7357,67 @@ async def grade_concept_quiz(
     return {
         "language": bank["language"],
         "category": bank["category"],
+        "total": total,
+        "correct": correct,
+        "score": score,
+        "results": results,
+        "progress_saved": saved is not None,
+        "attempt_id": saved.id if saved else None,
+    }
+
+
+@app.post("/api/coding/concept-quiz/mistakes/grade")
+async def grade_concept_quiz_mistakes(
+    req: ConceptQuizMistakeGradeRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Grade a mixed-category retry set from the mistake bank.
+
+    This is intentionally separate from a normal category attempt: fixing one
+    missed question should update that question's status, but it should not
+    rewrite the best/last score for the whole source category.
+    """
+    normalized = _concept_quiz_call(concept_quiz.normalize_language, req.language)
+    if not req.answers:
+        raise HTTPException(status_code=400, detail="Choose at least one missed question to retry.")
+
+    seen: set[tuple[str, str]] = set()
+    results: list[dict[str, Any]] = []
+    for answer in req.answers:
+        category = str(answer.category or "").strip()
+        if not category:
+            raise HTTPException(status_code=400, detail="Each mistake answer needs a source category.")
+        key = (category, answer.question_id)
+        if key in seen:
+            raise HTTPException(status_code=400, detail="Each missed question may only be answered once.")
+        seen.add(key)
+        question = _concept_quiz_call(
+            concept_quiz.find_question,
+            normalized,
+            category,
+            answer.question_id,
+        )
+        result = _grade_concept_answer(question, answer)
+        result["category"] = category
+        results.append(result)
+
+    total = len(results)
+    correct = sum(1 for result in results if result["correct"])
+    score = round(correct / total, 4) if total else 0.0
+    saved = _save_concept_attempt(
+        db,
+        user_id=user["user_id"],
+        language=normalized,
+        category="mistake-bank",
+        correct=correct,
+        total=total,
+        score=score,
+        results=results,
+    )
+    return {
+        "language": normalized,
+        "category": "mistake-bank",
         "total": total,
         "correct": correct,
         "score": score,

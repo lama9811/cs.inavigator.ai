@@ -9,73 +9,108 @@
   ],
   "refresher": "The DOM is the browser's **object** version of the page. JavaScript can find elements, change text or **classes**, and listen for events like clicks or typing. Event listeners let code run when the user does something.",
   "refresher_code": "const button = document.querySelector(\"#save\");\nbutton?.addEventListener(\"click\", () => {\n  status.textContent = \"Saved\";\n});",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "The DOM is how JavaScript sees the page. A button, heading, or **input** becomes an **object** your code can find and change."
+      "id": "idea",
+      "title": "Connect code to the page",
+      "summary": "Use DOM objects to read and change visible page elements.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "The **DOM** is how JavaScript sees the page. A button, heading, or **input** becomes an **object** your code can find and change."
+        },
+        {
+          "kind": "text",
+          "body": "An event is something that happens on the page, like a click or a **key** press. An event listener is the **function** you ask the browser to run when that event happens."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "An event is something that happens on the page, like a click or a **key** press. An event listener is the **function** you ask the browser to run when that event happens."
+      "id": "examples",
+      "title": "Handle a user event",
+      "summary": "Trace how a button click reaches your function.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The setup registers one listener. Each click then updates the stored count and the page text.",
+          "code": "const button = document.querySelector(\"#count\");\nconst output = document.querySelector(\"#output\");\nlet count = 0;\nbutton.addEventListener(\"click\", () => {\n  count += 1;\n  output.textContent = count;\n});",
+          "output": "The displayed number increases after each click."
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Common mistake",
+          "wrong": "document.querySelector(\"#missing\").textContent = \"Ready\";",
+          "right_label": "Clearer version",
+          "right": "const target = document.querySelector(\"#missing\");\nif (target) target.textContent = \"Ready\";",
+          "caption": "Selection can fail when the id is wrong or the script runs before the element exists. Check the returned **value** before using it."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The setup registers one listener. Each click then updates the stored count and the page text.",
-      "code": "const button = document.querySelector(\"#count\");\nconst output = document.querySelector(\"#output\");\nlet count = 0;\nbutton.addEventListener(\"click\", () => {\n  count += 1;\n  output.textContent = count;\n});",
-      "output": "The displayed number increases after each click."
+      "id": "pitfalls",
+      "title": "Wait for the element",
+      "summary": "Do not query or update elements before they exist.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "The setup code runs once and registers the callback. It does not run the callback immediately. Each later click makes the browser call the listener, which changes count and then writes the new **value** into the **output** element."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Use textContent for plain text",
+          "body": "`innerHTML` asks the browser to parse markup. Use `textContent` for ordinary user-facing text, especially when a **value** came from **input**, so text is displayed rather than treated as page structure."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "wrong_label": "Common mistake",
-      "wrong": "document.querySelector(\"#missing\").textContent = \"Ready\";",
-      "right_label": "Clearer version",
-      "right": "const target = document.querySelector(\"#missing\");\nif (target) target.textContent = \"Ready\";",
-      "caption": "Selection can fail when the id is wrong or the script runs before the element exists. Check the returned **value** before using it."
+      "id": "check",
+      "title": "Check DOM behavior",
+      "summary": "Practice selectors, events, and text updates.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "What can `querySelector` **return** when no element matches?",
+          "code": "",
+          "choices": [
+            "null",
+            "An empty string",
+            "false only",
+            "A new element"
+          ],
+          "answer_index": 0,
+          "why": "The **method** returns null when it cannot find a matching element, so code should check before accessing properties."
+        },
+        {
+          "kind": "check",
+          "prompt": "When does a click listener run?",
+          "code": "",
+          "choices": [
+            "After the registered element receives a click",
+            "As soon as it is registered",
+            "Before the page loads every time",
+            "Only when the function returns text"
+          ],
+          "answer_index": 0,
+          "why": "Registration stores the callback for later; the browser invokes it when the matching click event occurs."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "The setup code runs once and registers the callback. It does not run the callback immediately. Each later click makes the browser call the listener, which changes count and then writes the new **value** into the **output** element."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Use textContent for plain text",
-      "body": "`innerHTML` asks the browser to parse markup. Use `textContent` for ordinary user-facing text, especially when a **value** came from **input**, so text is displayed rather than treated as page structure."
-    },
-    {
-      "kind": "check",
-      "prompt": "What can `querySelector` **return** when no element matches?",
-      "code": "",
-      "choices": [
-        "null",
-        "An empty string",
-        "false only",
-        "A new element"
-      ],
-      "answer_index": 0,
-      "why": "The **method** returns null when it cannot find a matching element, so code should check before accessing properties."
-    },
-    {
-      "kind": "check",
-      "prompt": "When does a click listener run?",
-      "code": "",
-      "choices": [
-        "After the registered element receives a click",
-        "As soon as it is registered",
-        "Before the page loads every time",
-        "Only when the function returns text"
-      ],
-      "answer_index": 0,
-      "why": "Registration stores the callback for later; the browser invokes it when the matching click event occurs."
-    },
-    {
-      "kind": "list",
-      "title": "DOM & Events checklist",
-      "items": [
-        "Find the element before changing it.",
-        "Use event listeners for user actions.",
-        "Read **input** **values** when the event happens.",
-        "Keep page-changing code small and clear."
+      "id": "practice",
+      "title": "DOM habits",
+      "summary": "Use a checklist for page interaction code.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "DOM & Events checklist",
+          "items": [
+            "Find the element before changing it.",
+            "Use event listeners for user actions.",
+            "Read **input** **values** when the event happens.",
+            "Keep page-changing code small and clear."
+          ]
+        }
       ]
     }
   ],

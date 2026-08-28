@@ -1,13 +1,13 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Linked Lists",
-  "summary": "A **linked list** is made of **nodes**. Each node stores data and a link to the next node.",
-  "minutes": 19,
+  "summary": "A **linked list** is made of **nodes**. Each node stores data plus a **next** link to the following node.",
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A **linked list** stores **values** in **nodes**. Each node has data and a next link. The head points to the first node, and traversal follows next links until there is no next node.",
+  "refresher": "A **linked list** stores **values** in **nodes**. Each node has data and a **next** link. The **head** points to the first node, and **traversal** follows next links until there is no next node.",
   "refresher_code": "node = data + next\nhead -> first node",
   "learn_cards": {
     "advanced-node-parts": {
@@ -49,7 +49,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A **linked list** does not store items side by side like an **array**. It stores small **objects** called nodes. Each node carries one value and a link to the next node."
+          "body": "A **linked list** does not store items side by side like an **array**. It stores small **objects** called **nodes**. Each node carries one value and one next link."
         },
         {
           "kind": "visual",
@@ -83,7 +83,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Start with two nodes",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "A points to C. Head points to A.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "A points to C. Head points to A."
             },
             {
               "title": "Create B",
@@ -116,7 +133,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Create B",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Make the new **node** before changing links.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Make the new **node** before changing links."
             },
             {
               "title": "Point B to C",
@@ -154,7 +188,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Point B to C",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "B should remember the **node** that used to come after A.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "B should remember the **node** that used to come after A."
             },
             {
               "title": "Point A to B",
@@ -194,7 +245,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Point A to B",
+              "input_value": "A, B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Now A can point to B. The final order is A, B, C.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Now A can point to B. The final order is A, B, C."
             }
           ]
         },
@@ -253,7 +321,7 @@
     {
       "id": "traverse-list",
       "title": "Walk through a linked list",
-      "summary": "**Traversal** means following next links one at a time.",
+      "summary": "**Traversal** means following next links one node at a time.",
       "question_ids": [
         "advanced-traverse-list",
         "advanced-cycle-risk"
@@ -261,7 +329,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "You cannot jump straight to item 10 in a basic **linked list**. You start at head, read the current **node**, then move to current.next."
+          "body": "You cannot jump straight to item 10 in a basic **linked list**. You start at **head**, read the current **node**, then move to current.next."
         },
         {
           "kind": "visual",
@@ -309,7 +377,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Start at head",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "**Traversal** starts from the head **reference**, not from an **index**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "current points to the first **node**, A."
             },
             {
               "title": "Move to next",
@@ -351,7 +436,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Move to next",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **pointer** moves. The **nodes** stay where they are.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "After reading A, current follows A.next to B."
             },
             {
               "title": "Move again",
@@ -393,7 +495,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Move again",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "A **loop** repeats this same movement until next is missing.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "After B, current follows B.next to C."
             },
             {
               "title": "Stop at null",
@@ -435,7 +554,24 @@
                   }
                 ],
                 "note": "loop stops when current becomes null"
-              }
+              },
+              "code_focus": "trace linked-lists: Stop at null",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The missing link marks the end of the **list**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "loop stops when current becomes null"
+                }
+              ],
+              "output": "none yet",
+              "why": "C.next is null, so the **traversal** is done after C."
             }
           ]
         },
@@ -482,6 +618,61 @@
       ]
     },
     {
+      "id": "runner-safe-list-shapes",
+      "title": "Practice with array-backed links",
+      "summary": "Coding Tutor linked-list practice uses arrays to model nodes safely across languages.",
+      "question_ids": [
+        "advanced-traverse-list",
+        "advanced-cycle-risk"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Some practice problems represent a linked list with two arrays: one for **values** and one for **next indexes**. That keeps Python, JavaScript, Java, and C++ runners consistent while still teaching **head**, current, next, and null."
+        },
+        {
+          "kind": "code",
+          "caption": "`nextIndexes[i]` tells you which node comes after index `i`. A value such as `-1` means the list ends.",
+          "variants": {
+            "python": {
+              "code": "values = [10, 20, 30]\nnext_indexes = [1, 2, -1]\ncurrent = 0\nwhile current != -1:\n    print(values[current])\n    current = next_indexes[current]",
+              "output": "10\n20\n30"
+            },
+            "java": {
+              "code": "int[] values = {10, 20, 30};\nint[] nextIndexes = {1, 2, -1};\nint current = 0;\nwhile (current != -1) {\n    System.out.println(values[current]);\n    current = nextIndexes[current];\n}",
+              "output": "10\n20\n30"
+            },
+            "javascript": {
+              "code": "const values = [10, 20, 30];\nconst nextIndexes = [1, 2, -1];\nlet current = 0;\nwhile (current !== -1) {\n  console.log(values[current]);\n  current = nextIndexes[current];\n}",
+              "output": "10\n20\n30"
+            },
+            "cpp": {
+              "code": "std::vector<int> values = {10, 20, 30};\nstd::vector<int> nextIndexes = {1, 2, -1};\nint current = 0;\nwhile (current != -1) {\n    std::cout << values[current] << \"\\n\";\n    current = nextIndexes[current];\n}",
+              "output": "10\n20\n30"
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Follow next, not index order",
+          "body": "A linked list can store node data in any array position. The next pointer decides the order, not the physical index."
+        },
+        {
+          "kind": "check",
+          "prompt": "In an array-backed linked list, what does `-1` usually mean?",
+          "choices": [
+            "there is no next node",
+            "the next node is index one",
+            "the value should be negative",
+            "the list must be sorted"
+          ],
+          "answer_index": 0,
+          "why": "The sentinel value marks the end, like null in a node-based linked list."
+        }
+      ]
+    },
+    {
       "id": "insert-delete",
       "title": "Insert and delete by changing links",
       "summary": "Linked-**list** edits are mostly careful link updates.",
@@ -493,7 +684,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "To insert after a **node**, the new node must point to the old next node. Then the current node can point to the new node."
+          "body": "To insert after a **node**, the new node must point to the old next node first. Then the current node can point to the new node."
         },
         {
           "kind": "compare",

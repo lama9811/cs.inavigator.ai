@@ -9,134 +9,353 @@
   ],
   "refresher": "A **pointer** stores the address of another **value**. `&value` gets the address. `*pointer` follows the address to reach the value. `nullptr` means the pointer points to nothing, so check before using `*pointer`.",
   "refresher_code": "int value=7;\nint* p=&value;\nstd::cout << *p;",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Every **variable** lives at some spot in memory. A **pointer** stores that spot. It does not store a second copy of the **value**. It stores directions to the original value."
-    },
-    {
-      "kind": "visual",
-      "title": "A pointer stores an address-like link",
-      "concept": "pointers",
-      "caption": "See a pointer name refer to an existing value instead of holding a separate copy.",
-      "initial_state": {},
-      "steps": [
+      "id": "addresses-pointers",
+      "title": "Addresses and pointers",
+      "summary": "Understand that a pointer stores where another value lives.",
+      "blocks": [
         {
-          "title": "A value exists",
-          "body": "The variable score stores the number 92.",
-          "state": {
-            "table": [
-              {
-                "key": "score",
-                "value": "92",
-                "active": true
-              }
-            ]
-          }
+          "kind": "text",
+          "body": "Every **variable** lives at some spot in memory. A **pointer** stores that spot. It does not store a second copy of the **value**. It stores directions to the original value."
         },
         {
-          "title": "Pointer points at it",
-          "body": "The pointer stores a way to reach score.",
-          "animation": "highlight",
-          "state": {
-            "table": [
-              {
-                "key": "score",
-                "value": "92",
-                "active": true
+          "kind": "visual",
+          "title": "A pointer stores an address-like link",
+          "concept": "pointers",
+          "caption": "Trace the value, stored address, dereference, mutation, and null guard.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Create a value",
+              "body": "The variable score stores 92 in one memory location.",
+              "state": {
+                "active_step": "value",
+                "pointer_flow": {
+                  "value": "score = 92",
+                  "address": "&score exists",
+                  "pointer": "ptr not assigned yet",
+                  "dereference": "nothing to follow yet",
+                  "guard": "check before dereference"
+                },
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "92",
+                    "active": true
+                  }
+                ],
+                "note": "the value exists before the pointer"
               },
-              {
-                "key": "ptr",
-                "value": "points to score",
-                "active": true
-              }
-            ]
-          }
+              "code_focus": "value: Create a value",
+              "input_value": "score -> 92",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "value"
+                }
+              ],
+              "decision": "The variable score stores 92 in one memory location.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the value exists before the pointer"
+                },
+                {
+                  "name": "active entry",
+                  "value": "score -> 92"
+                }
+              ],
+              "output": "none yet",
+              "why": "The variable score stores 92 in one memory location."
+            },
+            {
+              "title": "Store its address",
+              "body": "The pointer stores a way to reach score; it does not copy 92.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "pointer",
+                "pointer_flow": {
+                  "value": "score = 92",
+                  "address": "&score",
+                  "pointer": "ptr points to score",
+                  "dereference": "*ptr can follow",
+                  "guard": "ptr is not nullptr"
+                },
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "92",
+                    "active": true
+                  },
+                  {
+                    "key": "ptr",
+                    "value": "points to score",
+                    "active": true
+                  }
+                ],
+                "note": "ptr stores the address-like link"
+              },
+              "code_focus": "pointer: Store its address",
+              "input_value": "score -> 92, ptr -> points to score",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "pointer"
+                }
+              ],
+              "decision": "The pointer stores a way to reach score; it does not copy 92.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "ptr stores the address-like link"
+                },
+                {
+                  "name": "active entry",
+                  "value": "score -> 92, ptr -> points to score"
+                }
+              ],
+              "output": "none yet",
+              "why": "The pointer stores a way to reach score; it does not copy 92."
+            },
+            {
+              "title": "Dereference safely",
+              "body": "Dereferencing follows the stored address and reads the original value.",
+              "animation": "slide",
+              "state": {
+                "active_step": "dereference",
+                "pointer_flow": {
+                  "value": "score still stores 92",
+                  "address": "&score",
+                  "pointer": "ptr has target",
+                  "dereference": "*ptr reads 92",
+                  "guard": "safe because ptr has a target"
+                },
+                "table": [
+                  {
+                    "key": "*ptr",
+                    "value": "92",
+                    "active": true
+                  },
+                  {
+                    "key": "score",
+                    "value": "92"
+                  }
+                ],
+                "note": "same value, reached indirectly"
+              },
+              "code_focus": "dereference: Dereference safely",
+              "input_value": "*ptr -> 92",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "dereference"
+                }
+              ],
+              "decision": "Dereferencing follows the stored address and reads the original value.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "same value, reached indirectly"
+                },
+                {
+                  "name": "active entry",
+                  "value": "*ptr -> 92"
+                }
+              ],
+              "output": "none yet",
+              "why": "Dereferencing follows the stored address and reads the original value."
+            },
+            {
+              "title": "Change through pointer",
+              "body": "Assigning through *ptr changes score because ptr reaches score.",
+              "animation": "branch",
+              "state": {
+                "active_step": "dereference",
+                "pointer_flow": {
+                  "value": "score becomes 85",
+                  "address": "&score",
+                  "pointer": "ptr still points to score",
+                  "dereference": "*ptr = 85",
+                  "guard": "target is valid"
+                },
+                "table": [
+                  {
+                    "key": "*ptr",
+                    "value": "85",
+                    "active": true
+                  },
+                  {
+                    "key": "score",
+                    "value": "85",
+                    "active": true
+                  }
+                ],
+                "note": "the original value changes"
+              },
+              "code_focus": "dereference: Change through pointer",
+              "input_value": "*ptr -> 85, score -> 85",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "dereference"
+                }
+              ],
+              "decision": "Assigning through *ptr changes score because ptr reaches score.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the original value changes"
+                },
+                {
+                  "name": "active entry",
+                  "value": "*ptr -> 85, score -> 85"
+                }
+              ],
+              "output": "none yet",
+              "why": "Assigning through *ptr changes score because ptr reaches score."
+            },
+            {
+              "title": "Guard null pointer",
+              "body": "If the pointer is nullptr, do not dereference it; take the safe branch instead.",
+              "animation": "return",
+              "state": {
+                "active_step": "guard",
+                "pointer_flow": {
+                  "value": "no target value",
+                  "address": "nullptr",
+                  "pointer": "ptr points nowhere",
+                  "dereference": "skip *ptr",
+                  "guard": "if ptr != nullptr"
+                },
+                "table": [
+                  {
+                    "key": "ptr",
+                    "value": "nullptr",
+                    "active": true
+                  },
+                  {
+                    "key": "*ptr",
+                    "value": "do not use"
+                  }
+                ],
+                "note": "check before following an address"
+              },
+              "code_focus": "guard: Guard null pointer",
+              "input_value": "ptr -> nullptr",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "guard"
+                }
+              ],
+              "decision": "If the pointer is nullptr, do not dereference it; take the safe branch instead.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "check before following an address"
+                },
+                {
+                  "name": "active entry",
+                  "value": "ptr -> nullptr"
+                }
+              ],
+              "output": "none yet",
+              "why": "If the pointer is nullptr, do not dereference it; take the safe branch instead."
+            }
+          ]
         },
         {
-          "title": "Dereference",
-          "body": "Dereferencing reads the value through the pointer.",
-          "state": {
-            "table": [
-              {
-                "key": "*ptr",
-                "value": "92",
-                "active": true
-              }
-            ],
-            "note": "same value, reached indirectly"
-          }
+          "kind": "text",
+          "body": "In `int* pointer = &score;`, `&score` means \"the address of score.\" Later, `*pointer` means \"go to that address and use the **value** there.\" The star has two jobs: it helps declare a **pointer**, and it helps follow one."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Python usually hides this layer",
+          "body": "Python keeps this layer mostly hidden. C++ lets you work with addresses directly. That gives you control, but it also means you must check where a **pointer** points before using it."
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "In `int* pointer = &score;`, `&score` means \"the address of score.\" Later, `*pointer` means \"go to that address and use the **value** there.\" The star has two jobs: it helps declare a **pointer**, and it helps follow one."
+      "id": "dereference-safely",
+      "title": "Dereference safely",
+      "summary": "Follow a pointer only after checking that it has a real target.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The **pointer** stores score's address. Assigning through `*pointer` therefore changes score itself.",
+          "code": "#include <iostream>\n\nint main() {\n  int score = 70;\n  int* pointer = &score;\n\n  *pointer = 85;\n  std::cout << score << \"\\n\";\n}",
+          "output": "85"
+        },
+        {
+          "kind": "compare",
+          "caption": "Check for a valid target before following an address.",
+          "wrong_label": "Common mistake",
+          "wrong": "int* score = nullptr;\nstd::cout << *score;",
+          "right_label": "Clearer version",
+          "right": "int* score = nullptr;\nif (score != nullptr) {\n  std::cout << *score;\n}"
+        },
+        {
+          "kind": "text",
+          "body": "`nullptr` means there is no target. Following it is like walking through a door that is not there. Check first, then use `*pointer` only when the **pointer** has a real address."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Never follow an unknown address",
+          "body": "Initialize a **pointer** when you create it. Use `nullptr` when it has no target, then check before using `*pointer`. Dereferencing a null or uninitialized pointer is invalid."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Python usually hides this layer",
-      "body": "Python keeps this layer mostly hidden. C++ lets you work with addresses directly. That gives you control, but it also means you must check where a **pointer** points before using it."
+      "id": "pointer-checks",
+      "title": "Pointer checks",
+      "summary": "Check the difference between an address and the value at that address.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "What does `p` hold after `int* p=&x`?",
+          "code": "",
+          "choices": [
+            "the address of x",
+            "a copy of x",
+            "the type of x",
+            "always zero"
+          ],
+          "answer_index": 0,
+          "why": "The `&` **operator** gets x's **memory** address, and the **pointer** stores that address."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does `*p` mean in an expression?",
+          "code": "",
+          "choices": [
+            "the value at the pointed address",
+            "a new pointer",
+            "the address of p",
+            "pointer multiplication"
+          ],
+          "answer_index": 0,
+          "why": "Dereference follows the stored address and accesses the **object** located there."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The **pointer** stores score's address. Assigning through `*pointer` therefore changes score itself.",
-      "code": "#include <iostream>\n\nint main() {\n  int score = 70;\n  int* pointer = &score;\n\n  *pointer = 85;\n  std::cout << score << \"\\n\";\n}",
-      "output": "85"
-    },
-    {
-      "kind": "compare",
-      "caption": "Check for a valid target before following an address.",
-      "wrong_label": "Common mistake",
-      "wrong": "int* score = nullptr;\nstd::cout << *score;",
-      "right_label": "Clearer version",
-      "right": "int* score = nullptr;\nif (score != nullptr) {\n  std::cout << *score;\n}"
-    },
-    {
-      "kind": "text",
-      "body": "`nullptr` means there is no target. Following it is like walking through a door that is not there. Check first, then use `*pointer` only when the **pointer** has a real address."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Never follow an unknown address",
-      "body": "Initialize a **pointer** when you create it. Use `nullptr` when it has no target, then check before using `*pointer`. Dereferencing a null or uninitialized pointer is invalid."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does `p` hold after `int* p=&x`?",
-      "code": "",
-      "choices": [
-        "the address of x",
-        "a copy of x",
-        "the type of x",
-        "always zero"
-      ],
-      "answer_index": 0,
-      "why": "The `&` **operator** gets x's **memory** address, and the **pointer** stores that address."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does `*p` mean in an expression?",
-      "code": "",
-      "choices": [
-        "the value at the pointed address",
-        "a new pointer",
-        "the address of p",
-        "pointer multiplication"
-      ],
-      "answer_index": 0,
-      "why": "Dereference follows the stored address and accesses the **object** located there."
-    },
-    {
-      "kind": "list",
+      "id": "pointer-checklist",
       "title": "Pointers checklist",
-      "items": [
-        "Initialize every **pointer**.",
-        "Use nullptr when there is no target.",
-        "Check before using *pointer.",
-        "Use a **reference** when \"nothing\" is not allowed."
+      "summary": "Review pointer habits before using addresses directly.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Pointers checklist",
+          "items": [
+            "Initialize every **pointer**.",
+            "Use nullptr when there is no target.",
+            "Check before using *pointer.",
+            "Use a **reference** when \"nothing\" is not allowed."
+          ]
+        }
       ]
     }
   ],

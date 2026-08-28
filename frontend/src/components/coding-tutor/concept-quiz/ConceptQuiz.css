@@ -67,6 +67,32 @@ body.coding-dark .practice-library {
   outline-offset: 3px;
 }
 
+.coding-app .practice-back-btn.is-track-chooser,
+.coding-app .practice-back-btn.is-track-chooser:hover:not(:disabled) {
+  padding: 9px 13px !important;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 30%, var(--ct-border)) !important;
+  border-radius: 999px !important;
+  background: var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
+  color: var(--ct-muted, #6b7280) !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: none !important;
+}
+
+.coding-app .practice-back-btn.is-track-chooser:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-accent) 30%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 6%, var(--ct-panel)) !important;
+  background-color: color-mix(in srgb, var(--ct-accent) 6%, var(--ct-panel)) !important;
+  color: var(--ct-text) !important;
+  transform: translateX(-2px) !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 10%, transparent) !important;
+}
+
+.coding-app .practice-back-btn.is-track-chooser:hover:not(:disabled) svg {
+  transform: translateX(-3px);
+}
+
 /* ---- Learn | Practice | Code toggle ---- */
 .practice-mode-toggle {
   display: inline-flex;
@@ -564,6 +590,12 @@ body.coding-dark .cq-hero-ring::before {
   border-color: #fdba74;
 }
 
+.cq-track-badge.is-mistakes {
+  color: #9f1239;
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
 body.coding-dark .cq-track-badge.is-beginner {
   color: #bbf7d0;
   background: rgba(22, 101, 52, 0.35);
@@ -580,6 +612,12 @@ body.coding-dark .cq-track-badge.is-advanced {
   color: #fed7aa;
   background: rgba(154, 52, 18, 0.35);
   border-color: #ea580c;
+}
+
+body.coding-dark .cq-track-badge.is-mistakes {
+  color: #fecdd3;
+  background: rgba(159, 18, 57, 0.35);
+  border-color: #be123c;
 }
 
 .cq-track-copy {
@@ -626,6 +664,115 @@ body.coding-dark .cq-track-badge.is-advanced {
   padding: 0 1rem 1rem;
 }
 
+.cq-mistake-bank {
+  border-style: dashed;
+}
+
+.cq-mistake-bank-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.cq-mistake-bank-intro,
+.cq-mistake-bank-question-head,
+.cq-mistake-bank-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cq-mistake-bank-intro {
+  padding: 1rem;
+  border: 1px solid var(--ct-border);
+  border-radius: 14px;
+  background: var(--ct-surface);
+}
+
+.cq-mistake-bank-intro h4,
+.cq-mistake-bank-question-head h4,
+.cq-mistake-bank-result h4 {
+  margin: 0.15rem 0 0.35rem;
+  color: var(--ct-text);
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+}
+
+.cq-mistake-bank-intro p,
+.cq-mistake-bank-question-head p {
+  margin: 0;
+  color: var(--ct-muted);
+  line-height: 1.45;
+}
+
+.cq-mistake-bank-list,
+.cq-mistake-bank-review {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.75rem;
+}
+
+.cq-mistake-bank-list article,
+.cq-mistake-bank-review article {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem;
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ct-panel) 78%, #fff);
+}
+
+.cq-mistake-bank-list small,
+.cq-mistake-bank-review strong {
+  color: var(--ct-primary);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cq-mistake-bank-list strong,
+.cq-mistake-bank-list span,
+.cq-mistake-bank-review span {
+  color: var(--ct-text);
+  line-height: 1.25;
+}
+
+.cq-mistake-bank-runner,
+.cq-mistake-bank-result {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--ct-border);
+  border-radius: 14px;
+  background: var(--ct-surface);
+}
+
+.cq-mistake-bank-question-head > span {
+  flex: 0 0 auto;
+  color: var(--ct-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.cq-mistake-bank-controls {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.cq-mistake-bank-review article.correct {
+  border-color: color-mix(in srgb, #16a34a 38%, var(--ct-border));
+  background: color-mix(in srgb, #dcfce7 52%, var(--ct-panel));
+}
+
+.cq-mistake-bank-review article.incorrect {
+  border-color: color-mix(in srgb, #ef4444 38%, var(--ct-border));
+  background: color-mix(in srgb, #fee2e2 45%, var(--ct-panel));
+}
+
+.cq-mistake-bank-review small {
+  color: var(--ct-muted);
+  line-height: 1.4;
+}
+
 @media (max-width: 640px) {
   .cq-track-toggle {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -643,6 +790,12 @@ body.coding-dark .cq-track-badge.is-advanced {
 
   .cq-track-content {
     padding: 0 0.65rem 0.65rem;
+  }
+
+  .cq-mistake-bank-intro,
+  .cq-mistake-bank-question-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

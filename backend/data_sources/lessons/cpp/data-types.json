@@ -9,110 +9,6 @@
   ],
   "refresher": "Use `int` for ordinary whole numbers and `long long` when a whole number may be large. Use `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text. The type affects which **values** and calculations are possible.",
   "refresher_code": "double average = static_cast<double>(total) / count;",
-  "blocks": [
-    {
-      "kind": "text",
-      "body": "A type describes the kind of **value** a **variable** can store. Start with common choices: `int` for ordinary whole numbers, `long long` for larger whole numbers, `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text."
-    },
-    {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Why practice starters may use long long",
-      "body": "`long long` works like `int`, but it can hold much larger whole numbers. Some Coding Tutor C++ starters use it so a correct idea does not fail just because the answer is bigger than an `int` can safely store."
-    },
-    {
-      "kind": "text",
-      "body": "The type matters during calculations. Dividing two **integers** drops the decimal part. Storing a decimal in an integer also drops the fraction. When the fraction matters, use a `double` before the calculation happens."
-    },
-    {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "A useful Python comparison",
-      "body": "Python uses `/` to produce a decimal result. In C++, `7 / 2` is `3` because both **values** are **integers**. Write `7.0 / 2` or convert one value to `double` when you need `3.5`."
-    },
-    {
-      "kind": "code",
-      "caption": "Changing total to a double before division keeps the fractional part, so seven divided by two becomes 3.5.",
-      "code": "#include <iostream>\n\nint main() {\n  int total = 7;\n  int count = 2;\n  double average = static_cast<double>(total) / count;\n  std::cout << average << \"\\n\";\n}",
-      "output": "3.5"
-    },
-    {
-      "kind": "compare",
-      "caption": "Keep fractional data in a matching type.",
-      "wrong_label": "Common mistake",
-      "wrong": "int gpa = 3.75;",
-      "right_label": "Clearer version",
-      "right": "double gpa = 3.75;"
-    },
-    {
-      "kind": "compare",
-      "caption": "When the starter uses long long, keep the same type in your answer.",
-      "wrong_label": "Can overflow on large totals",
-      "wrong": "int total = 0;\nfor (int n : values) {\n  total += n;\n}",
-      "right_label": "Safer for larger whole numbers",
-      "right": "long long total = 0;\nfor (long long n : values) {\n  total += n;\n}"
-    },
-    {
-      "kind": "text",
-      "body": "The first declaration changes `3.75` into the whole number `3`. The second keeps the decimal **value**. C++ may allow a conversion that loses information, so compare the **variable**'s type with the value you actually need."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "A type can change the answer",
-      "body": "Putting a decimal into an `int` removes the fractional part. The compiler may accept the line even when the result is not what the problem asks for."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which type stores one character?",
-      "code": "",
-      "choices": [
-        "char",
-        "string",
-        "double",
-        "bool"
-      ],
-      "answer_index": 0,
-      "why": "The char type represents one character **value** such as a letter."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why might a C++ starter use `long long` instead of `int`?",
-      "code": "",
-      "choices": [
-        "It can store larger whole numbers.",
-        "It stores decimal values.",
-        "It stores text.",
-        "It makes loops run automatically."
-      ],
-      "answer_index": 0,
-      "why": "`long long` is still a whole-number type, but it has a larger range than `int`."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is stored in `n`?",
-      "code": "int n = 4.9;",
-      "choices": [
-        "4",
-        "4.9",
-        "5",
-        "a string"
-      ],
-      "answer_index": 0,
-      "why": "Conversion to int truncates the fractional part rather than rounding it."
-    },
-    {
-      "kind": "list",
-      "title": "Data Types checklist",
-      "items": [
-        "Match type to meaning.",
-        "Use long long when the starter or problem may use large whole numbers.",
-        "Cast before **integer division**.",
-        "Watch narrowing conversions.",
-        "Use **string** for text."
-      ]
-    }
-  ],
   "_beginner_expanded": true,
   "learn_cards": {
     "concat-vs-add-01": {
@@ -195,5 +91,137 @@
       "section_id": "check",
       "example": "0.1 + 0.2"
     }
-  }
+  },
+  "sections": [
+    {
+      "id": "idea",
+      "title": "Pick the storage type",
+      "summary": "Start with common C++ types and why practice starters may use wider numbers.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **type** describes the kind of **value** a **variable** can store. Start with common choices: `int` for ordinary whole numbers, `long long` for larger whole numbers, `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Why practice starters may use long long",
+          "body": "`long long` works like `int`, but it can hold much larger whole numbers. Some Coding Tutor C++ starters use it so a correct idea does not fail just because the answer is bigger than an `int` can safely store."
+        }
+      ]
+    },
+    {
+      "id": "math",
+      "title": "Types affect calculations",
+      "summary": "Watch integer division and decimal division produce different results.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "The type matters during calculations. Dividing two **integers** drops the decimal part. Storing a decimal in an integer also drops the fraction. When the fraction matters, use a `double` before the calculation happens."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "A useful Python comparison",
+          "body": "Python uses `/` to produce a decimal result. In C++, `7 / 2` is `3` because both **values** are **integers**. Write `7.0 / 2` or convert one value to `double` when you need `3.5`."
+        },
+        {
+          "kind": "code",
+          "caption": "Changing total to a double before division keeps the fractional part, so seven divided by two becomes 3.5.",
+          "code": "#include <iostream>\n\nint main() {\n  int total = 7;\n  int count = 2;\n  double average = static_cast<double>(total) / count;\n  std::cout << average << \"\\n\";\n}",
+          "output": "3.5"
+        }
+      ]
+    },
+    {
+      "id": "matching",
+      "title": "Keep data in matching types",
+      "summary": "Avoid losing decimals or fighting the starter signature.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "Keep fractional data in a matching type.",
+          "wrong_label": "Common mistake",
+          "wrong": "int gpa = 3.75;",
+          "right_label": "Clearer version",
+          "right": "double gpa = 3.75;"
+        },
+        {
+          "kind": "compare",
+          "caption": "When the starter uses long long, keep the same type in your answer.",
+          "wrong_label": "Can overflow on large totals",
+          "wrong": "int total = 0;\nfor (int n : values) {\n  total += n;\n}",
+          "right_label": "Safer for larger whole numbers",
+          "right": "long long total = 0;\nfor (long long n : values) {\n  total += n;\n}"
+        },
+        {
+          "kind": "text",
+          "body": "The first declaration changes `3.75` into the whole number `3`. The second keeps the decimal **value**. C++ may allow a conversion that loses information, so compare the **variable**'s type with the value you actually need."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "A type can change the answer",
+          "body": "Putting a decimal into an `int` removes the fractional part. The compiler may accept the line even when the result is not what the problem asks for."
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "title": "Check C++ type choices",
+      "summary": "Practice char, long long, truncation, and the final checklist.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which type stores one character?",
+          "code": "",
+          "choices": [
+            "char",
+            "string",
+            "double",
+            "bool"
+          ],
+          "answer_index": 0,
+          "why": "The char type represents one character **value** such as a letter."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why might a C++ starter use `long long` instead of `int`?",
+          "code": "",
+          "choices": [
+            "It can store larger whole numbers.",
+            "It stores decimal values.",
+            "It stores text.",
+            "It makes loops run automatically."
+          ],
+          "answer_index": 0,
+          "why": "`long long` is still a whole-number type, but it has a larger range than `int`."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is stored in `n`?",
+          "code": "int n = 4.9;",
+          "choices": [
+            "4",
+            "4.9",
+            "5",
+            "a string"
+          ],
+          "answer_index": 0,
+          "why": "Conversion to int truncates the fractional part rather than rounding it."
+        },
+        {
+          "kind": "list",
+          "title": "Data Types checklist",
+          "items": [
+            "Match type to meaning.",
+            "Use long long when the starter or problem may use large whole numbers.",
+            "Cast before **integer division**.",
+            "Watch narrowing conversions.",
+            "Use **string** for text."
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -10,173 +10,341 @@
   ],
   "refresher": "A **class** is a blueprint for objects. Fields store each object's data. A constructor **sets** up a new object. **Methods** describe what the object can do. `new` creates an object from the class.",
   "refresher_code": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(s.gpa);\n// 3.9",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A **class** lets you create your own kind of **value**. Instead of passing around a loose name, id, and GPA, you can make one Student **object** that keeps those facts together."
-    },
-    {
-      "kind": "visual",
-      "title": "One object keeps related data together",
-      "concept": "objects",
-      "caption": "Watch fields live inside one object while a method updates them.",
-      "initial_state": {},
-      "steps": [
+      "id": "class-object-state",
+      "title": "Class and object state",
+      "summary": "Use classes to keep related data and behavior together.",
+      "blocks": [
         {
-          "title": "Create the object",
-          "body": "The object starts with its own field values.",
-          "state": {
-            "table": [
-              {
-                "key": "name",
-                "value": "Plant"
-              },
-              {
-                "key": "watered",
-                "value": "false"
-              }
-            ],
-            "note": "plant object"
-          }
+          "kind": "text",
+          "body": "A **class** lets you create your own kind of **value**. Instead of passing around a loose name, id, and GPA, you can make one Student **object** that keeps those facts together."
         },
         {
-          "title": "Call a method",
-          "body": "The method changes the object's watered field.",
-          "animation": "highlight",
-          "state": {
-            "table": [
-              {
-                "key": "name",
-                "value": "Plant"
+          "kind": "visual",
+          "title": "One object keeps related data together",
+          "concept": "objects",
+          "caption": "Trace object fields from creation through method update and remembered state.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Create object state",
+              "body": "The object groups related fields into one named thing.",
+              "state": {
+                "active_step": "store",
+                "object_flow": {
+                  "store": "plant object exists",
+                  "action": "fields are initialized",
+                  "decision": "which field changes?",
+                  "result": "state is grouped"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant",
+                    "active": true
+                  },
+                  {
+                    "key": "watered",
+                    "value": "false"
+                  }
+                ],
+                "note": "plant object"
               },
-              {
-                "key": "watered",
-                "value": "true",
-                "active": true
-              }
-            ],
-            "note": "plant.water()"
-          }
+              "code_focus": "store: Create object state",
+              "input_value": "name -> Plant",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "store"
+                }
+              ],
+              "decision": "which field changes?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "plant object"
+                },
+                {
+                  "name": "active entry",
+                  "value": "name -> Plant"
+                }
+              ],
+              "output": "none yet",
+              "why": "The object groups related fields into one named thing."
+            },
+            {
+              "title": "Call method",
+              "body": "The method receives the object and decides which field to update.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "action",
+                "object_flow": {
+                  "store": "same plant object",
+                  "action": "plant.water()",
+                  "decision": "update watered?",
+                  "result": "watered changes"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant"
+                  },
+                  {
+                    "key": "watered",
+                    "value": "false",
+                    "active": true
+                  }
+                ],
+                "note": "method is running"
+              },
+              "code_focus": "action: Call method",
+              "input_value": "watered -> false",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "action"
+                }
+              ],
+              "decision": "update watered?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "method is running"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> false"
+                }
+              ],
+              "output": "none yet",
+              "why": "The method receives the object and decides which field to update."
+            },
+            {
+              "title": "Update field",
+              "body": "Only the targeted field changes; the other fields stay with the same object.",
+              "animation": "branch",
+              "state": {
+                "active_step": "decision",
+                "object_flow": {
+                  "store": "plant object",
+                  "action": "set watered",
+                  "decision": "false becomes true",
+                  "result": "object state updates"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant"
+                  },
+                  {
+                    "key": "watered",
+                    "value": "true",
+                    "active": true
+                  }
+                ],
+                "note": "field update happens inside the object"
+              },
+              "code_focus": "decision: Update field",
+              "input_value": "watered -> true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "decision"
+                }
+              ],
+              "decision": "false becomes true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "field update happens inside the object"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> true"
+                }
+              ],
+              "output": "none yet",
+              "why": "Only the targeted field changes; the other fields stay with the same object."
+            },
+            {
+              "title": "State is remembered",
+              "body": "After the method ends, the object still stores the updated field value.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "object_flow": {
+                  "store": "same object",
+                  "action": "method finished",
+                  "decision": "state persists?",
+                  "result": "watered is true"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant"
+                  },
+                  {
+                    "key": "watered",
+                    "value": "true",
+                    "active": true
+                  }
+                ],
+                "note": "same object, updated state"
+              },
+              "code_focus": "result: State is remembered",
+              "input_value": "watered -> true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "state persists?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "same object, updated state"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> true"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the method ends, the object still stores the updated field value."
+            }
+          ]
         },
         {
-          "title": "State is remembered",
-          "body": "After the method ends, the object still stores the updated field.",
-          "state": {
-            "table": [
-              {
-                "key": "name",
-                "value": "Plant"
-              },
-              {
-                "key": "watered",
-                "value": "true",
-                "active": true
-              }
-            ],
-            "note": "same object, updated state"
-          }
+          "kind": "text",
+          "body": "Fields are the data each **object** carries. A constructor runs when you create a new object and fills in the starting **values**. **Methods** are actions that belong with that object."
+        },
+        {
+          "kind": "code",
+          "caption": "The constructor fills the fields. The displayName **method** uses the data stored inside this Student.",
+          "code": "public class Student {\n    String name;\n    double gpa;\n\n    public static void main(String[] args) {\n        Student s = new Student();\n        s.name = \"Ada\";\n        s.gpa = 3.9;\n        System.out.println(s.name);\n        System.out.println(s.gpa);\n    }\n}",
+          "output": "Ada\n3.9"
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "Fields are the data each **object** carries. A constructor runs when you create a new object and fills in the starting **values**. **Methods** are actions that belong with that object."
+      "id": "constructors-methods",
+      "title": "Constructors and methods",
+      "summary": "Create separate objects and give them useful methods.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "`new Student(...)` creates one **object**. If you call it again, you get a separate object with its own field **values**. Changing one student does not change the other."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "You have been writing classes all along",
+          "body": "Python lets you add attributes more freely. Java wants the **class** to say its fields up front. That feels strict at first, but it helps Java catch misspelled or missing data early."
+        },
+        {
+          "kind": "text",
+          "body": "Setting each field by hand after `new` gets tedious, and it is easy to forget one. A constructor does it for you. It is a **method** with the same name as the **class** and no **return type**, and it runs automatically as part of `new`."
+        },
+        {
+          "kind": "code",
+          "caption": "**Methods** are the behavior half of the blueprint, the way fields are the state half. Note that changing `grace` leaves `ada` untouched: they are two separate **objects** built from one **class**, each with its own copy of the fields.",
+          "code": "public class Student {\n    String name;\n    double gpa;\n\n    Student(String name, double gpa) {\n        this.name = name;\n        this.gpa = gpa;\n    }\n\n    String describe() {\n        return name + \" has a GPA of \" + gpa;\n    }\n\n    public static void main(String[] args) {\n        Student ada = new Student(\"Ada\", 3.9);\n        Student grace = new Student(\"Grace\", 2.5);\n        System.out.println(ada.describe());\n        System.out.println(grace.describe());\n        grace.gpa = 3.1;\n        System.out.println(grace.describe());\n        System.out.println(ada.describe());\n    }\n}",
+          "output": "Ada has a GPA of 3.9\nGrace has a GPA of 2.5\nGrace has a GPA of 3.1\nAda has a GPA of 3.9"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "What `this` is for",
+          "body": "Here the **parameter** and the field are both named `name`. `this.name = name` means: store the passed-in value in this **object**'s field. Without `this.`, `name = name` only assigns the parameter to itself, so the field stays unchanged."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The constructor fills the fields. The displayName **method** uses the data stored inside this Student.",
-      "code": "public class Student {\n    String name;\n    double gpa;\n\n    public static void main(String[] args) {\n        Student s = new Student();\n        s.name = \"Ada\";\n        s.gpa = 3.9;\n        System.out.println(s.name);\n        System.out.println(s.gpa);\n    }\n}",
-      "output": "Ada\n3.9"
+      "id": "instance-static",
+      "title": "Instance and static methods",
+      "summary": "Know when a method needs an object and when it belongs to the class.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "What does this **print**?",
+          "code": "Student a = new Student(\"Ada\", 3.9);\nStudent b = a;\nb.gpa = 2.0;\nSystem.out.println(a.gpa);\n// constructor sets this.name and this.gpa",
+          "choices": [
+            "2.0",
+            "3.9",
+            "It does not compile",
+            "It throws a NullPointerException"
+          ],
+          "answer_index": 0,
+          "why": "`new` was called once, so there is exactly one **object**. `Student b = a;` copies the **reference**, not the object, so `a` and `b` are two names pointing at the same Student. Changing it through `b` changes what you see through `a`, and the answer is 2.0. If you picked 3.9, you read `b = a` as making a second student. It does not: only `new` builds an object, and there is no second `new` here."
+        },
+        {
+          "kind": "text",
+          "body": "`static` means the **method** belongs to the **class**, not to one object. `main` is static because it runs before your program creates any objects. Then `main` can build the objects it needs."
+        },
+        {
+          "kind": "code",
+          "caption": "`describe()` is an **instance** **method**, so it needs a Student object. `main` is static and has no object by itself. Build an object first, then call the method on that object.",
+          "code": "public class Student {\n    String name;\n\n    String describe() {\n        return \"I am \" + name;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe());\n    }\n}",
+          "output": ""
+        },
+        {
+          "kind": "text",
+          "body": "Java checks many type and **method** mistakes before the program runs. If you see no output at all, suspect a compile error. If some output appears before the crash, suspect a **runtime error**."
+        },
+        {
+          "kind": "compare",
+          "caption": "Declaring a Student **variable** does not create a Student object. If the reference is still `null`, `s.name` has no object to read from, so the program throws a NullPointerException.",
+          "wrong_label": "NullPointerException",
+          "wrong": "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
+          "right_label": "Works",
+          "right": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then Ada:\n// new built the object"
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "`new Student(...)` creates one **object**. If you call it again, you get a separate object with its own field **values**. Changing one student does not change the other."
+      "id": "null-and-defaults",
+      "title": "Null and default object state",
+      "summary": "Recognize default field values and missing object references.",
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "A NullPointerException means you never called new",
+          "body": "A NullPointerException usually means a **reference** is `null`, not that the object is broken. Go to the line Java names, find the variable before the dot, and trace back to where it should have been assigned with `new`."
+        },
+        {
+          "kind": "check",
+          "prompt": "The Student **class** declares `String name;` and `double gpa;` and has no constructor. What does this **print**?",
+          "code": "Student s = new Student();\nSystem.out.println(s.name);\nSystem.out.println(s.gpa);",
+          "choices": [
+            "null then 0.0",
+            "It throws a NullPointerException on the first println",
+            "It does not compile, since the fields were never set",
+            "An empty line then 0"
+          ],
+          "answer_index": 0,
+          "why": "`new` really did build an **object**, so `s` points at something and the dot works. Java fills unset fields with defaults: a `double` starts at 0.0, and any object type, including `String`, starts at `null`. So you get `null` and then `0.0`. If you picked the NullPointerException, you had the right idea about `null` but the wrong target: `s.name` is null, and `s` is not. Printing a null is fine. Only using a dot on a null crashes."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "You have been writing classes all along",
-      "body": "Python lets you add attributes more freely. Java wants the **class** to say its fields up front. That feels strict at first, but it helps Java catch misspelled or missing data early."
-    },
-    {
-      "kind": "text",
-      "body": "Setting each field by hand after `new` gets tedious, and it is easy to forget one. A constructor does it for you. It is a **method** with the same name as the **class** and no **return type**, and it runs automatically as part of `new`."
-    },
-    {
-      "kind": "code",
-      "caption": "**Methods** are the behavior half of the blueprint, the way fields are the state half. Note that changing `grace` leaves `ada` untouched: they are two separate **objects** built from one **class**, each with its own copy of the fields.",
-      "code": "public class Student {\n    String name;\n    double gpa;\n\n    Student(String name, double gpa) {\n        this.name = name;\n        this.gpa = gpa;\n    }\n\n    String describe() {\n        return name + \" has a GPA of \" + gpa;\n    }\n\n    public static void main(String[] args) {\n        Student ada = new Student(\"Ada\", 3.9);\n        Student grace = new Student(\"Grace\", 2.5);\n        System.out.println(ada.describe());\n        System.out.println(grace.describe());\n        grace.gpa = 3.1;\n        System.out.println(grace.describe());\n        System.out.println(ada.describe());\n    }\n}",
-      "output": "Ada has a GPA of 3.9\nGrace has a GPA of 2.5\nGrace has a GPA of 3.1\nAda has a GPA of 3.9"
-    },
-    {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "What `this` is for",
-      "body": "In that constructor, the **parameter** is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. So `this.name = name` means: take the **value** that was passed in, and store it in this **object**'s field. Drop the `this.` and you write `name = name`, which quietly assigns the parameter to itself and leaves the field empty. It compiles. It just does nothing."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does this **print**?",
-      "code": "Student a = new Student(\"Ada\", 3.9);\nStudent b = a;\nb.gpa = 2.0;\nSystem.out.println(a.gpa);\n// constructor sets this.name and this.gpa",
-      "choices": [
-        "2.0",
-        "3.9",
-        "It does not compile",
-        "It throws a NullPointerException"
-      ],
-      "answer_index": 0,
-      "why": "`new` was called once, so there is exactly one **object**. `Student b = a;` copies the **reference**, not the object, so `a` and `b` are two names pointing at the same Student. Changing it through `b` changes what you see through `a`, and the answer is 2.0. If you picked 3.9, you read `b = a` as making a second student. It does not: only `new` builds an object, and there is no second `new` here."
-    },
-    {
-      "kind": "text",
-      "body": "Now for the `static` in `public static void main`. A static **method** belongs to the **class** itself, not to any **object**. That is exactly what `main` needs to be, because `main` is where your program starts. At that moment no objects exist yet, so there is nothing for a non-static method to be attached to. `main` runs first and builds the objects."
-    },
-    {
-      "kind": "code",
-      "caption": "`describe()` is an **instance** **method**: it needs a Student to describe. `main` is static, so it has no Student. Java catches this while compiling, before a single line runs. Nothing prints. You get: `error: non-static method describe() cannot be referenced from a static context`. The fix is to build an **object** first and call the method on it: `new Student().describe()`.",
-      "code": "public class Student {\n    String name;\n\n    String describe() {\n        return \"I am \" + name;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe());\n    }\n}",
-      "output": ""
-    },
-    {
-      "kind": "text",
-      "body": "That is worth pausing on, because it is a real difference from Python. Java checks types and **method** calls while compiling, so a mistake like this is caught before the program runs at all. An error that arrives with no **output** above it is a compile error, and it means the program never started. An error that arrives after some of your output has already printed is a **runtime error**, and it means the program was running fine until that line."
-    },
-    {
-      "kind": "compare",
-      "caption": "Both sides compile, which is what makes this one sting: the mistake survives the compiler and only shows up when you run it. Declaring a **variable** of type Student does not create a Student, so the NullPointerException side holds a **reference** pointing at nothing. The dot in `s.name` says \"go to the **object** and get its name\", and there is no object to go to.",
-      "wrong_label": "NullPointerException",
-      "wrong": "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
-      "right_label": "Works",
-      "right": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then Ada:\n// new built the object"
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "A NullPointerException means you never called new",
-      "body": "This is the error Java beginners hit most. It does not mean the **object** is broken. It means there is no object. Some **reference** is holding `null`, and you used a dot on it. Java tells you which line, so go to that line, find the **variable** before the dot, and trace backwards to where it should have been given a `new`. Usually you declared it in one branch of an `if` and used it outside."
-    },
-    {
-      "kind": "check",
-      "prompt": "The Student **class** declares `String name;` and `double gpa;` and has no constructor. What does this **print**?",
-      "code": "Student s = new Student();\nSystem.out.println(s.name);\nSystem.out.println(s.gpa);",
-      "choices": [
-        "null then 0.0",
-        "It throws a NullPointerException on the first println",
-        "It does not compile, since the fields were never set",
-        "An empty line then 0"
-      ],
-      "answer_index": 0,
-      "why": "`new` really did build an **object**, so `s` points at something and the dot works. Java fills unset fields with defaults: a `double` starts at 0.0, and any object type, including `String`, starts at `null`. So you get `null` and then `0.0`. If you picked the NullPointerException, you had the right idea about `null` but the wrong target: `s.name` is null, and `s` is not. Printing a null is fine. Only using a dot on a null crashes."
-    },
-    {
-      "kind": "list",
+      "id": "class-checklist",
       "title": "Working with a new class",
-      "items": [
-        "Use a **class** when data belongs together.",
-        "Fields hold **object** data.",
-        "Constructors **set** starting **values**.",
-        "**Methods** define useful actions.",
-        "Use new to create an **object**."
+      "summary": "Review the order for designing and using a class.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Working with a new class",
+          "items": [
+            "Use a **class** when data belongs together.",
+            "Fields hold **object** data.",
+            "Constructors **set** starting **values**.",
+            "**Methods** define useful actions.",
+            "Use new to create an **object**."
+          ]
+        }
       ]
     }
   ],

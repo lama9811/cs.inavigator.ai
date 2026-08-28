@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Two Pointers & Sliding Window",
   "summary": "Use **two pointers** to move through related positions. Use a **sliding window** when a contiguous group grows and shrinks.",
-  "minutes": 18,
+  "minutes": 20,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -140,6 +140,45 @@
           "tone": "warning",
           "title": "Sliding window needs the right kind of data",
           "body": "The sum example assumes nonnegative numbers. Negative numbers can make the window shrink/grow logic unreliable."
+        }
+      ]
+    },
+    {
+      "id": "choose-the-pattern",
+      "title": "Choose pointer pair or moving window",
+      "summary": "The prompt tells you whether positions are independent pointers or one contiguous range.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Use two pointers when the positions can move for separate reasons, such as checking both ends of a word. Use sliding window when the important thing is one contiguous chunk from left through right."
+        },
+        {
+          "kind": "compare",
+          "caption": "The prompt wording usually gives away the shape before you write code.",
+          "wrong_label": "Window for separate ends",
+          "wrong": "compare first and last\nstore every middle value",
+          "right_label": "Pointer pair",
+          "right": "left starts at front\nright starts at back"
+        },
+        {
+          "kind": "compare",
+          "caption": "A contiguous range needs a window state such as a sum, count, or set.",
+          "wrong_label": "Pair only",
+          "wrong": "check two values\nignore what sits between",
+          "right_label": "Window state",
+          "right": "include every value from left through right"
+        },
+        {
+          "kind": "check",
+          "prompt": "Which phrase points more strongly to sliding window?",
+          "choices": [
+            "longest contiguous group",
+            "first and last character",
+            "two sorted endpoints",
+            "mirror positions"
+          ],
+          "answer_index": 0,
+          "why": "Contiguous group means the current answer is a whole range, not just two separate positions."
         }
       ]
     },

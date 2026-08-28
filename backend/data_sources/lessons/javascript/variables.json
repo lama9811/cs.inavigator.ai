@@ -10,76 +10,6 @@
   ],
   "refresher": "Use `const` when a binding stays fixed and `let` when it must be reassigned. Declare either name before its first use.",
   "refresher_code": "const course = \"CS 201\";\nlet seats = 3;\nseats = 2;",
-  "blocks": [
-    {
-      "kind": "text",
-      "body": "Use `const` when a binding stays fixed and `let` when it must be reassigned. Declare either name before its first use. Name **values** and show whether reassignment is expected."
-    },
-    {
-      "kind": "text",
-      "body": "A **variable** name is a label your code uses to reach a value. `const` means that label cannot be reassigned, while `let` permits reassignment. This rule concerns the label itself. A const **object** or **array** may still have its contents changed because the label continues to point to the same value."
-    },
-    {
-      "kind": "code",
-      "caption": "The course binding stays fixed while the numeric count changes.",
-      "code": "const course = \"CS 201\";\nlet enrolled = 24;\nenrolled += 1;\nconsole.log(`${course}: ${enrolled}`);",
-      "output": "CS 201: 25"
-    },
-    {
-      "kind": "compare",
-      "caption": "Declare once, then reassign only when the design requires change.",
-      "wrong_label": "Common mistake",
-      "wrong": "let count = 1;\nlet count = 2;",
-      "right_label": "Clearer version",
-      "right": "let count = 1;\ncount = 2;"
-    },
-    {
-      "kind": "text",
-      "body": "After the corrected code runs, there is one **variable** named `count`. Its first **value** is one, and the assignment replaces that value with two. A block inside braces may declare its own name, but that separate **scope** should be intentional."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Watch this detail",
-      "body": "Repeating `let score` in one block redeclares the name and causes a **syntax error**; reassignment omits `let`."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which declaration suits a changing counter?",
-      "code": "",
-      "choices": [
-        "let attempts = 0;",
-        "const attempts = 0;",
-        "attempts let = 0;",
-        "change attempts = 0;"
-      ],
-      "answer_index": 0,
-      "why": "A let binding may be reassigned as the counter changes."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is printed?",
-      "code": "let points = 4;\npoints += 3;\nconsole.log(points);",
-      "choices": [
-        "7",
-        "43",
-        "4",
-        "undefined"
-      ],
-      "answer_index": 0,
-      "why": "Compound assignment adds three and stores seven in the existing **variable**."
-    },
-    {
-      "kind": "list",
-      "title": "Variables checklist",
-      "items": [
-        "Default to stable bindings.",
-        "Use let for changing state.",
-        "Declare before reading.",
-        "Avoid same-block redeclaration."
-      ]
-    }
-  ],
   "_beginner_expanded": true,
   "learn_cards": {
     "assign-01": {
@@ -162,5 +92,103 @@
       "section_id": "check",
       "example": "let score = 25;"
     }
-  }
+  },
+  "sections": [
+    {
+      "id": "idea",
+      "title": "Choose let or const",
+      "summary": "Start by deciding whether the name should ever point somewhere new.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Use `const` when a binding stays fixed and `let` when it must be reassigned. Declare either name before its first use. Name **values** and show whether reassignment is expected."
+        },
+        {
+          "kind": "text",
+          "body": "A **variable** name is a label your code uses to reach a value. `const` means that label cannot be reassigned, while `let` permits reassignment. This rule concerns the label itself. A const **object** or **array** may still have its contents changed because the label continues to point to the same value."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "Trace one changing value",
+      "summary": "Watch a fixed binding and a changing counter side by side.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The course binding stays fixed while the numeric count changes.",
+          "code": "const course = \"CS 201\";\nlet enrolled = 24;\nenrolled += 1;\nconsole.log(`${course}: ${enrolled}`);",
+          "output": "CS 201: 25"
+        },
+        {
+          "kind": "compare",
+          "caption": "Declare once, then reassign only when the design requires change.",
+          "wrong_label": "Common mistake",
+          "wrong": "let count = 1;\nlet count = 2;",
+          "right_label": "Clearer version",
+          "right": "let count = 1;\ncount = 2;"
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "title": "Keep the current value clear",
+      "summary": "Follow the latest stored value after the corrected code runs.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "After the corrected code runs, there is one **variable** named `count`. Its first **value** is one, and the assignment replaces that value with two. A block inside braces may declare its own name, but that separate **scope** should be intentional."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Watch this detail",
+          "body": "Repeating `let score` in one block redeclares the name and causes a **syntax error**; reassignment omits `let`."
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "title": "Check variable choices",
+      "summary": "Practice choosing declarations and tracing output.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which declaration suits a changing counter?",
+          "code": "",
+          "choices": [
+            "let attempts = 0;",
+            "const attempts = 0;",
+            "attempts let = 0;",
+            "change attempts = 0;"
+          ],
+          "answer_index": 0,
+          "why": "A let binding may be reassigned as the counter changes."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is printed?",
+          "code": "let points = 4;\npoints += 3;\nconsole.log(points);",
+          "choices": [
+            "7",
+            "43",
+            "4",
+            "undefined"
+          ],
+          "answer_index": 0,
+          "why": "Compound assignment adds three and stores seven in the existing **variable**."
+        },
+        {
+          "kind": "list",
+          "title": "Variables checklist",
+          "items": [
+            "Default to stable bindings.",
+            "Use let for changing state.",
+            "Declare before reading.",
+            "Avoid same-block redeclaration."
+          ]
+        }
+      ]
+    }
+  ]
 }

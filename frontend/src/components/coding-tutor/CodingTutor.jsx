@@ -380,6 +380,15 @@ function practiceTargetFromPath(pathname) {
   }
 
   // --- Practice (the concept quizzes) ---
+  const mistakeRunner = clean.match(/^\/coding\/practice\/quiz\/([^/]+)\/mistake-bank(?:\/(.+))?$/);
+  if (mistakeRunner) {
+    return {
+      mode: "quiz",
+      view: "mistake-runner",
+      language: decodeURIComponent(mistakeRunner[1]),
+      questionId: mistakeRunner[2] ? decodeURIComponent(mistakeRunner[2]) : "",
+    };
+  }
   const runner = clean.match(/^\/coding\/practice\/quiz\/([^/]+)\/([^/]+)\/(.+)$/);
   if (runner) {
     return {
@@ -419,6 +428,10 @@ const quizPathForQuestion = (language, category, questionId) =>
   `/coding/practice/quiz/${encodeURIComponent(language)}/${encodeURIComponent(
     category
   )}/${encodeURIComponent(questionId)}`;
+const quizPathForMistakeBank = (language, questionId) =>
+  `/coding/practice/quiz/${encodeURIComponent(language)}/mistake-bank${
+    questionId ? `/${encodeURIComponent(questionId)}` : ""
+  }`;
 
 const DEFAULT_PRACTICE_ROUTES = {
   current: PRACTICE_LEARN_PATH,
@@ -4340,7 +4353,7 @@ export default function CodingTutor({
       let back = null;
       if (target.view === "language") {
         back = { label: "All languages", onClick: () => navigate(PRACTICE_QUIZ_PATH) };
-      } else if (target.view === "runner") {
+      } else if (target.view === "runner" || target.view === "mistake-runner") {
         const langLabel = CONCEPT_QUIZ_LABELS[target.language] || target.language;
         back = {
           label: `Back to ${langLabel}`,
@@ -4353,6 +4366,7 @@ export default function CodingTutor({
       } else if (target.view === "lessons") {
         back = {
           label: "Choose track",
+          variant: "track-chooser",
           onClick: () => navigate(learnPathForLanguage(target.language)),
         };
       } else if (target.view === "lesson") {
@@ -4361,6 +4375,7 @@ export default function CodingTutor({
           label: target.track
             ? `Back to ${target.track === "beginner" ? "Beginner" : "Intermediate"} track`
             : `Back to ${langLabel}`,
+          variant: target.track ? "track-chooser" : undefined,
           onClick: () =>
             navigate(
               target.track
@@ -4412,7 +4427,13 @@ export default function CodingTutor({
               ))}
             </div>
             {back ? (
-              <button type="button" className="practice-back-btn" onClick={back.onClick}>
+              <button
+                type="button"
+                className={`practice-back-btn ${
+                  back.variant ? `is-${back.variant}` : ""
+                }`}
+                onClick={back.onClick}
+              >
                 <FaArrowLeft aria-hidden="true" /> {back.label}
               </button>
             ) : null}
@@ -4452,6 +4473,9 @@ export default function CodingTutor({
               onNavigateToLanguage={(language) => navigate(quizPathForLanguage(language))}
               onNavigateToQuestion={(language, category, questionId) =>
                 navigate(quizPathForQuestion(language, category, questionId))
+              }
+              onNavigateToMistakeBank={(language, questionId) =>
+                navigate(quizPathForMistakeBank(language, questionId))
               }
               // "I don't remember this" -> the full lesson, same topic.
               onOpenLesson={(language, category) =>
@@ -4505,7 +4529,7 @@ export default function CodingTutor({
     `coding-page-${activePage}`,
     activePage === "workspace" ? "coding-workspace-active" : "",
     activePage === "quiz" &&
-    practiceTargetFromPath(location.pathname).view === "runner"
+    ["runner", "mistake-runner"].includes(practiceTargetFromPath(location.pathname).view)
       ? "coding-quiz-runner-active"
       : "",
     terminalOpen ? "terminal-open" : "terminal-closed",

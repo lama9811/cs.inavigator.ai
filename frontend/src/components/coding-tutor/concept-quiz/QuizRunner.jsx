@@ -141,7 +141,7 @@ function ParsonsBoard({ question, value, onChange, disabled = false }) {
   );
 }
 
-function AnswerPanel({ question, answer, onAnswer, choiceOrder = [], locked = false }) {
+export function AnswerPanel({ question, answer, onAnswer, choiceOrder = [], locked = false }) {
   if (question.kind === "typein") {
     return (
       <div className="cq-answer cq-answer-typein">
@@ -529,7 +529,7 @@ function buildImmediateReview(question, result, explanation) {
   };
 }
 
-function ImmediateFeedback({ question, answer, onReviewLesson }) {
+export function ImmediateFeedback({ question, answer, onReviewLesson }) {
   if (!answer?.checked) return null;
 
   const result = gradeAnswerLocally(question, answer);
@@ -588,7 +588,13 @@ function ImmediateFeedback({ question, answer, onReviewLesson }) {
   );
 }
 
-function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
+function ResultsScreen({
+  grade,
+  questions,
+  onRetry,
+  onBackToCategory,
+  backLabel = "Back to categories",
+}) {
   const byId = useMemo(() => {
     const map = {};
     grade.results.forEach((r) => {
@@ -684,7 +690,7 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
 
       <div className="cq-results-actions">
         <button type="button" className="cq-btn cq-btn-ghost" onClick={onBackToCategory}>
-          Back to categories
+          {backLabel}
         </button>
         <button type="button" className="cq-btn cq-btn-primary" onClick={onRetry}>
           Try again
@@ -705,6 +711,7 @@ export default function QuizRunner({
   onGrade,
   onSaveResult,
   onBackToCategory,
+  backLabel,
   onOpenLesson,
 }) {
   const [tab, setTab] = useState("question");
@@ -747,6 +754,8 @@ export default function QuizRunner({
   }, [index]);
 
   const question = questions[index];
+  const questionCategory = question?.category || category;
+  const questionCategoryLabel = question?.category_label || categoryLabel;
   const total = questions.length;
   const answered = question ? answersById[question.id] : undefined;
   const isAnswered = isAnswerComplete(answered);
@@ -777,6 +786,7 @@ export default function QuizRunner({
         grade={grade}
         questions={questions}
         onBackToCategory={onBackToCategory}
+        backLabel={backLabel}
         onRetry={() => {
           setAnswersById({});
           setGrade(null);
@@ -944,8 +954,8 @@ export default function QuizRunner({
               <LearnTab
                 apiBase={apiBase}
                 language={language}
-                category={category}
-                categoryLabel={categoryLabel}
+                category={questionCategory}
+                categoryLabel={questionCategoryLabel}
                 questionId={question.id}
                 onOpenLesson={onOpenLesson}
               />

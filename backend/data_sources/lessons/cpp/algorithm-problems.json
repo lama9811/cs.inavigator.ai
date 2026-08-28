@@ -9,146 +9,312 @@
   ],
   "refresher": "First state the **input** and expected **output**. Choose any value the algorithm must remember, update it as you visit the data, and **return** only after all required work is finished.",
   "refresher_code": "long long total = 0;\nfor (long long n : values) total += n;\nreturn total;",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "An algorithm is a clear sequence of steps for producing an answer. Before writing C++, describe the **input**, the **output**, what must be remembered, and what work repeats. Then translate each part into code."
-    },
-    {
-      "kind": "visual",
-      "title": "Track best-so-far state",
-      "concept": "arrays",
-      "caption": "Watch the best index update only when a better value appears.",
-      "initial_state": {},
-      "steps": [
+      "id": "read-trace",
+      "title": "Read and trace first",
+      "summary": "Name the input, expected output, and one hand-traced example.",
+      "blocks": [
         {
-          "title": "Initialize",
-          "body": "Best starts at index 0 because that is the first candidate.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "best": 0
-            },
-            "note": "best value = 4"
-          }
+          "kind": "text",
+          "body": "An algorithm is a clear sequence of steps for producing an answer. Before writing C++, describe the **input**, the **output**, what must be remembered, and what work repeats. Then translate each part into code."
         },
         {
-          "title": "Compare index 1",
-          "body": "Nine is larger than four, so best moves to index 1.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 1
+          "kind": "visual",
+          "title": "Track best-so-far state",
+          "concept": "state-trace",
+          "caption": "Watch the active item, the comparison, and the best-so-far state move together.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Initialize",
+              "body": "Start with the first value as the best-so-far because it is the only candidate seen.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "best": 0
+                },
+                "active_step": "state",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 0 has 4",
+                  "comparison": "No comparison yet",
+                  "decision": "Initialize best",
+                  "tracked": "best = 4 at index 0",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 4"
+              },
+              "code_focus": "state: Initialize",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "state"
+                }
+              ],
+              "decision": "Initialize best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 4"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start with the first value as the best-so-far because it is the only candidate seen."
             },
-            "note": "best value = 9"
-          }
+            {
+              "title": "Compare index 1",
+              "body": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 1
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 1 has 9",
+                  "comparison": "9 > 4 is true",
+                  "decision": "Update best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 9"
+              },
+              "code_focus": "compare: Compare index 1",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Update best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1."
+            },
+            {
+              "title": "Compare index 2",
+              "body": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 2
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 2 has 7",
+                  "comparison": "7 > 9 is false",
+                  "decision": "Keep best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "ready to return"
+                },
+                "note": "best still points at index 1"
+              },
+              "code_focus": "compare: Compare index 2",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Keep best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best still points at index 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1."
+            },
+            {
+              "title": "Return best",
+              "body": "After every item has been checked, return or use the stored best value.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1
+                },
+                "active_step": "result",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "no items left",
+                  "comparison": "loop is finished",
+                  "decision": "Use best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "return 9"
+                },
+                "note": "return the best value 9"
+              },
+              "code_focus": "result: Return best",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "Use best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "return the best value 9"
+                }
+              ],
+              "output": "return 9",
+              "why": "After every item has been checked, return or use the stored best value."
+            }
+          ]
         },
         {
-          "title": "Compare index 2",
-          "body": "Seven is not larger than nine, so best stays put.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 2
-            },
-            "note": "return best index 1"
-          }
+          "kind": "text",
+          "body": "To add a vector, remember a running total. Programmers often call a **value** like this an accumulator because it collects each update. Start it at zero, add every number, and **return** the total after the **loop**."
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "To add a vector, remember a running total. Programmers often call a **value** like this an accumulator because it collects each update. Start it at zero, add every number, and **return** the total after the **loop**."
+      "id": "accumulator",
+      "title": "Build running state",
+      "summary": "Set up an accumulator with the starter types and return after traversal.",
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Use the starter's types while solving",
+          "body": "If the starter uses `long long`, use `long long` for related totals and **loop** **variables** too. That keeps your code matched to the runner and avoids overflow when the numbers get large."
+        },
+        {
+          "kind": "code",
+          "caption": "Total begins at zero, receives every **value**, and is returned only after the **loop** is complete.",
+          "code": "#include <iostream>\n#include <vector>\n\nlong long sum(std::vector<long long> values) {\n  long long total = 0;\n\n  for (long long value : values) {\n    total += value;\n  }\n\n  return total;\n}\n\nint main() {\n  std::cout << sum({3, 5, 2}) << \"\\n\";\n}",
+          "output": "10"
+        },
+        {
+          "kind": "compare",
+          "caption": "Keep the **return** outside the **loop** body.",
+          "wrong_label": "Common mistake",
+          "wrong": "for (int value : values) {\n  total += value;\n  return total;\n}",
+          "right_label": "Clearer version",
+          "right": "for (int value : values) {\n  total += value;\n}\nreturn total;"
+        },
+        {
+          "kind": "text",
+          "body": "For `{3, 5, 2}`, the running total becomes three, then eight, then ten. An empty vector performs no additions and returns zero. Trace both an ordinary case and the smallest allowed case to catch misplaced setup or **return** steps."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Use the starter's types while solving",
-      "body": "If the starter uses `long long`, use `long long` for related totals and **loop** **variables** too. That keeps your code matched to the runner and avoids overflow when the numbers get large."
+      "id": "check",
+      "title": "Check algorithm order",
+      "summary": "Practice initialization and return placement.",
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Finish the repeated work before returning",
+          "body": "A **return** inside the **loop** ends the **function** during the first pass. Put the final return after the loop when every element must contribute to the answer."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is the sum accumulator initialized to?",
+          "code": "",
+          "choices": [
+            "0",
+            "1",
+            "the vector size",
+            "the first index"
+          ],
+          "answer_index": 0,
+          "why": "Zero is the additive identity and works correctly even when the vector is empty."
+        },
+        {
+          "kind": "check",
+          "prompt": "Where does a full **traversal** **return**?",
+          "code": "",
+          "choices": [
+            "after the loop",
+            "before initialization",
+            "inside the first pass",
+            "before every update"
+          ],
+          "answer_index": 0,
+          "why": "Later elements can change the result, so the **loop** must finish first."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "Total begins at zero, receives every **value**, and is returned only after the **loop** is complete.",
-      "code": "#include <iostream>\n#include <vector>\n\nlong long sum(std::vector<long long> values) {\n  long long total = 0;\n\n  for (long long value : values) {\n    total += value;\n  }\n\n  return total;\n}\n\nint main() {\n  std::cout << sum({3, 5, 2}) << \"\\n\";\n}",
-      "output": "10"
-    },
-    {
-      "kind": "compare",
-      "caption": "Keep the **return** outside the **loop** body.",
-      "wrong_label": "Common mistake",
-      "wrong": "for (int value : values) {\n  total += value;\n  return total;\n}",
-      "right_label": "Clearer version",
-      "right": "for (int value : values) {\n  total += value;\n}\nreturn total;"
-    },
-    {
-      "kind": "text",
-      "body": "For `{3, 5, 2}`, the running total becomes three, then eight, then ten. An empty vector performs no additions and returns zero. Trace both an ordinary case and the smallest allowed case to catch misplaced setup or **return** steps."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Finish the repeated work before returning",
-      "body": "A **return** inside the **loop** ends the **function** during the first pass. Put the final return after the loop when every element must contribute to the answer."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is the sum accumulator initialized to?",
-      "code": "",
-      "choices": [
-        "0",
-        "1",
-        "the vector size",
-        "the first index"
-      ],
-      "answer_index": 0,
-      "why": "Zero is the additive identity and works correctly even when the vector is empty."
-    },
-    {
-      "kind": "check",
-      "prompt": "Where does a full **traversal** **return**?",
-      "code": "",
-      "choices": [
-        "after the loop",
-        "before initialization",
-        "inside the first pass",
-        "before every update"
-      ],
-      "answer_index": 0,
-      "why": "Later elements can change the result, so the **loop** must finish first."
-    },
-    {
-      "kind": "list",
-      "title": "Algorithm Problems: Part 1 checklist",
-      "items": [
-        "Write expected **output**.",
-        "Keep the starter's **function** signature.",
-        "Choose correct initial state.",
-        "Visit each needed element.",
-        "**Return** after traversal."
+      "id": "habits",
+      "title": "Algorithm habits",
+      "summary": "Use the checklist before arranging code.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Algorithm Problems: Part 1 checklist",
+          "items": [
+            "Write expected **output**.",
+            "Keep the starter's **function** signature.",
+            "Choose correct initial state.",
+            "Visit each needed element.",
+            "**Return** after traversal."
+          ]
+        }
       ]
     }
   ],

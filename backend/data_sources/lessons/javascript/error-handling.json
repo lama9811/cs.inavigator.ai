@@ -9,73 +9,361 @@
   ],
   "refresher": "JavaScript uses `throw` to report an error and `try/catch` to handle one. Catch errors when you know what to do next. Do not catch every error just to make the console quiet.",
   "refresher_code": "try {\n  const data = JSON.parse(raw);\n} catch (error) {\n  console.log(error.message);\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Errors are not all the same. Some are expected, like bad user **input**. Some are bugs you need to fix. Good error handling tells those apart."
+      "id": "expected-errors",
+      "title": "Expected errors",
+      "summary": "Use try and catch for failures the program can handle.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Errors are not all the same. Some are expected, like bad user **input**. Some are bugs you need to fix. Good error handling tells those apart."
+        },
+        {
+          "kind": "text",
+          "body": "`try` holds the risky code. `catch` runs if that code throws. Keep the try block small so you can tell what failed."
+        },
+        {
+          "kind": "visual",
+          "title": "Thrown errors leave the try path",
+          "concept": "exception-flow",
+          "caption": "Trace malformed JSON through try, thrown SyntaxError, catch, and the visible response.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start risky parsing",
+              "body": "JSON.parse is the risky operation, so it belongs inside try.",
+              "animation": "add",
+              "state": {
+                "active_step": "try",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "JSON.parse(raw)",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "raw is malformed",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "error object arrives",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "show useful message",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "keep bug evidence",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "keep try close to the operation that may fail"
+              },
+              "code_focus": "try: Start risky parsing",
+              "input_value": "JSON.parse(raw)",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "try"
+                }
+              ],
+              "decision": "JSON.parse is the risky operation, so it belongs inside try.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "keep try close to the operation that may fail"
+                }
+              ],
+              "output": "none yet",
+              "why": "JSON.parse is the risky operation, so it belongs inside try."
+            },
+            {
+              "title": "Throw SyntaxError",
+              "body": "Parsing stops when the text is not valid JSON.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "throw",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "parse begins",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "SyntaxError",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "control jumps",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "Loaded is skipped",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "not yet",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "the rest of try does not run after throw"
+              },
+              "code_focus": "throw: Throw SyntaxError",
+              "input_value": "SyntaxError",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "throw"
+                }
+              ],
+              "decision": "Parsing stops when the text is not valid JSON.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the rest of try does not run after throw"
+                }
+              ],
+              "output": "none yet",
+              "why": "Parsing stops when the text is not valid JSON."
+            },
+            {
+              "title": "Catch with evidence",
+              "body": "Catch receives the Error object, which can be logged or translated into a user-safe message.",
+              "animation": "slide",
+              "state": {
+                "active_step": "respond",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "normal path skipped",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "SyntaxError",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "catch (error)",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "Could not read that JSON",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "ready",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "empty catches erase the clue you need"
+              },
+              "code_focus": "respond: Catch with evidence",
+              "input_value": "Could not read that JSON",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "respond"
+                }
+              ],
+              "decision": "Catch receives the Error object, which can be logged or translated into a user-safe message.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "empty catches erase the clue you need"
+                }
+              ],
+              "output": "none yet",
+              "why": "Catch receives the Error object, which can be logged or translated into a user-safe message."
+            },
+            {
+              "title": "Continue intentionally",
+              "body": "The program continues only after a handler has made the failure visible or recoverable.",
+              "animation": "add",
+              "state": {
+                "active_step": "continue",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "risky work handled",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "handled",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "error preserved",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "message shown",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "next safe step",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "handle expected failures without hiding real bugs"
+              },
+              "code_focus": "continue: Continue intentionally",
+              "input_value": "next safe step",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "continue"
+                }
+              ],
+              "decision": "The program continues only after a handler has made the failure visible or recoverable.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "handle expected failures without hiding real bugs"
+                }
+              ],
+              "output": "handle expected failures without hiding real bugs",
+              "why": "The program continues only after a handler has made the failure visible or recoverable."
+            }
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "JSON.parse throws before the Loaded message, so catch provides a controlled response.",
+          "code": "const raw = \"{bad json}\";\ntry {\n  JSON.parse(raw);\n  console.log(\"Loaded\");\n} catch (error) {\n  console.log(\"Could not read that JSON\");\n}",
+          "output": "Could not read that JSON"
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "`try` holds the risky code. `catch` runs if that code throws. Keep the try block small so you can tell what failed."
+      "id": "visible-failures",
+      "title": "Handle visible failures",
+      "summary": "Avoid empty catches and keep the failure cause clear.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "wrong_label": "Common mistake",
+          "wrong": "try { riskyWork(); } catch (error) {}",
+          "right_label": "Clearer version",
+          "right": "try {\n  riskyWork();\n} catch (error) {\n  console.error(error);\n  throw error;\n}",
+          "caption": "An empty catch makes the program look successful even though its work failed. Handle an expected case or preserve the error for a layer that can."
+        },
+        {
+          "kind": "text",
+          "body": "Trace the malformed **input**: parse begins, detects invalid syntax, creates a SyntaxError, and transfers control to catch. The original Error still matters during development, even when the message shown to a student is simpler."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Catch narrowly",
+          "body": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected **input** problems."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "JSON.parse throws before the Loaded message, so catch provides a controlled response.",
-      "code": "const raw = \"{bad json}\";\ntry {\n  JSON.parse(raw);\n  console.log(\"Loaded\");\n} catch (error) {\n  console.log(\"Could not read that JSON\");\n}",
-      "output": "Could not read that JSON"
+      "id": "control-flow-checks",
+      "title": "Control-flow checks",
+      "summary": "Know when finally runs and why empty catch blocks are risky.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which block runs whether try succeeds or fails?",
+          "code": "",
+          "choices": [
+            "finally",
+            "catch only",
+            "throw",
+            "return"
+          ],
+          "answer_index": 0,
+          "why": "A finally block runs after the try and any matching catch, making it suitable for cleanup that both paths require."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is wrong with an empty catch block?",
+          "code": "try { save(); } catch (error) {}",
+          "choices": [
+            "It hides the failure and its evidence",
+            "Catch requires a return value",
+            "It retries forever",
+            "It converts the error to text"
+          ],
+          "answer_index": 0,
+          "why": "The program silently continues, so neither the user nor the developer can see that save failed or why it failed."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "wrong_label": "Common mistake",
-      "wrong": "try { riskyWork(); } catch (error) {}",
-      "right_label": "Clearer version",
-      "right": "try {\n  riskyWork();\n} catch (error) {\n  console.error(error);\n  throw error;\n}",
-      "caption": "An empty catch makes the program look successful even though its work failed. Handle an expected case or preserve the error for a layer that can."
-    },
-    {
-      "kind": "text",
-      "body": "Trace the malformed **input**: parse begins, detects invalid syntax, creates a SyntaxError, and transfers control to catch. The original Error still matters during development, even when the message shown to a student is simpler."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Catch narrowly",
-      "body": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected **input** problems."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which block runs whether try succeeds or fails?",
-      "code": "",
-      "choices": [
-        "finally",
-        "catch only",
-        "throw",
-        "return"
-      ],
-      "answer_index": 0,
-      "why": "A finally block runs after the try and any matching catch, making it suitable for cleanup that both paths require."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is wrong with an empty catch block?",
-      "code": "try { save(); } catch (error) {}",
-      "choices": [
-        "It hides the failure and its evidence",
-        "Catch requires a return value",
-        "It retries forever",
-        "It converts the error to text"
-      ],
-      "answer_index": 0,
-      "why": "The program silently continues, so neither the user nor the developer can see that save failed or why it failed."
-    },
-    {
-      "kind": "list",
+      "id": "error-checklist",
       "title": "Error Handling checklist",
-      "items": [
-        "Use throw when code cannot safely continue.",
-        "Catch errors where you can recover.",
-        "Keep try blocks small.",
-        "Do not hide bugs by catching everything silently."
+      "summary": "Review JavaScript error-handling habits.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Error Handling checklist",
+          "items": [
+            "Use throw when code cannot safely continue.",
+            "Catch errors where you can recover.",
+            "Keep try blocks small.",
+            "Do not hide bugs by catching everything silently."
+          ]
+        },
+        {
+          "kind": "list",
+          "title": "Common JavaScript error types",
+          "items": [
+            "`SyntaxError`: JavaScript cannot parse the code or JSON text.",
+            "`TypeError`: code uses a value in a way that does not fit its type.",
+            "`ReferenceError`: code uses a name that is not defined.",
+            "`RangeError`: a number is outside the allowed range.",
+            "`URIError`: URI encoding or decoding receives invalid text."
+          ]
+        }
       ]
     }
   ],
