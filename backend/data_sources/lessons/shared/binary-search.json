@@ -54,7 +54,7 @@
           "kind": "visual",
           "title": "Cut the search space",
           "concept": "binary-search",
-          "caption": "Watch low, mid, and high move while searching a sorted **list**.",
+          "caption": "Compare low, mid, and high while searching a sorted **list**.",
           "initial_state": {
             "items": [
               2,
@@ -277,7 +277,7 @@
           "kind": "visual",
           "title": "Avoid the stuck-mid bug",
           "concept": "binary-search",
-          "caption": "Watch why `low = mid` can repeat the same range instead of shrinking it.",
+          "caption": "Trace why `low = mid` can repeat the same range instead of shrinking it.",
           "initial_state": {
             "items": [
               10,

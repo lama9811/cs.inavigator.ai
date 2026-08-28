@@ -219,14 +219,16 @@
 }
 
 .terminal-panel-empty {
-  border: 0;
-  border-radius: 0;
+  width: fit-content;
+  border: 1px solid rgba(230, 237, 243, 0.08);
+  border-radius: 999px;
   background: transparent;
-  color: #6b7888;
+  color: #7b8796;
   font-family: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, "Courier New", monospace;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  padding: 2px 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 4px 8px;
 }
 
 .terminal-panel pre {

@@ -67,7 +67,7 @@
       "variants": {
         "python": {
           "code": "name = \"Ada\"\nprint(\"Hello,\", name)",
-          "prompt": "What does this code do?",
+          "prompt": "What does this code print when `name` stores \"Ada\"?",
           "choices": [
             "Prints the literal text: Hello, name",
             "Prints a greeting using the value stored in name",
@@ -79,7 +79,7 @@
         },
         "java": {
           "code": "String name = \"Ada\";\nSystem.out.println(\"Hello, \" + name);",
-          "prompt": "What does this code do?",
+          "prompt": "What does this code print when `name` stores \"Ada\"?",
           "choices": [
             "Prints the literal text: Hello, name",
             "Prints a greeting using the value stored in name",
@@ -91,7 +91,7 @@
         },
         "javascript": {
           "code": "let name = \"Ada\";\nconsole.log(\"Hello, \" + name);",
-          "prompt": "What does this code do?",
+          "prompt": "What does this code log when `name` stores \"Ada\"?",
           "choices": [
             "Prints the literal text: Hello, name",
             "Prints a greeting using the value stored in name",
@@ -103,7 +103,7 @@
         },
         "cpp": {
           "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string name = \"Ada\";\n    cout << \"Hello, \" << name;\n    return 0;\n}",
-          "prompt": "What does this program do?",
+          "prompt": "What does this program print when `name` stores \"Ada\"?",
           "choices": [
             "Prints the literal text: Hello, name",
             "Prints a greeting using the value stored in name",

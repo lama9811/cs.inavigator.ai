@@ -1,0 +1,1376 @@
+import fs from "node:fs";
+import path from "node:path";
+
+const repoRoot = path.resolve(process.cwd(), "..");
+const questionDir = path.join(repoRoot, "backend", "data_sources", "quiz", "questions");
+const generatorPath = path.join(process.cwd(), "src", "components", "coding-tutor", "universal-visualizer", "generators.ts");
+const bannedPhrases = [
+  "use this prompt rule",
+  "authored example input",
+  "public example input",
+  "hidden test",
+];
+
+const bannedGeneratedPseudocode = [
+  "first_operation",
+  "second_operation",
+  "total = adjust(total)",
+  "result.append(",
+  "seen.add(",
+  "pairs.append(",
+  "queue.append(",
+  "frontier.append(",
+  "heap.append(",
+  "values.append(",
+  "ops.append(",
+  "positives = set()",
+  "positives.add(",
+  "groups[key].append(",
+  "visited.add(",
+];
+
+const conceptStepTargets = {
+  "dynamic-programming": 8,
+  "binary-search": 8,
+  "sliding-window": 8,
+  "prefix-sum": 8,
+  stack: 8,
+  recursion: 8,
+  "two-pointers": 7,
+  "hash-map": 7,
+  "linked-list": 7,
+  matrix: 7,
+  graph: 7,
+  "binary-tree": 7,
+  heap: 7,
+  trie: 7,
+  "union-find": 8,
+  intervals: 7,
+  "bit-manipulation": 7,
+};
+
+function targetStepCount(concept) {
+  return conceptStepTargets[concept] || 6;
+}
+
+const familyStepTargets = {
+  "array-maximum-score": 7,
+  "array-sum-even": 7,
+  "array-dedupe-order": 7,
+  "array-smallest-positive": 7,
+  "array-find-index": 6,
+  "array-merge-names": 7,
+  "array-threshold-count": 6,
+  "array-truthy-count": 6,
+  "array-every-other": 7,
+  "array-comfort-count": 6,
+  "array-plant-care-days": 7,
+  "array-rotate": 8,
+  "array-dedupe": 6,
+  "array-filter": 6,
+  "array-running-total": 6,
+  "array-search": 6,
+  "array-max-min": 6,
+  "array-swap": 7,
+  "string-scan": 6,
+  "string-count-vowels": 6,
+  "string-reverse-words": 6,
+  "string-count-words": 5,
+  "string-course-code": 6,
+  "string-initials": 6,
+  "string-palindrome": 5,
+  "string-normalize-emails": 7,
+  "string-prefix-search": 7,
+  "hash-complement": 7,
+  "hash-frequency": 7,
+  "hash-grouping": 7,
+  "hash-lookup": 7,
+  "stack-brackets": 8,
+  "stack-expression": 8,
+  "stack-commands": 5,
+  "stack-adjacent-pairs": 6,
+  "stack-monotonic": 6,
+  "queue-help-desk": 7,
+  "queue-line-commands": 5,
+  "queue-serve-count": 5,
+  "queue-ticket-rounds": 6,
+  "queue-window-count": 5,
+  "queue-fifo": 6,
+  "binary-search": 8,
+  "binary-search-exact": 8,
+  "binary-search-first-at-least": 8,
+  "binary-search-first-bad": 8,
+  "binary-search-first-one": 8,
+  "binary-search-first-passing": 8,
+  "binary-search-insert-position": 8,
+  "binary-search-last-at-most": 8,
+  "binary-search-median-two-lists": 8,
+  "two-pointer-closest": 7,
+  "two-pointer-count-ends": 7,
+  "two-pointer-edge-pairs": 7,
+  "two-pointer-merge": 8,
+  "two-pointer-pair-sum": 7,
+  "two-pointer-remove-pair": 7,
+  "two-pointer-reverse-letters": 7,
+  "two-pointer-symmetric": 7,
+  "two-pointers": 7,
+  "sliding-window-average": 8,
+  "sliding-window-calm-two-day": 8,
+  "sliding-window-longest-under-limit": 8,
+  "sliding-window-longest-unique": 8,
+  "sliding-window-max-sum": 8,
+  "sliding-window-min-study": 8,
+  "sliding-window-short-blocks": 8,
+  "sliding-window-three-day": 8,
+  "sliding-window": 8,
+  "prefix-balance-index": 8,
+  "prefix-balanced-split": 8,
+  "prefix-index-total": 8,
+  "prefix-range": 8,
+  "prefix-range-queries": 8,
+  "prefix-running-totals": 8,
+  "prefix-single-range": 8,
+  "prefix-subarray-count": 8,
+  "prefix-subarray-k": 8,
+  "prefix-subarray-longest": 8,
+  "matrix-traverse": 7,
+  "dp-blocked-stairs": 8,
+  "dp-best-non-adjacent": 8,
+  "dp-climb-stairs": 8,
+  "dp-coin-change": 8,
+  "dp-decode-ways": 8,
+  "dp-edit-distance": 8,
+  "dp-lis": 8,
+  "dp-max-subarray-deletion": 8,
+  "dp-maximal-square": 8,
+  "dp-min-cost-stairs": 8,
+  "dp-non-adjacent-points": 8,
+  "dp-one-three-steps": 8,
+  "dp-study-plan-cost": 8,
+  "dp-study-plan-ways": 8,
+  "dp-table": 8,
+  "graph-alien-order": 8,
+  "graph-campus-reachable": 8,
+  "graph-clone": 8,
+  "graph-course-chain": 8,
+  "graph-neighbor-count": 8,
+  "graph-shortest-grid": 8,
+  "graph-topological-order": 8,
+  "graph-traversal": 7,
+  "graph-word-ladder": 8,
+  "recursion-countdown-list": 9,
+  "recursion-digit-sum": 9,
+  "recursion-factorial": 9,
+  "recursion-list-count": 9,
+  "recursion-list-sum": 9,
+  "recursion-nested-list": 8,
+  "recursion-power": 9,
+  "recursion-reverse-text": 9,
+  "recursion-stack": 9,
+  "heap-highest-priority-name": 8,
+  "heap-top-three": 8,
+  "heap-smallest-two": 7,
+  "heap-top-priority-assignments": 7,
+  "heap-lowest-priority-assignment": 7,
+  "heap-kth-largest-stream": 7,
+  "heap-top-k-scores": 7,
+  "heap-running-median": 7,
+  "heap-priority": 7,
+  "trie-all-share-prefix": 7,
+  "trie-any-has-prefix": 7,
+  "trie-any-prefix": 7,
+  "trie-autocomplete-first": 7,
+  "trie-count-prefix-matches": 7,
+  "trie-first-word-prefix": 7,
+  "trie-longest-common-prefix": 7,
+  "trie-longest-prefix-word": 7,
+  "trie-prefix": 7,
+  "trie-prefix-counts": 7,
+  "trie-prefix-match-count": 7,
+  "union-find": 8,
+  "union-find-club-groups": 8,
+  "union-find-components": 8,
+  "union-find-earliest-connected": 8,
+  "union-find-group-size": 8,
+  "union-find-largest-group": 8,
+  "union-find-members-zero": 8,
+  "union-find-redundant-edge": 8,
+  "union-find-repeated-link": 8,
+  "union-find-same-club": 8,
+  "union-find-same-group": 8,
+  "union-find-timeline": 8,
+  "tree-contains": 8,
+  "tree-height": 8,
+  "tree-lca": 8,
+  "tree-leaf-count": 8,
+  "tree-level-sums": 8,
+  "tree-node-count": 8,
+  "tree-path-sum-count": 8,
+  "tree-right-side-view": 8,
+  "tree-serialize": 8,
+  "interval-busy-minutes": 7,
+  "interval-count-overlap": 7,
+  "interval-gap": 7,
+  "interval-insert": 7,
+  "interval-meeting-rooms": 7,
+  "interval-merge": 7,
+  "interval-overlap": 7,
+  "interval-schedule-valid": 7,
+  "bit-alternating": 7,
+  "bit-count": 7,
+  "bit-count-small": 7,
+  "bit-different-count": 7,
+  "bit-lowest-bit": 7,
+  "bit-max-pair-xor": 7,
+  "bit-odd-last": 7,
+  "bit-power-two": 7,
+  "bit-turn-off-lowest": 7,
+  "bit-xor-all": 7,
+  "conditional-flow": 6,
+  "set-membership": 6,
+  "set-first-missing": 8,
+  "set-first-repeat": 5,
+  "set-intersection": 6,
+  "set-unique-count": 6,
+  "math-last-digit": 4,
+  "math-count-digits": 6,
+  "math-grade-points": 5,
+  "math-round-groups": 6,
+  "tuple-pair": 6,
+  "tuple-swap": 6,
+  "tuple-score-at-index": 5,
+  "tuple-first-last": 4,
+  "linked-list-cycle": 7,
+  "linked-list-kth": 7,
+  "linked-list-length": 7,
+  "linked-list-merge-index": 7,
+  "linked-list-middle": 7,
+  "linked-list-reverse-values": 7,
+  "linked-list-tail": 7,
+  "linked-list-traverse": 7,
+  "string-run-compress": 7,
+  "graph-islands": 8,
+  "stack-min": 8,
+};
+
+const trueArrayFamilies = {
+  "easy-03": { family: "array-maximum-score", sample: "scores=[72, 88, 91, 84]", expected: "91" },
+  "easy-05": { family: "array-sum-even", sample: "values=[1, 2, 3, 4]", expected: "6" },
+  "easy-08": { family: "array-dedupe-order", sample: "values=[3, 1, 3, 2]", expected: "[3, 1, 2]" },
+  "easy-10": { family: "array-smallest-positive", sample: "values=[-2, 4, 0, 3]", expected: "3" },
+  "easy-11": { family: "array-running-total", sample: "values=[2, 4, 1]", expected: "[2, 6, 7]" },
+  "easy-13": { family: "array-find-index", sample: "values=[5, 7, 9], target=7", expected: "1" },
+  "easy-14": { family: "array-merge-names", sample: "first=[Ada], second=[Grace, Katherine]", expected: "[Ada, Grace, Katherine]" },
+  "easy-15": { family: "array-threshold-count", sample: "readings=[70, 82, 81], threshold=80", expected: "2" },
+  "easy-17": { family: "array-truthy-count", sample: "present=[true, false, true]", expected: "2" },
+  "easy-20": { family: "array-every-other", sample: "values=[10, 20, 30, 40, 50]", expected: "[10, 30, 50]" },
+  "easy-27": { family: "array-comfort-count", sample: "readings=[68, 72, 80], low=70, high=78", expected: "1" },
+  "easy-36": { family: "array-plant-care-days", sample: "readings=[20, 55, 30], days=[Mon, Tue, Wed], threshold=35", expected: "[Mon, Wed]" },
+  "medium-09": { family: "array-rotate", sample: "values=[1, 2, 3, 4], k=2", expected: "[3, 4, 1, 2]" },
+};
+
+const trueConditionalIds = new Set([
+  "easy-07",
+  "easy-19",
+  "easy-23",
+  "easy-25",
+  "easy-26",
+  "easy-35",
+]);
+
+const trueMathFamilies = {
+  "easy-16": { family: "math-last-digit", sample: "number=384", expected: "4" },
+  "easy-21": { family: "math-count-digits", sample: "number_left=5029", expected: "4" },
+  "easy-53": { family: "math-grade-points", sample: "current=72, target=80", expected: "8" },
+  "easy-54": { family: "math-round-groups", sample: "students=23, group_size=5", expected: "5" },
+};
+
+const trueTupleFamilies = {
+  "easy-33": { family: "tuple-pair", sample: "names=[Ada, Grace], scores=[95, 88]", expected: "[Ada:95, Grace:88]" },
+  "easy-34": { family: "tuple-swap", sample: "original=[lab, lecture]", expected: "[lecture, lab]" },
+  "easy-55": { family: "tuple-score-at-index", sample: "index=1", expected: "Bo:82" },
+  "easy-56": { family: "tuple-first-last", sample: "items=[pen, notebook, charger]", expected: "[pen, charger]" },
+};
+
+const trueStringFamilies = {
+  "easy-01": { family: "string-count-vowels", sample: "Code", expected: "2" },
+  "easy-02": { family: "string-reverse-words", sample: "red blue", expected: "blue red" },
+  "easy-04": { family: "string-palindrome", sample: "level", expected: "true" },
+  "easy-09": { family: "string-count-words", sample: "red blue", expected: "2" },
+  "easy-12": { family: "string-course-code", sample: "COSC 352", expected: "true" },
+  "easy-18": { family: "string-initials", sample: "Ada Lovelace", expected: "AL" },
+  "medium-11": { family: "string-run-compress", sample: "aaabbc", expected: "a3b2c1" },
+  "medium-16": { family: "string-normalize-emails", sample: "emails=[Ada@MSU.edu, ada@msu.edu, Bo@MSU.edu]", expected: "[ada@msu.edu, bo@msu.edu]" },
+  "medium-17": { family: "string-prefix-search", sample: "words=[code, card, car], prefix=ca", expected: "[card, car]" },
+};
+
+const trueStackQueueFamilies = {
+  "easy-37": { family: "stack-commands", expected: "2" },
+  "easy-38": { family: "queue-serve-count", expected: "[Ana, Bo]" },
+  "easy-45": { family: "stack-commands", expected: "tray" },
+  "easy-46": { family: "queue-serve-count", expected: "Cy" },
+  "easy-60": { family: "queue-line-commands", expected: "[Bo, Cy]" },
+  "easy-81": { family: "stack-commands", expected: "[open]" },
+  "easy-82": { family: "queue-line-commands", expected: "Bo" },
+  "hard-08": { family: "stack-expression", expected: "7" },
+  "hard-20": { family: "queue-window-count", expected: "[true,true,true]" },
+  "medium-02": { family: "stack-brackets", expected: "true" },
+  "medium-15": { family: "stack-min", expected: "[1,3]" },
+  "medium-23": { family: "queue-help-desk", expected: "[Ana,Bo,none]" },
+  "medium-34": { family: "stack-monotonic", expected: "[1,2,1,0]" },
+  "medium-35": { family: "queue-window-count", expected: "[1,2,1,2]" },
+  "medium-55": { family: "queue-ticket-rounds", expected: "[Ana,Cy,Bo]" },
+  "medium-71": { family: "stack-adjacent-pairs", expected: "ca" },
+};
+
+const trueLinkedListFamilies = {
+  "easy-41": { family: "linked-list-traverse", sample: "values=[10,20,30], nextIndexes=[1,2,-1], head=0", expected: "[10,20,30]" },
+  "easy-50": { family: "linked-list-length", sample: "nextIndexes=[1,2,-1], head=0", expected: "3" },
+  "easy-80": { family: "linked-list-tail", sample: "values=[7,8,9], nextIndexes=[1,2,-1], head=0", expected: "9" },
+  "medium-32": { family: "linked-list-middle", sample: "values=[5,6,7,8], nextIndexes=[1,2,3,-1], head=0", expected: "7" },
+  "medium-33": { family: "linked-list-cycle", sample: "nextIndexes=[1,2,1], head=0", expected: "true" },
+  "medium-37": { family: "linked-list-reverse-values", sample: "values=[4,5,6], nextIndexes=[1,2,-1], head=0", expected: "[6,5,4]" },
+  "medium-70": { family: "linked-list-kth", sample: "values=[4,5,6], nextIndexes=[1,2,-1], head=0, k=2", expected: "6" },
+  "hard-31": { family: "linked-list-merge-index", sample: "nextIndexes=[2,2,3,-1], headA=0, headB=1", expected: "2" },
+};
+
+const trueBitFamilies = {
+  "easy-51": { family: "bit-count", sample: "n=13, bits=1101", expected: "3" },
+  "easy-52": { family: "bit-power-two", sample: "n=16, bits=10000", expected: "true" },
+  "easy-70": { family: "bit-odd-last", sample: "n=7, bits=111", expected: "true" },
+  "easy-71": { family: "bit-lowest-bit", sample: "n=6, bits=110", expected: "0" },
+  "easy-92": { family: "bit-turn-off-lowest", sample: "n=12, bits=1100", expected: "8" },
+  "medium-45": { family: "bit-different-count", sample: "a=10 bits=1010, b=7 bits=0111", expected: "3" },
+  "medium-64": { family: "bit-xor-all", sample: "nums=[4,1,4]", expected: "1" },
+  "medium-65": { family: "bit-alternating", sample: "n=10, bits=1010", expected: "true" },
+  "medium-66": { family: "bit-count-small", sample: "n=13, bits=1101", expected: "3" },
+  "hard-33": { family: "bit-max-pair-xor", sample: "nums=[3,10,5]", expected: "15" },
+};
+
+const trueHeapFamilies = {
+  "easy-72": { family: "heap-highest-priority-name", sample: "names=[Ada, Bo, Cy], priorities=[4, 9, 9]", expected: "Bo" },
+  "easy-73": { family: "heap-top-three", sample: "scores=[5, 9, 7, 2]", expected: "[9,7,5]" },
+  "easy-74": { family: "heap-smallest-two", sample: "scores=[8, 3, 5]", expected: "[3,5]" },
+  "medium-29": { family: "heap-top-priority-assignments", sample: "names=[lab, quiz, project], priorities=[2, 5, 5], k=2", expected: "[project,quiz]" },
+  "medium-49": { family: "heap-lowest-priority-assignment", sample: "names=[lab, quiz, essay], priorities=[3, 1, 1]", expected: "essay" },
+  "hard-11": { family: "heap-kth-largest-stream", sample: "k=3, stream=[4, 5, 8, 2]", expected: "[null,null,4,4]" },
+  "hard-21": { family: "heap-top-k-scores", sample: "scores=[88, 91, 72, 91, 84], k=3", expected: "[91,91,88]" },
+  "hard-28": { family: "heap-running-median", sample: "scores=[80, 90, 70, 100]", expected: "[80,80,80,80]" },
+};
+
+const trueUnionFindFamilies = {
+  "easy-75": { family: "union-find-same-group", sample: "n=4, links=[[0,1],[1,2]], a=0, b=2", expected: "true" },
+  "easy-76": { family: "union-find-group-size", sample: "n=5, pairs=[[0,1],[1,2],[3,4]], student=1", expected: "3" },
+  "easy-93": { family: "union-find-repeated-link", sample: "n=3, pairs=[[0,1],[1,2],[0,2]]", expected: "true" },
+  "easy-94": { family: "union-find-members-zero", sample: "n=4, pairs=[[0,1],[1,2]]", expected: "[0,1,2]" },
+  "hard-10": { family: "union-find-components", sample: "n=5, pairs=[[0,1],[1,2],[3,4]]", expected: "2" },
+  "hard-23": { family: "union-find-earliest-connected", sample: "n=3, events=[[1,0,1],[4,1,2]]", expected: "4" },
+  "hard-27": { family: "union-find-redundant-edge", sample: "n=3, pairs=[[0,1],[1,2],[0,2]]", expected: "[0,2]" },
+  "medium-30": { family: "union-find-club-groups", sample: "n=5, pairs=[[0,1],[1,2],[3,4]]", expected: "2" },
+  "medium-50": { family: "union-find-same-club", sample: "n=5, pairs=[[0,1],[1,2]], a=0, b=2", expected: "true" },
+  "medium-67": { family: "union-find-timeline", sample: "n=4, pairs=[[0,1],[2,3],[1,2]]", expected: "[3,2,1]" },
+  "medium-74": { family: "union-find-largest-group", sample: "n=5, pairs=[[0,1],[1,2],[3,4]]", expected: "3" },
+};
+
+const trueTwoPointerFamilies = {
+  "easy-42": { family: "two-pointer-edge-pairs", sample: "words=[lab, quiz, lab]", expected: "1" },
+  "easy-57": { family: "two-pointer-symmetric", sample: "names=[Ana, Bo, Ana]", expected: "true" },
+  "easy-79": { family: "two-pointer-count-ends", sample: "values=[1, 2, 2, 1]", expected: "2" },
+  "medium-05": { family: "two-pointer-merge", sample: "left=[1,3,5], right=[2,4]", expected: "[1,2,3,4,5]" },
+  "medium-21": { family: "two-pointer-pair-sum", sample: "values=[1, 2, 4, 7], target=9", expected: "true" },
+  "medium-38": { family: "two-pointer-reverse-letters", sample: "a-bC-d", expected: "d-Cb-a" },
+  "medium-52": { family: "two-pointer-closest", sample: "values=[1, 4, 7, 10], target=12", expected: "[1,10]" },
+  "medium-69": { family: "two-pointer-remove-pair", sample: "values=[1, 2, 4, 5], target=6", expected: "[2,4]" },
+};
+
+const trueBinarySearchFamilies = {
+  "easy-39": { family: "binary-search-first-at-least", sample: "scores=[60,70,70,85], target=70", expected: "1" },
+  "easy-47": { family: "binary-search-first-one", sample: "flags=[0,0,1,1]", expected: "2" },
+  "easy-61": { family: "binary-search-first-passing", sample: "scores=[55,61,70], passingScore=60", expected: "61" },
+  "hard-06": { family: "binary-search-median-two-lists", sample: "left=[1,3], right=[2]", expected: "2" },
+  "medium-13": { family: "binary-search-insert-position", sample: "values=[1,3,5,6], target=2", expected: "1" },
+  "medium-22": { family: "binary-search-exact", sample: "values=[2,4,6,8], target=6", expected: "2" },
+  "medium-36": { family: "binary-search-first-bad", sample: "versions=[0,0,1,1]", expected: "2" },
+  "medium-56": { family: "binary-search-last-at-most", sample: "scores=[50,60,60,70], target=60", expected: "2" },
+};
+
+const trueSlidingWindowFamilies = {
+  "easy-43": { family: "sliding-window-short-blocks", sample: "minutes=[20,30,45], limit=60", expected: "1" },
+  "easy-58": { family: "sliding-window-three-day", sample: "minutes=[30,45,25,20]", expected: "[100,90]" },
+  "easy-84": { family: "sliding-window-calm-two-day", sample: "minutes=[40,25,50], limit=70", expected: "true" },
+  "medium-03": { family: "sliding-window-longest-unique", sample: "abcabcbb", expected: "3" },
+  "medium-18": { family: "sliding-window-average", sample: "values=[1,2,3,4], k=2", expected: "[1.5,2.5,3.5]" },
+  "medium-27": { family: "sliding-window-max-sum", sample: "values=[2,1,5,1,3], k=3", expected: "9" },
+  "medium-39": { family: "sliding-window-min-study", sample: "minutes=[10,20,30,40], target=70", expected: "2" },
+  "medium-53": { family: "sliding-window-longest-under-limit", sample: "minutes=[20,30,10,40], limit=60", expected: "3" },
+};
+
+const truePrefixSumFamilies = {
+  "easy-64": { family: "prefix-running-totals", sample: "nums=[2,4,1]", expected: "[2,6,7]" },
+  "easy-65": { family: "prefix-single-range", sample: "nums=[2,4,1,5], left=1, right=3", expected: "10" },
+  "easy-89": { family: "prefix-index-total", sample: "nums=[2,4,1], index=1", expected: "6" },
+  "easy-90": { family: "prefix-single-range", sample: "nums=[2,4,1,3], left=1, right=2", expected: "5" },
+  "medium-25": { family: "prefix-range-queries", sample: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", expected: "[6,8]" },
+  "medium-43": { family: "prefix-balance-index", sample: "nums=[2,3,1,1,4]", expected: "2" },
+  "medium-58": { family: "prefix-balanced-split", sample: "nums=[1,2,3]", expected: "1" },
+  "medium-59": { family: "prefix-subarray-count", sample: "nums=[1,2,1,2], target=3", expected: "3" },
+  "hard-18": { family: "prefix-subarray-k", sample: "values=[1,1,1], k=2", expected: "2" },
+  "hard-32": { family: "prefix-subarray-longest", sample: "nums=[1,-1,5,-2,3], k=3", expected: "4" },
+};
+
+const trueIntervalFamilies = {
+  "easy-77": { family: "interval-overlap", sample: "a=[1,4], b=[3,6]", expected: "true" },
+  "easy-78": { family: "interval-gap", sample: "a=[1,3], b=[6,8]", expected: "3" },
+  "medium-12": { family: "interval-schedule-valid", sample: "intervals=[[9,10],[10,11],[10,12]]", expected: "false" },
+  "medium-26": { family: "interval-merge", sample: "intervals=[[1,3],[2,6],[8,10]]", expected: "[[1,6],[8,10]]" },
+  "medium-48": { family: "interval-count-overlap", sample: "intervals=[[9,11],[10,12],[13,15]], time=10", expected: "2" },
+  "medium-68": { family: "interval-insert", sample: "intervals=[[1,3],[6,8]], newInterval=[2,7]", expected: "[[1,8]]" },
+  "hard-13": { family: "interval-meeting-rooms", sample: "intervals=[[0,30],[5,10],[15,20]]", expected: "2" },
+  "hard-34": { family: "interval-busy-minutes", sample: "intervals=[[9,12],[11,13],[14,16]]", expected: "6" },
+};
+
+const trueRecursionFamilies = {
+  "easy-40": { family: "recursion-countdown-list", sample: "n=2", expected: "[2,1,0]" },
+  "easy-44": { family: "recursion-factorial", sample: "n=3", expected: "6" },
+  "easy-59": { family: "recursion-list-count", sample: "nums=[5,6]", expected: "2" },
+  "easy-83": { family: "recursion-list-sum", sample: "nums=[2,5]", expected: "7" },
+  "medium-19": { family: "recursion-nested-list", sample: "value=[1,[2,[3]]]", expected: "14" },
+  "medium-24": { family: "recursion-digit-sum", sample: "number=34", expected: "7" },
+  "medium-40": { family: "recursion-power", sample: "base=2, exponent=2", expected: "4" },
+  "medium-54": { family: "recursion-reverse-text", sample: "text='go'", expected: "og" },
+};
+
+const trueDynamicProgrammingFamilies = {
+  "easy-62": { family: "dp-climb-stairs", sample: "n=4", expected: "5" },
+  "easy-63": { family: "dp-min-cost-stairs", sample: "costs=[2,5,1]", expected: "3" },
+  "easy-85": { family: "dp-one-three-steps", sample: "n=4", expected: "3" },
+  "easy-86": { family: "dp-best-non-adjacent", sample: "points=[4,1,7]", expected: "11" },
+  "hard-03": { family: "dp-lis", sample: "nums=[2,5,3,7]", expected: "3" },
+  "hard-04": { family: "dp-edit-distance", sample: "cat -> cut", expected: "1" },
+  "hard-12": { family: "dp-decode-ways", sample: "digits=226", expected: "3" },
+  "hard-15": { family: "dp-max-subarray-deletion", sample: "values=[1,-2,0,3]", expected: "4" },
+  "hard-19": { family: "dp-maximal-square", sample: "grid=[[1,1],[1,1]]", expected: "4" },
+  "hard-25": { family: "dp-study-plan-cost", sample: "costs=[10,15,20]", expected: "15" },
+  "medium-51": { family: "dp-study-plan-ways", sample: "days=4", expected: "5" },
+  "medium-57": { family: "dp-non-adjacent-points", sample: "points=[3,2,7,10]", expected: "13" },
+  "medium-72": { family: "dp-coin-change", sample: "coins=[1,2], amount=4", expected: "3" },
+  "medium-73": { family: "dp-blocked-stairs", sample: "openSteps=[1,1,0,1]", expected: "1" },
+};
+
+const trueGraphFamilies = {
+  "easy-95": { family: "graph-neighbor-count", sample: "edges=[A-B, A-C, B-D], node=A", expected: "2" },
+  "hard-01": { family: "graph-shortest-grid", sample: "grid=S..|.#.|..T", expected: "4" },
+  "hard-02": { family: "graph-topological-order", sample: "prereqs=[B before C, A before B]", expected: "[A,B,C]" },
+  "hard-07": { family: "graph-word-ladder", sample: "hit -> hot -> dot -> dog", expected: "4" },
+  "hard-14": { family: "graph-clone", sample: "node 1 connected to 2 and 3", expected: "new graph with same shape" },
+  "hard-17": { family: "graph-alien-order", sample: "words=[ba, bc, ac]", expected: "bac" },
+  "medium-06": { family: "graph-course-chain", sample: "pairs=[COSC350->COSC220, COSC220->COSC112], course=COSC350, prereq=COSC112", expected: "true" },
+  "medium-14": { family: "graph-islands", sample: "grid=[[1,1,0],[0,0,1],[1,0,1]]", expected: "3" },
+  "medium-28": { family: "graph-campus-reachable", sample: "connections=[library-union, union-gym], start=library, target=gym", expected: "true" },
+};
+
+const trueTreeFamilies = {
+  "easy-48": { family: "tree-node-count", sample: "tree=[1,2,3,-1,4]", expected: "4" },
+  "easy-49": { family: "tree-height", sample: "tree=[1,2,3,-1,4]", expected: "3" },
+  "hard-16": { family: "tree-serialize", sample: "tree=[1,2,3]", expected: "1,2,#,#,3,#,#" },
+  "hard-24": { family: "tree-level-sums", sample: "tree=[3,9,20,-1,-1,15,7]", expected: "[3,29,22]" },
+  "hard-26": { family: "tree-right-side-view", sample: "tree=[1,2,3,-1,5,-1,4]", expected: "[1,3,4]" },
+  "hard-29": { family: "tree-lca", sample: "tree=[3,5,1,6,2,0,8], a=6, b=2", expected: "5" },
+  "hard-30": { family: "tree-path-sum-count", sample: "tree=[5,4,8,11,13], target=20", expected: "1" },
+  "medium-41": { family: "tree-leaf-count", sample: "tree=[1,2,3,-1,4]", expected: "2" },
+  "medium-42": { family: "tree-contains", sample: "tree=[5,3,8,-1,4], target=4", expected: "true" },
+  "easy-66": { family: "trie-any-prefix", sample: "words=[cat, car, dog], prefix=ca", expected: "true" },
+  "easy-67": { family: "trie-count-prefix-matches", sample: "words=[sun, sum, cat], prefix=su", expected: "2" },
+  "easy-87": { family: "trie-all-share-prefix", sample: "words=[cat, car, camp], prefix=ca", expected: "true" },
+  "easy-88": { family: "trie-first-word-prefix", sample: "words=[dog, cat, car], prefix=ca", expected: "cat" },
+  "medium-31": { family: "trie-prefix-match-count", sample: "words=[code, coding, course], prefix=cod", expected: "2" },
+  "medium-47": { family: "trie-longest-common-prefix", sample: "words=[cab, car, cat]", expected: "ca" },
+  "medium-60": { family: "trie-autocomplete-first", sample: "words=[car, cat, cab, dog], prefix=ca, k=2", expected: "[cab, car]" },
+  "medium-61": { family: "trie-longest-prefix-word", sample: "words=[cart, car, care], prefix=car", expected: "care" },
+  "hard-09": { family: "trie-prefix-counts", sample: "insert cat, car, dog; count ca", expected: "2" },
+  "hard-22": { family: "trie-any-has-prefix", sample: "words=[cat, car, dog], prefix=ca", expected: "true" },
+};
+
+function visualizerFamilyText(problem) {
+  return `${problem?.title || ""} ${problem?.topic || ""} ${problem?.prompt || ""} ${problem?.visualizer?.title || ""} ${problem?.visualizer?.caption || ""} ${problem?.visualizer?.concept || ""}`.toLowerCase();
+}
+
+function isTupleSwapProblem(problem) {
+  return /swap|reverse\s+pair|pair\s+order|order\s+pair/i.test(visualizerFamilyText(problem));
+}
+
+function detectVisualizerFamily(problem, concept) {
+  const text = visualizerFamilyText(problem);
+  const isTrieConcept = concept === "trie" || concept === "tries" || (concept !== "union-find" && /\btries?\b/.test(text));
+  if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
+  if (concept === "prefix-sum") {
+    if (/running prefix totals/.test(text)) return "prefix-running-totals";
+    if (/single range sum/.test(text)) return "prefix-single-range";
+    if (/prefix sum at index/.test(text)) return "prefix-index-total";
+    if (/one range sum/.test(text)) return "prefix-single-range";
+    if (/range sum queries/.test(text)) return "prefix-range-queries";
+    if (/prefix balance index/.test(text)) return "prefix-balance-index";
+    if (/balanced prefix split/.test(text)) return "prefix-balanced-split";
+    if (/subarray sum equals k/.test(text)) return "prefix-subarray-k";
+    if (/longest subarray sum k/.test(text)) return "prefix-subarray-longest";
+    if (/subarray sum count/.test(text)) return "prefix-subarray-count";
+    return "prefix-range";
+  }
+  if (/maximum score/.test(text)) return "array-maximum-score";
+  if (/sum even numbers/.test(text)) return "array-sum-even";
+  if (/remove duplicates keep order/.test(text)) return "array-dedupe-order";
+  if (/\bsmallest positive\b/.test(text) && !/missing/.test(text)) return "array-smallest-positive";
+  if (/\brunning total\b/.test(text)) return "array-running-total";
+  if (/\bfind index\b/.test(text)) return "array-find-index";
+  if (/\bmerge names\b/.test(text)) return "array-merge-names";
+  if (/temperature above threshold/.test(text)) return "array-threshold-count";
+  if (/truthy attendance/.test(text)) return "array-truthy-count";
+  if (/every other item/.test(text)) return "array-every-other";
+  if (/temperature comfort count/.test(text)) return "array-comfort-count";
+  if (/weekly plant care days/.test(text)) return "array-plant-care-days";
+  if (/first missing positive|missing positive/.test(text)) return "set-first-missing";
+  if (/first repeated character|first repeated/.test(text)) return "set-first-repeat";
+  if (/shared study topics|intersection|shared/.test(text) && concept === "set") return "set-intersection";
+  if (/unique count|unique parking zones|unique/.test(text) && concept === "set") return "set-unique-count";
+  if (/count vowels?/.test(text)) return "string-count-vowels";
+  if (/reverse words?/.test(text)) return "string-reverse-words";
+  if (/count words?/.test(text)) return "string-count-words";
+  if (/valid course code shape|course code/.test(text)) return "string-course-code";
+  if (/\binitials?\b/.test(text)) return "string-initials";
+  if (/compress runs|run length|repeated adjacent|character plus count/.test(text)) return "string-run-compress";
+  if (/normalize email list|normalize emails?|email list/.test(text)) return "string-normalize-emails";
+  if (isTrieConcept) {
+    if (/all words share prefix/.test(text)) return "trie-all-share-prefix";
+    if (/any word has prefix/.test(text)) return "trie-any-has-prefix";
+    if (/any word with prefix/.test(text)) return "trie-any-prefix";
+    if (/count prefix matches/.test(text)) return "trie-count-prefix-matches";
+    if (/prefix match count/.test(text)) return "trie-prefix-match-count";
+    if (/first word with prefix/.test(text)) return "trie-first-word-prefix";
+    if (/longest common prefix/.test(text)) return "trie-longest-common-prefix";
+    if (/first autocomplete matches/.test(text)) return "trie-autocomplete-first";
+    if (/longest prefix word/.test(text)) return "trie-longest-prefix-word";
+    if (/trie prefix counts/.test(text)) return "trie-prefix-counts";
+    return "trie-prefix";
+  }
+  if (/prefix search|starts with|matching prefix/.test(text)) return "string-prefix-search";
+  if (/count islands|island|land.*water|water.*land/.test(text)) return "graph-islands";
+  if (/last digit/.test(text)) return "math-last-digit";
+  if (/count digits/.test(text)) return "math-count-digits";
+  if (/grade points needed/.test(text)) return "math-grade-points";
+  if (/round up lab groups/.test(text)) return "math-round-groups";
+  if (/pair names with scores/.test(text)) return "tuple-pair";
+  if (/student score pair/.test(text)) return "tuple-score-at-index";
+  if (/first last pair/.test(text)) return "tuple-first-last";
+  if (concept === "tuple") return isTupleSwapProblem(problem) ? "tuple-swap" : "tuple-pair";
+  if (concept === "set") return "set-membership";
+  if (concept === "queue") {
+    if (/help session finish order|tickets/.test(text)) return "queue-ticket-rounds";
+    if (/recent queue counts|rate limiter|window/.test(text)) return "queue-window-count";
+    if (/serve first students|queue front after serves|servecount/.test(text)) return "queue-serve-count";
+    if (/help desk|ticket|support/.test(text)) return "queue-help-desk";
+    if (/dining line after commands|front after line commands|commands|join|serve/.test(text)) return "queue-line-commands";
+    return "queue-fifo";
+  }
+  if (concept === "linked-list") {
+    if (/merge index|merge point|share one nextindexes/.test(text)) return "linked-list-merge-index";
+    if (/has cycle|cycle/.test(text)) return "linked-list-cycle";
+    if (/reverse linked list values|reverse.*values/.test(text)) return "linked-list-reverse-values";
+    if (/middle value|middle/.test(text)) return "linked-list-middle";
+    if (/value after k links|k links/.test(text)) return "linked-list-kth";
+    if (/tail value|tail/.test(text)) return "linked-list-tail";
+    if (/linked list length|length/.test(text)) return "linked-list-length";
+    return "linked-list-traverse";
+  }
+  if (concept === "binary-search") {
+    if (/first score at least/.test(text)) return "binary-search-first-at-least";
+    if (/first one index/.test(text)) return "binary-search-first-one";
+    if (/first passing score value/.test(text)) return "binary-search-first-passing";
+    if (/median of two sorted lists/.test(text)) return "binary-search-median-two-lists";
+    if (/insert position/.test(text)) return "binary-search-insert-position";
+    if (/binary search exact/.test(text)) return "binary-search-exact";
+    if (/first bad version/.test(text)) return "binary-search-first-bad";
+    if (/last score at most/.test(text)) return "binary-search-last-at-most";
+    return "binary-search";
+  }
+  if (concept === "two-pointers") {
+    if (/edge pair matches/.test(text)) return "two-pointer-edge-pairs";
+    if (/symmetric roster|palindrome|roster/.test(text)) return "two-pointer-symmetric";
+    if (/count matching ends/.test(text)) return "two-pointer-count-ends";
+    if (/merge sorted lists/.test(text)) return "two-pointer-merge";
+    if (/closest pair sum/.test(text)) return "two-pointer-closest";
+    if (/pair sum sorted/.test(text)) return "two-pointer-pair-sum";
+    if (/reverse only letters/.test(text)) return "two-pointer-reverse-letters";
+    if (/remove one target pair/.test(text)) return "two-pointer-remove-pair";
+    return "two-pointers";
+  }
+  if (concept === "sliding-window") {
+    if (/count short study blocks/.test(text)) return "sliding-window-short-blocks";
+    if (/three day study totals/.test(text)) return "sliding-window-three-day";
+    if (/any calm two day stretch/.test(text)) return "sliding-window-calm-two-day";
+    if (/longest unique window/.test(text)) return "sliding-window-longest-unique";
+    if (/window average/.test(text)) return "sliding-window-average";
+    if (/maximum window sum/.test(text)) return "sliding-window-max-sum";
+    if (/minimum study window/.test(text)) return "sliding-window-min-study";
+    if (/longest study stretch under limit/.test(text)) return "sliding-window-longest-under-limit";
+    return "sliding-window";
+  }
+  if (concept === "recursion") {
+    if (/countdown/.test(text)) return "recursion-countdown-list";
+    if (/factorial/.test(text)) return "recursion-factorial";
+    if (/recursive list count|list count/.test(text)) return "recursion-list-count";
+    if (/recursive list sum|list sum/.test(text)) return "recursion-list-sum";
+    if (/nested list depth sum|nested|depth|flatten/.test(text)) return "recursion-nested-list";
+    if (/digit sum/.test(text)) return "recursion-digit-sum";
+    if (/power|exponent/.test(text)) return "recursion-power";
+    if (/reverse text|reverse.*text/.test(text)) return "recursion-reverse-text";
+    return "recursion-stack";
+  }
+  if (concept === "matrix") return "matrix-traverse";
+  if (concept === "intervals") {
+    if (/two intervals overlap/.test(text)) return "interval-overlap";
+    if (/gap between ranges/.test(text)) return "interval-gap";
+    if (/valid study schedule/.test(text)) return "interval-schedule-valid";
+    if (/merge overlapping intervals/.test(text)) return "interval-merge";
+    if (/count overlapping intervals/.test(text)) return "interval-count-overlap";
+    if (/insert one interval/.test(text)) return "interval-insert";
+    if (/minimum meeting rooms/.test(text)) return "interval-meeting-rooms";
+    if (/total busy minutes/.test(text)) return "interval-busy-minutes";
+    return "interval-merge";
+  }
+  if (concept === "heap") {
+    if (/highest priority name/.test(text)) return "heap-highest-priority-name";
+    if (/top three scores/.test(text)) return "heap-top-three";
+    if (/smallest two scores/.test(text)) return "heap-smallest-two";
+    if (/top priority assignments/.test(text)) return "heap-top-priority-assignments";
+    if (/lowest priority assignment/.test(text)) return "heap-lowest-priority-assignment";
+    if (/kth largest stream/.test(text)) return "heap-kth-largest-stream";
+    if (/top k scores/.test(text)) return "heap-top-k-scores";
+    if (/running median/.test(text)) return "heap-running-median";
+    return "heap-priority";
+  }
+  if (concept === "union-find") {
+    if (/same group after links/.test(text)) return "union-find-same-group";
+    if (/group size of student/.test(text)) return "union-find-group-size";
+    if (/repeated group link/.test(text)) return "union-find-repeated-link";
+    if (/members connected to zero/.test(text)) return "union-find-members-zero";
+    if (/union find components/.test(text)) return "union-find-components";
+    if (/earliest connected time/.test(text)) return "union-find-earliest-connected";
+    if (/redundant friendship edge/.test(text)) return "union-find-redundant-edge";
+    if (/club membership groups/.test(text)) return "union-find-club-groups";
+    if (/same club group/.test(text)) return "union-find-same-club";
+    if (/component count timeline/.test(text)) return "union-find-timeline";
+    if (/largest group after links/.test(text)) return "union-find-largest-group";
+    return "union-find";
+  }
+  if (concept === "dynamic-programming") {
+    if (/climb small staircase|climb.*stair/.test(text)) return "dp-climb-stairs";
+    if (/tiny minimum stair cost/.test(text)) return "dp-min-cost-stairs";
+    if (/ways with one or three steps/.test(text)) return "dp-one-three-steps";
+    if (/best non adjacent total/.test(text)) return "dp-best-non-adjacent";
+    if (/non adjacent points/.test(text)) return "dp-non-adjacent-points";
+    if (/longest increasing subsequence/.test(text)) return "dp-lis";
+    if (/edit distance/.test(text)) return "dp-edit-distance";
+    if (/decode ways/.test(text)) return "dp-decode-ways";
+    if (/maximum subarray with one deletion/.test(text)) return "dp-max-subarray-deletion";
+    if (/maximal square/.test(text)) return "dp-maximal-square";
+    if (/minimum study plan cost/.test(text)) return "dp-study-plan-cost";
+    if (/study plan ways/.test(text)) return "dp-study-plan-ways";
+    if (/coin change ways/.test(text)) return "dp-coin-change";
+    if (/blocked stair ways/.test(text)) return "dp-blocked-stairs";
+    return "dp-table";
+  }
+  if (concept === "bit-manipulation") {
+    if (/maximum pair xor|pair xor/.test(text)) return "bit-max-pair-xor";
+    if (/different bit count|positions are different/.test(text)) return "bit-different-count";
+    if (/xor every number|xor of every/.test(text)) return "bit-xor-all";
+    if (/alternating bits|bits alternate/.test(text)) return "bit-alternating";
+    if (/turn off lowest set bit|turning off the lowest 1/.test(text)) return "bit-turn-off-lowest";
+    if (/odd from last bit|odd by checking the last bit/.test(text)) return "bit-odd-last";
+    if (/lowest bit value|lowest bit of/.test(text)) return "bit-lowest-bit";
+    if (/power of two/.test(text)) return "bit-power-two";
+    if (/count set bits small/.test(text)) return "bit-count-small";
+    return "bit-count";
+  }
+  if (concept === "graph") {
+    if (/neighbor count/.test(text)) return "graph-neighbor-count";
+    if (/course prerequisite chain/.test(text)) return "graph-course-chain";
+    if (/count islands|island|land.*water|water.*land/.test(text)) return "graph-islands";
+    if (/campus stop reachable/.test(text)) return "graph-campus-reachable";
+    if (/shortest path/.test(text)) return "graph-shortest-grid";
+    if (/course plan topological order|topological/.test(text)) return "graph-topological-order";
+    if (/word ladder/.test(text)) return "graph-word-ladder";
+    if (/clone graph/.test(text)) return "graph-clone";
+    if (/alien dictionary/.test(text)) return "graph-alien-order";
+    return "graph-traversal";
+  }
+  if (concept === "binary-tree" || concept === "tree") {
+    if (/tree node count/.test(text)) return "tree-node-count";
+    if (/tree height levels/.test(text)) return "tree-height";
+    if (/tree leaf count/.test(text)) return "tree-leaf-count";
+    if (/tree contains value/.test(text)) return "tree-contains";
+    if (/serialize binary tree/.test(text)) return "tree-serialize";
+    if (/tree level sums/.test(text)) return "tree-level-sums";
+    if (/tree right side view/.test(text)) return "tree-right-side-view";
+    if (/lowest common ancestor|lca/.test(text)) return "tree-lca";
+    if (/tree path sum count/.test(text)) return "tree-path-sum-count";
+    return "graph-traversal";
+  }
+  if (concept === "stack") {
+    if (/bracket|parenth|valid|balanced/.test(text)) return "stack-brackets";
+    if (/min stack|minimum stack|getmin|track.*min|stack.*minimum/.test(text)) return "stack-min";
+    if (/temperature|next warmer|warmer/.test(text)) return "stack-monotonic";
+    if (/adjacent equal|remove adjacent|pairs/.test(text)) return "stack-adjacent-pairs";
+    if (/plate|undo|latest action|top after|commands|push|pop/.test(text)) return "stack-commands";
+    return "stack-expression";
+  }
+  if (concept === "hash-map") {
+    if (/two sum|complement|pair.*target|target.*pair/.test(text)) return "hash-complement";
+    if (/group|anagram|bucket by|categor/.test(text)) return "hash-grouping";
+    if (/count|frequency|frequent|favorite|most common|occurrence|top k/.test(text)) return "hash-frequency";
+    return "hash-lookup";
+  }
+  if (/palindrome/.test(text)) return "string-palindrome";
+  if (/string|word|text|vowel|character|letter/.test(text)) return "string-scan";
+  if (/rotate/.test(text)) return "array-rotate";
+  if (/duplicate|unique|repeat/.test(text)) return "array-dedupe";
+  if (/running total|prefix|cumulative/.test(text)) return "array-running-total";
+  if (/find|index|search|smallest positive|missing/.test(text)) return "array-search";
+  if (/maximum|minimum|max|min|largest|smallest|best/.test(text)) return "array-max-min";
+  if (/even|odd|filter|above|below|comfortable|count/.test(text)) return "array-filter";
+  return "array-swap";
+}
+
+function targetStepCountFor(problem, concept) {
+  const family = detectVisualizerFamily(problem, concept);
+  return familyStepTargets[family] || targetStepCount(concept);
+}
+
+const generatedOverrideConcepts = new Set([
+  "array",
+  "conditional",
+  "stack",
+  "queue",
+  "hash-map",
+  "set",
+  "linked-list",
+  "binary-search",
+  "two-pointers",
+  "sliding-window",
+  "recursion",
+  "binary-tree",
+  "graph",
+  "matrix",
+  "heap",
+  "trie",
+  "union-find",
+  "dynamic-programming",
+  "prefix-sum",
+  "intervals",
+  "bit-manipulation",
+  "tuple",
+  "math",
+  "search",
+  "sort",
+]);
+
+function difficultyFromFile(file) {
+  return file.replace(/\.json$/i, "");
+}
+
+function parseToken(token) {
+  const cleaned = String(token || "").trim().replace(/^['"]|['"]$/g, "");
+  const numeric = Number(cleaned);
+  return cleaned !== "" && Number.isFinite(numeric) ? numeric : cleaned;
+}
+
+function parseFirstList(input = "") {
+  const match = String(input).match(/\[([^\]]*)\]/);
+  if (!match) return [];
+  return match[1].split(",").map(parseToken).filter((value) => String(value).length > 0);
+}
+
+function parseAllNamedLists(input = "") {
+  const lists = {};
+  const pattern = /([A-Za-z_][A-Za-z0-9_]*)\s*=\s*\[([^\]]*)\]/g;
+  let match = pattern.exec(String(input));
+  while (match) {
+    lists[match[1]] = match[2].split(",").map(parseToken).filter((value) => String(value).length > 0);
+    match = pattern.exec(String(input));
+  }
+  return lists;
+}
+
+function conceptFromProblem(problem) {
+  const topic = String(problem?.topic || "").toLowerCase();
+  const visualConcept = String(problem?.visualizer?.concept || "").toLowerCase();
+  const title = String(problem?.title || "").toLowerCase();
+  const raw = `${visualConcept} ${topic} ${title}`.toLowerCase();
+  if (raw.includes("linked")) return "linked-list";
+  if (raw.includes("two pointer")) return "two-pointers";
+  if (raw.includes("sliding")) return "sliding-window";
+  if (raw.includes("binary search")) return "binary-search";
+  if (raw.includes("graph")) return "graph";
+  if (raw.includes("heap")) return "heap";
+  if (raw.includes("trie")) return "trie";
+  if (raw.includes("union") || raw.includes("disjoint")) return "union-find";
+  if (topic.includes("tuple") || visualConcept.includes("tuple")) return "tuple";
+  if (topic.includes("set") || visualConcept === "set") return "set";
+  if (raw.includes("hash") || raw.includes("map") || raw.includes("dictionary")) return "hash-map";
+  if (raw.includes("stack")) return "stack";
+  if (raw.includes("queue")) return "queue";
+  if (raw.includes("recursion")) return "recursion";
+  if (raw.includes("tree")) return "binary-tree";
+  if (raw.includes("condition") || raw.includes("decision")) return "conditional";
+  if (raw.includes("math") || raw.includes("arithmetic")) return "math";
+  if (raw.includes("matrix")) return "matrix";
+  if (/\bprefix sums?\b|running prefix|range sum|subarray sum|balance index|balanced prefix split/.test(raw)) return "prefix-sum";
+  if (raw.includes("interval")) return "intervals";
+  if (raw.includes("dynamic")) return "dynamic-programming";
+  if (raw.includes("bit")) return "bit-manipulation";
+  if (raw.includes("array-scan") || raw.includes("string-scan") || raw.includes("array") || raw.includes("string") || raw.includes("list")) return "array";
+  return "array";
+}
+
+function rawVisualInput(problem, state = {}) {
+  const example = Array.isArray(problem.examples) ? problem.examples[0] : {};
+  return String(example?.input || state.example || state.text || state.input || state.sample || "").trim();
+}
+
+function compactVisualInput(problem, concept, state = {}) {
+  const raw = rawVisualInput(problem, state);
+  if (!raw) return raw;
+  const title = `${problem.title || ""} ${problem.topic || ""} ${problem.prompt || ""} ${problem.visualizer?.concept || ""}`.toLowerCase();
+  const family = detectVisualizerFamily(problem, concept);
+  if (trueArrayFamilies[problem.id]) return trueArrayFamilies[problem.id].sample;
+  if (trueMathFamilies[problem.id]) return trueMathFamilies[problem.id].sample;
+  if (trueTupleFamilies[problem.id]) return trueTupleFamilies[problem.id].sample;
+  if (trueStringFamilies[problem.id]) return trueStringFamilies[problem.id].sample;
+  if (trueLinkedListFamilies[problem.id]) return trueLinkedListFamilies[problem.id].sample;
+  if (trueBitFamilies[problem.id]) return trueBitFamilies[problem.id].sample;
+  if (trueRecursionFamilies[problem.id]) return trueRecursionFamilies[problem.id].sample;
+  if (trueDynamicProgrammingFamilies[problem.id]) return trueDynamicProgrammingFamilies[problem.id].sample;
+  if (trueGraphFamilies[problem.id]) return trueGraphFamilies[problem.id].sample;
+  if (trueTreeFamilies[problem.id]) return trueTreeFamilies[problem.id].sample;
+  if (family === "set-first-missing") return "values=[1, 2, 0]";
+  if (family === "string-run-compress") return "aaabbc";
+  if (family === "graph-islands") return "grid=[[1,1,0],[0,0,1],[1,0,1]]";
+  if (family === "stack-brackets") return "{[()]}";
+  if (family === "stack-min") return "commands=[push 3, push 1, min, pop, top]";
+  if (family === "stack-monotonic") return "temperatures=[70,72,71,75]";
+  if (family === "stack-adjacent-pairs") return "text=abbaca";
+  if (family === "stack-commands") {
+    if (/max plate|height/.test(title)) return "commands=[push, push, pop, push]";
+    if (/undo/.test(title)) return "actions=[open, type, undo]";
+    return "commands=[push tray, push cup, pop]";
+  }
+  if (family === "recursion-countdown-list") return "n=2";
+  if (family === "recursion-factorial") return "n=3";
+  if (family === "recursion-list-count") return "nums=[5,6]";
+  if (family === "recursion-list-sum") return "nums=[2,5]";
+  if (family === "recursion-nested-list") return "value=[1,[2,[3]]]";
+  if (family === "recursion-digit-sum") return "number=34";
+  if (family === "recursion-power") return "base=2, exponent=2";
+  if (family === "recursion-reverse-text") return "text='go'";
+  if (family === "dp-climb-stairs") return "n=4";
+  if (family === "dp-min-cost-stairs") return "costs=[2,5,1]";
+  if (family === "dp-one-three-steps") return "n=4";
+  if (family === "dp-best-non-adjacent") return "points=[4,1,7]";
+  if (family === "dp-non-adjacent-points") return "points=[3,2,7,10]";
+  if (family === "dp-study-plan-ways") return "days=4";
+  if (family === "dp-lis") return "nums=[2,5,3,7]";
+  if (family === "dp-edit-distance") return "cat -> cut";
+  if (family === "dp-decode-ways") return "digits=226";
+  if (family === "dp-max-subarray-deletion") return "values=[1,-2,0,3]";
+  if (family === "dp-maximal-square") return "grid=[[1,1],[1,1]]";
+  if (family === "dp-study-plan-cost") return "costs=[10,15,20]";
+  if (family === "dp-coin-change") return "coins=[1,2], amount=4";
+  if (family === "dp-blocked-stairs") return "openSteps=[1,1,0,1]";
+  if (family === "graph-neighbor-count") return "edges=[A-B, A-C, B-D], node=A";
+  if (family === "graph-course-chain") return "pairs=[COSC350->COSC220, COSC220->COSC112], course=COSC350, prereq=COSC112";
+  if (family === "graph-campus-reachable") return "connections=[library-union, union-gym], start=library, target=gym";
+  if (family === "graph-shortest-grid") return "grid=S..|.#.|..T";
+  if (family === "graph-topological-order") return "prereqs=[B before C, A before B]";
+  if (family === "graph-word-ladder") return "hit -> hot -> dot -> dog";
+  if (family === "graph-clone") return "node 1 connected to 2 and 3";
+  if (family === "graph-alien-order") return "words=[ba, bc, ac]";
+  if (family === "tree-node-count") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-height") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-leaf-count") return "tree=[1,2,3,-1,4]";
+  if (family === "tree-contains") return "tree=[5,3,8,-1,4], target=4";
+  if (family === "tree-serialize") return "tree=[1,2,3]";
+  if (family === "tree-level-sums") return "tree=[3,9,20,-1,-1,15,7]";
+  if (family === "tree-right-side-view") return "tree=[1,2,3,-1,5,-1,4]";
+  if (family === "tree-lca") return "tree=[3,5,1,6,2,0,8], a=6, b=2";
+  if (family === "tree-path-sum-count") return "tree=[5,4,8,11,13], target=20";
+  if (family === "queue-help-desk") return "commands=[join Ana, join Bo, serve, serve, serve]";
+  if (family === "queue-serve-count") return "names=[Ana, Bo, Cy], serveCount=2";
+  if (family === "queue-line-commands") {
+    if (/front after/.test(title)) return "commands=[join Ana, join Bo, serve]";
+    return "commands=[join Ana, join Bo, serve, join Cy]";
+  }
+  if (family === "queue-window-count") {
+    if (/rate limiter/.test(title)) return "k=2, window=10, times=[1,2,11]";
+    return "times=[1,2,8,12], window=5";
+  }
+  if (family === "queue-ticket-rounds") return "names=[Ana, Bo, Cy], tickets=[1,2,1]";
+  if (trueBinarySearchFamilies[problem.id]) return trueBinarySearchFamilies[problem.id].sample;
+  if (trueTwoPointerFamilies[problem.id]) return trueTwoPointerFamilies[problem.id].sample;
+  if (trueSlidingWindowFamilies[problem.id]) return trueSlidingWindowFamilies[problem.id].sample;
+  if (truePrefixSumFamilies[problem.id]) return truePrefixSumFamilies[problem.id].sample;
+  if (trueIntervalFamilies[problem.id]) return trueIntervalFamilies[problem.id].sample;
+  if (trueUnionFindFamilies[problem.id]) return trueUnionFindFamilies[problem.id].sample;
+  if (title.includes("vowel")) return "Code";
+  if (title.includes("palindrome")) return "level";
+  if (title.includes("reverse words")) return "red blue";
+  if (title.includes("reverse only letters")) return "a-bC-d";
+  if (title.includes("first repeated")) return "cocoa";
+  if (title.includes("edit distance")) return "cat -> cut";
+  if (concept === "stack") return "expression=3+2*2";
+  if (concept === "queue") return "commands=[join Ana, join Bo, serve Ana]";
+  if (concept === "hash-map") {
+    if (/two sum|complement/.test(title)) return "nums=[2, 7], target=9";
+    if (/count|frequency|anagram/.test(title)) return "items=[A, B, A]";
+    return "keys=[Ana, Bo], values=[90, 82], lookup=Ana";
+  }
+  if (concept === "binary-search") return "values=[1, 3, 5], target=3";
+  if (concept === "two-pointers") return "values=[1, 4, 6], target=7";
+  if (concept === "sliding-window") return "values=[2, 4, 1], k=2";
+  if (concept === "recursion") return "n=3";
+  if (concept === "binary-tree") return "values=[4, 2, 6]";
+  if (concept === "graph") return "edges=[A-B, A-C, B-D], start=A";
+  if (concept === "matrix") return "grid=[[1,2],[3,4]]";
+  if (concept === "prefix-sum") return "values=[2, 4, 1]";
+  if (concept === "intervals") return "intervals=[[1,3],[2,5]]";
+  if (trueHeapFamilies[problem.id]?.sample) return trueHeapFamilies[problem.id].sample;
+  if (concept === "heap") return "values=[30, 40, 50]";
+  if (concept === "trie") return "words=[cat, car]";
+  if (concept === "union-find") return "pairs=[A-B, B-C]";
+  if (concept === "dynamic-programming") return "n=4";
+  if (concept === "bit-manipulation") return "bits=1011";
+  const namedLists = parseAllNamedLists(raw);
+  if (Object.keys(namedLists).length) {
+    const compacted = raw.replace(/\[([^\]]*)\]/g, (match) => {
+      const values = match.slice(1, -1).split(",").map((item) => item.trim()).filter(Boolean);
+      return values.length > 6 ? `[${values.slice(0, 6).join(", ")}]` : match;
+    });
+    return compacted;
+  }
+  const firstList = parseFirstList(raw);
+  if (firstList.length > 6) return `[${firstList.slice(0, 6).join(", ")}]`;
+  if (firstList.length) return raw;
+  if (title.includes("edit distance")) return "cat -> cut";
+  if (title.includes("reverse only letters") && raw.length > 8 && !raw.includes("=")) return "a-bC-d";
+  const visualConcept = String(problem.visualizer?.concept || "").toLowerCase();
+  const stringLike = concept === "array" || visualConcept.includes("string-scan") || title.includes("first repeated");
+  if (stringLike && raw.length > 6 && !raw.includes("=")) {
+    if (title.includes("vowel")) return "Code";
+    if (title.includes("palindrome")) return "level";
+    if (title.includes("repeat")) return "cocoa";
+    if (title.includes("word") || title.includes("sentence")) return "red blue";
+    return raw.replace(/\s+/g, "").slice(0, 6);
+  }
+  return raw;
+}
+
+function valuesFromVisualSample(sample) {
+  if (/expression\s*=\s*3\s*\+\s*2\s*\*\s*2/i.test(sample)) return [3, "+", 2, "*", 2];
+  const namedLists = parseAllNamedLists(sample);
+  const firstNamed = Object.values(namedLists)[0];
+  if (firstNamed?.length) return firstNamed;
+  const firstList = parseFirstList(sample);
+  if (firstList.length) return firstList;
+  if (sample && !sample.includes("=")) return [...sample].map((char) => char === " " ? "space" : char);
+  return [];
+}
+
+function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
+  if (!generatedOverrideConcepts.has(concept)) return false;
+  if (concept === "binary-search") return true;
+  if (concept === "two-pointers") return true;
+  if (concept === "sliding-window") return true;
+  if (concept === "prefix-sum") return true;
+  if (concept === "intervals") return true;
+  if (concept === "recursion") return true;
+  if (concept === "dynamic-programming") return true;
+  if (concept === "graph") return true;
+  if (concept === "binary-tree") return true;
+  if (concept === "trie") return true;
+  const target = targetStepCountFor(problem, concept);
+  if (!rawSteps.length || rawSteps.length >= target) return false;
+  if (rawSteps.length < Math.min(target, 6)) return true;
+  const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
+  return /load the example|set the sample|predict the next state|connect the visual|return only what the prompt asks|movement pattern/.test(genericText)
+    || /animated practice trace|visual walkthrough/i.test(`${problem.visualizer?.title || ""} ${problem.visualizer?.caption || ""}`);
+}
+
+function runtimeVisualText(problem, concept, sample) {
+  const rawSteps = Array.isArray(problem.visualizer?.steps) ? problem.visualizer.steps : [];
+  const rawValues = [
+    problem.examples?.[0]?.input,
+    problem.visualizer?.input?.sample,
+    problem.visualizer?.input?.text,
+    problem.visualizer?.input?.input,
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+  return rawSteps.map((step) => {
+    let text = `${step.title || ""} ${step.body || ""} ${step.code || ""}`;
+    rawValues.forEach((raw) => {
+      if (sample && raw && raw !== sample) text = text.split(raw).join(sample);
+    });
+    return text
+      .replace(/authored example input/gi, "teaching sample")
+      .replace(/public example input/gi, "teaching sample")
+      .replace(/public example result/gi, "teaching sample result");
+  }).join(" ").toLowerCase() + ` ${concept}`;
+}
+
+function containsBannedPhrase(problem, concept, sample) {
+  const visualText = runtimeVisualText(problem, concept, sample);
+  return bannedPhrases.find((phrase) => visualText.includes(phrase));
+}
+
+function normalizedStepLabel(step = {}) {
+  return String(step.action || step.title || "").replace(/[-_]/g, " ").trim().toLowerCase();
+}
+
+function duplicateGenericStepLabels(steps = []) {
+  const counts = new Map();
+  const duplicates = [];
+  for (const step of steps) {
+    const label = normalizedStepLabel(step);
+    if (!label) continue;
+    const count = counts.get(label) || 0;
+    counts.set(label, count + 1);
+    if (count === 1 && /\b(setup|finish|trace|predict|load|result)\b/.test(label)) duplicates.push(label);
+  }
+  return duplicates;
+}
+
+function hasGenericScaffold(steps = []) {
+  const genericText = steps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""} ${step.code || ""}`).join(" ").toLowerCase();
+  return /load the example|set the sample|predict the next state|connect the visual|return only what the prompt asks|movement pattern|make one .* move|animated practice trace|visual walkthrough/.test(genericText);
+}
+
+function stableState(value) {
+  return JSON.stringify(value || {});
+}
+
+function adjacentNoStateChanges(steps = []) {
+  let count = 0;
+  for (let index = 1; index < steps.length; index += 1) {
+    const prev = steps[index - 1] || {};
+    const next = steps[index] || {};
+    if (
+      stableState(prev.state) === stableState(next.state)
+      && String(prev.code || "") === String(next.code || "")
+      && normalizedStepLabel(prev) !== normalizedStepLabel(next)
+    ) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+const rows = [];
+const warnings = [];
+const generatorSource = fs.existsSync(generatorPath) ? fs.readFileSync(generatorPath, "utf8") : "";
+for (const phrase of bannedGeneratedPseudocode) {
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const visibleStringPattern = new RegExp(`["'\`][^"'\`\\n]*${escaped}`);
+  if (visibleStringPattern.test(generatorSource)) {
+    warnings.push(`generated pseudocode contains old visible remnant "${phrase}"`);
+  }
+}
+
+for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".json"))) {
+  const difficulty = difficultyFromFile(file);
+  const data = JSON.parse(fs.readFileSync(path.join(questionDir, file), "utf8"));
+  for (const problem of data.questions || []) {
+    if (!problem.visualizer) continue;
+    const concept = conceptFromProblem(problem);
+    const family = detectVisualizerFamily(problem, concept);
+    const firstState = problem.visualizer.input || problem.visualizer.steps?.[0]?.state || {};
+    const raw = rawVisualInput(problem, firstState);
+    const sample = compactVisualInput(problem, concept, firstState);
+    const itemCount = valuesFromVisualSample(sample).length;
+    const rawStepCount = Array.isArray(problem.visualizer.steps) ? problem.visualizer.steps.length : 0;
+    const targetSteps = targetStepCountFor(problem, concept);
+    const effectiveStepCount = rawStepCount > 0 ? Math.max(rawStepCount, targetSteps) : 0;
+    const banned = containsBannedPhrase(problem, concept, sample);
+    const rawSteps = Array.isArray(problem.visualizer.steps) ? problem.visualizer.steps : [];
+    const runtimeGenerated = usesGeneratedRuntimeTrace(problem, concept, rawSteps);
+    const duplicateLabels = duplicateGenericStepLabels(rawSteps);
+    const noStateChangeCount = adjacentNoStateChanges(rawSteps);
+    const genericScaffold = hasGenericScaffold(rawSteps);
+
+    rows.push({
+      id: problem.id,
+      title: problem.title,
+      difficulty,
+      concept,
+      family,
+      targetSteps,
+      rawStepCount,
+      effectiveStepCount,
+      runtimeGenerated,
+      genericScaffold,
+      sample,
+      itemCount,
+    });
+
+    if (banned) warnings.push(`${problem.id} ${problem.title}: banned phrase "${banned}"`);
+    if (effectiveStepCount < targetSteps) warnings.push(`${problem.id} ${problem.title}: visualizer has only ${effectiveStepCount} effective steps; target is ${targetSteps}`);
+    if ((difficulty === "medium" || difficulty === "hard") && effectiveStepCount < targetSteps) {
+      warnings.push(`${problem.id} ${problem.title}: medium/hard visualizer is below ${family} target depth`);
+    }
+    if ((difficulty === "medium" || difficulty === "hard") && rawStepCount > 0 && rawStepCount < Math.min(targetSteps, 6) && !runtimeGenerated) {
+      warnings.push(`${problem.id} ${problem.title}: authored medium/hard visualizer has only ${rawStepCount} raw steps before runtime expansion`);
+    }
+    if (duplicateLabels.length) warnings.push(`${problem.id} ${problem.title}: duplicate generic step label(s): ${duplicateLabels.join(", ")}`);
+    if (noStateChangeCount > 1) warnings.push(`${problem.id} ${problem.title}: ${noStateChangeCount} adjacent authored step(s) have no state/code change`);
+    if ((difficulty === "medium" || difficulty === "hard") && genericScaffold && !runtimeGenerated) {
+      warnings.push(`${problem.id} ${problem.title}: generic authored scaffold is not replaced by a family renderer`);
+    }
+    if (!familyStepTargets[family]) warnings.push(`${problem.id} ${problem.title}: unknown visualizer family "${family}"`);
+    if (trueConditionalIds.has(problem.id) || concept === "conditional" || String(problem.topic || "").toLowerCase() === "conditionals") {
+      if (family !== "conditional-flow") {
+        warnings.push(`${problem.id} ${problem.title}: Conditionals visualizer routes to "${family}", expected "conditional-flow"`);
+      }
+      if (/\[[\s\d,]+\]/.test(sample) || /array-|list/.test(family)) {
+        warnings.push(`${problem.id} ${problem.title}: Conditionals visualizer still looks like an array/list visual with sample "${sample}"`);
+      }
+    }
+    const requiredArray = trueArrayFamilies[problem.id];
+    if (requiredArray) {
+      if (family !== requiredArray.family) {
+        warnings.push(`${problem.id} ${problem.title}: true Arrays visualizer routes to "${family}", expected "${requiredArray.family}"`);
+      }
+      if (sample !== requiredArray.sample) {
+        warnings.push(`${problem.id} ${problem.title}: true Arrays sample is "${sample}", expected "${requiredArray.sample}"`);
+      }
+      if (/array-(dedupe|filter|search|max-min|swap)$/.test(family)) {
+        warnings.push(`${problem.id} ${problem.title}: true Arrays visualizer still uses shared generic array family "${family}"`);
+      }
+    }
+    const requiredMath = trueMathFamilies[problem.id];
+    if (requiredMath) {
+      if (family !== requiredMath.family) {
+        warnings.push(`${problem.id} ${problem.title}: Math visualizer routes to "${family}", expected "${requiredMath.family}"`);
+      }
+      if (sample !== requiredMath.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Math sample is "${sample}", expected "${requiredMath.sample}"`);
+      }
+    }
+    const requiredTuple = trueTupleFamilies[problem.id];
+    if (requiredTuple) {
+      if (family !== requiredTuple.family) {
+        warnings.push(`${problem.id} ${problem.title}: Tuple visualizer routes to "${family}", expected "${requiredTuple.family}"`);
+      }
+      if (sample !== requiredTuple.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Tuple sample is "${sample}", expected "${requiredTuple.sample}"`);
+      }
+    }
+    const requiredStackQueue = trueStackQueueFamilies[problem.id];
+    if (requiredStackQueue && family !== requiredStackQueue.family) {
+      warnings.push(`${problem.id} ${problem.title}: Stack/Queue visualizer routes to "${family}", expected "${requiredStackQueue.family}"`);
+    }
+    const requiredLinkedList = trueLinkedListFamilies[problem.id];
+    if (requiredLinkedList) {
+      if (family !== requiredLinkedList.family) {
+        warnings.push(`${problem.id} ${problem.title}: Linked List visualizer routes to "${family}", expected "${requiredLinkedList.family}"`);
+      }
+      if (sample !== requiredLinkedList.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Linked List sample is "${sample}", expected "${requiredLinkedList.sample}"`);
+      }
+    }
+    const requiredBit = trueBitFamilies[problem.id];
+    if (requiredBit) {
+      if (family !== requiredBit.family) {
+        warnings.push(`${problem.id} ${problem.title}: Bit visualizer routes to "${family}", expected "${requiredBit.family}"`);
+      }
+      if (sample !== requiredBit.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Bit sample is "${sample}", expected "${requiredBit.sample}"`);
+      }
+      if (family === "bit-count" && requiredBit.family !== "bit-count") {
+        warnings.push(`${problem.id} ${problem.title}: Bit visualizer still uses shared count fallback`);
+      }
+    }
+    const requiredBinarySearch = trueBinarySearchFamilies[problem.id];
+    if (requiredBinarySearch) {
+      if (family !== requiredBinarySearch.family) {
+        warnings.push(`${problem.id} ${problem.title}: Binary Search visualizer routes to "${family}", expected "${requiredBinarySearch.family}"`);
+      }
+      if (sample !== requiredBinarySearch.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Binary Search sample is "${sample}", expected "${requiredBinarySearch.sample}"`);
+      }
+      if (family === "binary-search") {
+        warnings.push(`${problem.id} ${problem.title}: Binary Search visualizer still uses shared generic family`);
+      }
+    }
+    const requiredTwoPointer = trueTwoPointerFamilies[problem.id];
+    if (requiredTwoPointer) {
+      if (family !== requiredTwoPointer.family) {
+        warnings.push(`${problem.id} ${problem.title}: Two Pointers visualizer routes to "${family}", expected "${requiredTwoPointer.family}"`);
+      }
+      if (sample !== requiredTwoPointer.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Two Pointers sample is "${sample}", expected "${requiredTwoPointer.sample}"`);
+      }
+      if (family === "two-pointers") {
+        warnings.push(`${problem.id} ${problem.title}: Two Pointers visualizer still uses shared generic family`);
+      }
+    }
+    const requiredSlidingWindow = trueSlidingWindowFamilies[problem.id];
+    if (requiredSlidingWindow) {
+      if (family !== requiredSlidingWindow.family) {
+        warnings.push(`${problem.id} ${problem.title}: Sliding Window visualizer routes to "${family}", expected "${requiredSlidingWindow.family}"`);
+      }
+      if (sample !== requiredSlidingWindow.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Sliding Window sample is "${sample}", expected "${requiredSlidingWindow.sample}"`);
+      }
+      if (family === "sliding-window") {
+        warnings.push(`${problem.id} ${problem.title}: Sliding Window visualizer still uses shared generic family`);
+      }
+    }
+    const requiredPrefixSum = truePrefixSumFamilies[problem.id];
+    if (requiredPrefixSum) {
+      if (family !== requiredPrefixSum.family) {
+        warnings.push(`${problem.id} ${problem.title}: Prefix Sum visualizer routes to "${family}", expected "${requiredPrefixSum.family}"`);
+      }
+      if (sample !== requiredPrefixSum.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Prefix Sum sample is "${sample}", expected "${requiredPrefixSum.sample}"`);
+      }
+      if (family === "prefix-range") {
+        warnings.push(`${problem.id} ${problem.title}: Prefix Sum visualizer still uses shared generic family`);
+      }
+    }
+    const requiredInterval = trueIntervalFamilies[problem.id];
+    if (requiredInterval) {
+      if (family !== requiredInterval.family) {
+        warnings.push(`${problem.id} ${problem.title}: Interval visualizer routes to "${family}", expected "${requiredInterval.family}"`);
+      }
+      if (sample !== requiredInterval.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Interval sample is "${sample}", expected "${requiredInterval.sample}"`);
+      }
+      if (family === "interval-merge" && requiredInterval.family !== "interval-merge") {
+        warnings.push(`${problem.id} ${problem.title}: Interval visualizer still uses shared merge fallback`);
+      }
+    }
+    const requiredRecursion = trueRecursionFamilies[problem.id];
+    if (requiredRecursion) {
+      if (family !== requiredRecursion.family) {
+        warnings.push(`${problem.id} ${problem.title}: Recursion visualizer routes to "${family}", expected "${requiredRecursion.family}"`);
+      }
+      if (sample !== requiredRecursion.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Recursion sample is "${sample}", expected "${requiredRecursion.sample}"`);
+      }
+      if (family === "recursion-stack") {
+        warnings.push(`${problem.id} ${problem.title}: Recursion visualizer still uses shared generic stack fallback`);
+      }
+    }
+    const requiredDynamicProgramming = trueDynamicProgrammingFamilies[problem.id];
+    if (requiredDynamicProgramming) {
+      if (family !== requiredDynamicProgramming.family) {
+        warnings.push(`${problem.id} ${problem.title}: Dynamic Programming visualizer routes to "${family}", expected "${requiredDynamicProgramming.family}"`);
+      }
+      if (sample !== requiredDynamicProgramming.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Dynamic Programming sample is "${sample}", expected "${requiredDynamicProgramming.sample}"`);
+      }
+      if (family === "dp-table") {
+        warnings.push(`${problem.id} ${problem.title}: Dynamic Programming visualizer still uses shared table fallback`);
+      }
+    }
+    const requiredHeap = trueHeapFamilies[problem.id];
+    if (requiredHeap) {
+      if (family !== requiredHeap.family) {
+        warnings.push(`${problem.id} ${problem.title}: Heap visualizer routes to "${family}", expected "${requiredHeap.family}"`);
+      }
+      if (sample !== requiredHeap.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Heap sample is "${sample}", expected "${requiredHeap.sample}"`);
+      }
+      if (family === "heap-priority") {
+        warnings.push(`${problem.id} ${problem.title}: Heap visualizer still uses shared priority fallback`);
+      }
+    }
+    const requiredUnionFind = trueUnionFindFamilies[problem.id];
+    if (requiredUnionFind) {
+      if (family !== requiredUnionFind.family) {
+        warnings.push(`${problem.id} ${problem.title}: Disjoint Sets visualizer routes to "${family}", expected "${requiredUnionFind.family}"`);
+      }
+      if (sample !== requiredUnionFind.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Disjoint Sets sample is "${sample}", expected "${requiredUnionFind.sample}"`);
+      }
+      if (family === "union-find") {
+        warnings.push(`${problem.id} ${problem.title}: Disjoint Sets visualizer still uses shared union-find fallback`);
+      }
+    }
+    const requiredGraph = trueGraphFamilies[problem.id];
+    if (requiredGraph) {
+      if (family !== requiredGraph.family) {
+        warnings.push(`${problem.id} ${problem.title}: Graph visualizer routes to "${family}", expected "${requiredGraph.family}"`);
+      }
+      if (sample !== requiredGraph.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Graph sample is "${sample}", expected "${requiredGraph.sample}"`);
+      }
+      if (family === "graph-traversal") {
+        warnings.push(`${problem.id} ${problem.title}: Graph visualizer still uses shared traversal fallback`);
+      }
+    }
+    const requiredTree = trueTreeFamilies[problem.id];
+    if (requiredTree) {
+      if (family !== requiredTree.family) {
+        warnings.push(`${problem.id} ${problem.title}: Tree visualizer routes to "${family}", expected "${requiredTree.family}"`);
+      }
+      if (sample !== requiredTree.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Tree sample is "${sample}", expected "${requiredTree.sample}"`);
+      }
+      if (family === "graph-traversal") {
+        warnings.push(`${problem.id} ${problem.title}: Tree visualizer still uses shared traversal fallback`);
+      }
+    }
+    const requiredString = trueStringFamilies[problem.id];
+    if (requiredString) {
+      if (family !== requiredString.family) {
+        warnings.push(`${problem.id} ${problem.title}: String visualizer routes to "${family}", expected "${requiredString.family}"`);
+      }
+      if (sample !== requiredString.sample) {
+        warnings.push(`${problem.id} ${problem.title}: String sample is "${sample}", expected "${requiredString.sample}"`);
+      }
+      if (family === "string-scan") {
+        warnings.push(`${problem.id} ${problem.title}: true Strings visualizer still uses shared generic string-scan`);
+      }
+    }
+    if (concept === "array" && sample && !sample.includes("=") && itemCount > 8 && !trueStringFamilies[problem.id]) {
+      warnings.push(`${problem.id} ${problem.title}: oversized string/list visual sample "${sample}" (${itemCount} items)`);
+    }
+    if ((difficulty === "medium" || difficulty === "hard") && /morgan state|university|data structures are useful/i.test(sample)) {
+      warnings.push(`${problem.id} ${problem.title}: medium/hard visualizer still uses a long public sample "${sample}"`);
+    }
+    if (/count vowels/i.test(problem.title || "") && /morgan state/i.test(sample)) {
+      warnings.push(`${problem.id} ${problem.title}: Count Vowels still uses Morgan State`);
+    }
+    if (raw && sample && raw !== sample && JSON.stringify(firstState).includes(raw)) {
+      rows[rows.length - 1].compactedFrom = raw;
+    }
+  }
+}
+
+console.table(rows.map((row) => ({
+  id: row.id,
+  concept: row.concept,
+  family: row.family,
+  target: row.targetSteps,
+  steps: row.effectiveStepCount,
+  rawSteps: row.rawStepCount,
+  runtime: row.runtimeGenerated ? "generated" : "authored",
+  generic: row.genericScaffold ? "yes" : "",
+  items: row.itemCount,
+  sample: row.sample,
+  compactedFrom: row.compactedFrom || "",
+})));
+
+if (warnings.length) {
+  console.error(`Practice visualizer audit found ${warnings.length} issue(s):`);
+  warnings.forEach((warning) => console.error(`- ${warning}`));
+  process.exit(1);
+}
+
+console.log(`Practice visualizer audit passed for ${rows.length} visualizer(s).`);

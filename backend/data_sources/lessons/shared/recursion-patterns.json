@@ -45,7 +45,7 @@
           "kind": "visual",
           "title": "Follow the call stack",
           "concept": "recursion-patterns",
-          "caption": "Watch calls pile up until the **base case**, then **return** back down.",
+          "caption": "Trace calls until the **base case**, then **return** back down.",
           "initial_state": {},
           "steps": [
             {
@@ -262,7 +262,7 @@
           "kind": "visual",
           "title": "Return values come back up",
           "concept": "recursion-patterns",
-          "caption": "Watch `sum_list([2, 4, 6])` wait for smaller calls, then add results on the way back.",
+          "caption": "Trace `sum_list([2, 4, 6])` through smaller calls, then add results on the way back.",
           "initial_state": {},
           "steps": [
             {
@@ -486,7 +486,7 @@
         },
         {
           "kind": "visual",
-          "title": "Watch recursive calls unwind",
+          "title": "Trace recursive calls unwind",
           "concept": "recursion",
           "caption": "The smallest call returns first, then each waiting call finishes.",
           "initial_state": {},

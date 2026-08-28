@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Prefix Sums",
+  "summary": "A **prefix sum** stores running totals so range sums can be answered quickly.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A **prefix sum** turns many range-sum questions into subtraction. Keep one convention for indexes, especially whether the right edge is included.",
+  "refresher_code": "nums=[2,4,1]",
+  "learn_cards": {
+    "advanced-prefix-meaning": {
+      "title": "Prefix meaning",
+      "notice": "Trace nums=[2,4,1] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "save-running-totals",
+      "body": "A **prefix sum** turns many range-sum questions into subtraction. Keep one convention for indexes, especially whether the right edge is included."
+    },
+    "advanced-prefix-range": {
+      "title": "Range formula",
+      "notice": "Trace nums=[2,4,1] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "answer-a-range",
+      "body": "A **prefix sum** turns many range-sum questions into subtraction. Keep one convention for indexes, especially whether the right edge is included."
+    },
+    "advanced-prefix-empty": {
+      "title": "Empty prefix",
+      "notice": "Trace nums=[2,4,1] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "choose-a-convention",
+      "body": "A **prefix sum** turns many range-sum questions into subtraction. Keep one convention for indexes, especially whether the right edge is included."
+    },
+    "advanced-prefix-offbyone": {
+      "title": "Index mistake",
+      "notice": "Trace nums=[2,4,1] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-prefix-sums-help",
+      "body": "A **prefix sum** turns many range-sum questions into subtraction. Keep one convention for indexes, especially whether the right edge is included."
+    }
+  },
+  "sections": [
+    {
+      "id": "save-running-totals",
+      "title": "Save running totals",
+      "summary": "A **prefix sum** stores running totals so range sums can be answered quickly. Use nums=[2,4,1] because the running total",
+      "question_ids": [
+        "advanced-prefix-meaning"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **prefix sum** stores running totals so range sums can be answered quickly. Use nums=[2,4,1] because the running totals and a leading zero fit on one small line."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace prefix sums state",
+          "concept": "prefix-sum",
+          "caption": "Build prefix=[0,2,6,7] from nums=[2,4,1].",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "nums=[2,4,1]",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "prefix sums: load sample",
+              "input_value": "nums=[2,4,1]",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "nums=[2,4,1]",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "prefix sums: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "nums=[2,4,1]",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "prefix sums: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "nums=[2,4,1]",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "prefix sums: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "nums=[2,4,1]",
+                "active": "answer state",
+                "changed": "prefix=[0,2,6,7]",
+                "result": "prefix=[0,2,6,7]"
+              },
+              "code_focus": "prefix sums: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "prefix=[0,2,6,7]"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with prefix=[0,2,6,7].",
+              "state": {
+                "sample": "nums=[2,4,1]",
+                "active": "complete",
+                "result": "prefix=[0,2,6,7]",
+                "goal": "prefix=[0,2,6,7]"
+              },
+              "code_focus": "prefix sums: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "prefix=[0,2,6,7]"
+                }
+              ],
+              "decision": "The compact trace ends with prefix=[0,2,6,7].",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "prefix=[0,2,6,7]"
+                }
+              ],
+              "output": "prefix=[0,2,6,7]",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "answer-a-range",
+      "title": "Answer a range",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-prefix-range"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Prefix code may use lists or arrays, but the index convention is what matters.",
+          "variants": {
+            "python": {
+              "code": "prefix = [0]\nfor value in nums:\n    prefix.append(prefix[-1] + value)\nrange_sum = prefix[right + 1] - prefix[left]",
+              "output": ""
+            },
+            "java": {
+              "code": "int[] prefix = new int[nums.length + 1];\nfor (int i = 0; i < nums.length; i++) {\n    prefix[i + 1] = prefix[i] + nums[i];\n}\nint rangeSum = prefix[right + 1] - prefix[left];",
+              "output": ""
+            },
+            "javascript": {
+              "code": "const prefix = [0];\nfor (const value of nums) {\n  prefix.push(prefix[prefix.length - 1] + value);\n}\nconst rangeSum = prefix[right + 1] - prefix[left];",
+              "output": ""
+            },
+            "cpp": {
+              "code": "std::vector<int> prefix(nums.size() + 1);\nfor (int i = 0; i < (int)nums.size(); i++) {\n    prefix[i + 1] = prefix[i] + nums[i];\n}\nint rangeSum = prefix[right + 1] - prefix[left];",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a prefix-sum trace check first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Check the meaning of prefix indexes first. The formula works only when the convention stays steady."
+        }
+      ]
+    },
+    {
+      "id": "choose-a-convention",
+      "title": "Choose a convention",
+      "summary": "Prefix-sum tracing is mostly index discipline. Write what each prefix slot means before using subtraction.",
+      "question_ids": [
+        "advanced-prefix-empty"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Prefix-sum tracing is mostly index discipline. Write what each prefix slot means before using subtraction."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Start with the leading zero if your formula uses one.",
+            "Append each running total.",
+            "Map the query endpoints to prefix indexes.",
+            "Subtract the total before the range."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-prefix-sums-help",
+      "title": "When prefix sums help",
+      "summary": "Use prefix sums when the data stays fixed and many questions ask for totals across ranges.",
+      "question_ids": [
+        "advanced-prefix-offbyone"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use prefix sums when the data stays fixed and many questions ask for totals across ranges."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits prefix sums best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "One three-item list is enough to reveal whether the formula includes the right endpoint and excludes the value before left."
+        }
+      ]
+    },
+    {
+      "id": "common-prefix-mistakes",
+      "title": "Common prefix mistakes",
+      "summary": "Prefix code often mixes conventions. If prefix[i] sometimes means through i and sometimes before i, range answers drift.",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "Prefix code often mixes conventions. If prefix[i] sometimes means through i and sometimes before i, range answers drift."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace nums=[2,4,1] and say why the leading zero changes the range formula."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Intervals",
+  "summary": "An **interval** describes a range with a start and an end, so overlap rules matter.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "**Intervals** become easier after sorting by start. Compare the next start with the current end, then either merge or start a new range.",
+  "refresher_code": "[1,4] and [3,6]",
+  "learn_cards": {
+    "advanced-interval-overlap": {
+      "title": "Overlap rule",
+      "notice": "Trace [1,4] and [3,6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "read-range-endpoints",
+      "body": "**Intervals** become easier after sorting by start. Compare the next start with the current end, then either merge or start a new range."
+    },
+    "advanced-interval-sort": {
+      "title": "Sort first",
+      "notice": "Trace [1,4] and [3,6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "sort-before-scanning",
+      "body": "**Intervals** become easier after sorting by start. Compare the next start with the current end, then either merge or start a new range."
+    },
+    "advanced-interval-merge": {
+      "title": "Merge update",
+      "notice": "Trace [1,4] and [3,6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "merge-or-separate",
+      "body": "**Intervals** become easier after sorting by start. Compare the next start with the current end, then either merge or start a new range."
+    },
+    "advanced-interval-gap": {
+      "title": "Gap check",
+      "notice": "Trace [1,4] and [3,6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-intervals-fit",
+      "body": "**Intervals** become easier after sorting by start. Compare the next start with the current end, then either merge or start a new range."
+    }
+  },
+  "sections": [
+    {
+      "id": "read-range-endpoints",
+      "title": "Read range endpoints",
+      "summary": "An **interval** describes a range with a start and an end, so overlap rules matter. Use [1,4] and [3,6] because one over",
+      "question_ids": [
+        "advanced-interval-overlap"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "An **interval** describes a range with a start and an end, so overlap rules matter. Use [1,4] and [3,6] because one overlap shows the endpoint rule without clutter."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace intervals state",
+          "concept": "intervals",
+          "caption": "Merge [1,4] and [3,6] into [1,6].",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "[1,4] and [3,6]",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "intervals: load sample",
+              "input_value": "[1,4] and [3,6]",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "[1,4] and [3,6]",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "intervals: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "[1,4] and [3,6]",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "intervals: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "[1,4] and [3,6]",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "intervals: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "[1,4] and [3,6]",
+                "active": "answer state",
+                "changed": "merged [1,6]",
+                "result": "merged [1,6]"
+              },
+              "code_focus": "intervals: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "merged [1,6]"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with merged [1,6].",
+              "state": {
+                "sample": "[1,4] and [3,6]",
+                "active": "complete",
+                "result": "merged [1,6]",
+                "goal": "merged [1,6]"
+              },
+              "code_focus": "intervals: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "merged [1,6]"
+                }
+              ],
+              "decision": "The compact trace ends with merged [1,6].",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "merged [1,6]"
+                }
+              ],
+              "output": "merged [1,6]",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sort-before-scanning",
+      "title": "Sort before scanning",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-interval-sort"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Interval code varies by collection type, while the start/end comparison stays central.",
+          "variants": {
+            "python": {
+              "code": "intervals.sort()\nmerged = []\nfor start, end in intervals:\n    if not merged or start > merged[-1][1]:\n        merged.append([start, end])\n    else:\n        merged[-1][1] = max(merged[-1][1], end)",
+              "output": ""
+            },
+            "java": {
+              "code": "intervals.sort(Comparator.comparingInt(a -> a[0]));\nList<int[]> merged = new ArrayList<>();\nfor (int[] cur : intervals) {\n    if (merged.isEmpty() || cur[0] > merged.get(merged.size()-1)[1]) merged.add(cur);\n    else merged.get(merged.size()-1)[1] = Math.max(merged.get(merged.size()-1)[1], cur[1]);\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "intervals.sort((a, b) => a[0] - b[0]);\nconst merged = [];\nfor (const [start, end] of intervals) {\n  if (!merged.length || start > merged.at(-1)[1]) merged.push([start, end]);\n  else merged.at(-1)[1] = Math.max(merged.at(-1)[1], end);\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "std::sort(intervals.begin(), intervals.end());\nstd::vector<std::vector<int>> merged;\nfor (auto cur : intervals) {\n    if (merged.empty() || cur[0] > merged.back()[1]) merged.push_back(cur);\n    else merged.back()[1] = std::max(merged.back()[1], cur[1]);\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should an interval trace check first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Check the current end and the next start first. That comparison decides merge or gap."
+        }
+      ]
+    },
+    {
+      "id": "merge-or-separate",
+      "title": "Merge or separate",
+      "summary": "Interval tracing depends on endpoint policy. Decide whether touching counts as overlap before writing the merge conditio",
+      "question_ids": [
+        "advanced-interval-merge"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Interval tracing depends on endpoint policy. Decide whether touching counts as overlap before writing the merge condition."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Sort by start.",
+            "Carry one current merged range.",
+            "Compare the next start with the current end.",
+            "Extend the end only when the ranges overlap."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-intervals-fit",
+      "title": "When intervals fit",
+      "summary": "Use intervals for calendars, room bookings, time windows, ranges, and any prompt about overlap or gaps.",
+      "question_ids": [
+        "advanced-interval-gap"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use intervals for calendars, room bookings, time windows, ranges, and any prompt about overlap or gaps."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits intervals best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "A pair of intervals is enough to test the boundary rule. Larger lists only repeat that comparison."
+        }
+      ]
+    },
+    {
+      "id": "common-interval-mistakes",
+      "title": "Common interval mistakes",
+      "summary": "Interval code often changes both endpoints during a merge. Usually the start stays put while the end grows.",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "Interval code often changes both endpoints during a merge. Usually the start stays put while the end grows."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace [1,4] and [3,6] and decide which endpoint changes."
+        }
+      ]
+    }
+  ]
+}

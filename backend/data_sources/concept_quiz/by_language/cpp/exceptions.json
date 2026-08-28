@@ -100,10 +100,10 @@
       "code": null,
       "prompt": "What should thrown C++ exceptions communicate?",
       "choices": [
-        "Wrap a whole program in one broad protected block.",
+        "Throw a vague failure so callers do not see internal details.",
         "Throw a descriptive exception type.",
-        "Catch errors at a layer that cannot recover.",
-        "Hide unexpected programming mistakes."
+        "Throw ordinary success states instead of returning normally.",
+        "Throw only strings so all exception types look identical."
       ],
       "answer_index": 1,
       "explanation": "An exception should describe the failure clearly enough for a caller or log to understand what went wrong. Vague failures make debugging harder and push context out of the place that knows it."
@@ -118,10 +118,10 @@
       "code": null,
       "prompt": "Where should C++ code catch an exception?",
       "choices": [
-        "Raise an exception after the function already returned successfully.",
-        "Use an exception to skip normal loop logic.",
+        "At the first possible line, even if that code cannot respond.",
+        "In every helper function so failures are always swallowed.",
         "Catch only where recovery or context is possible.",
-        "Report failure without enough context to debug it."
+        "Only at the end of the program after all context is gone."
       ],
       "answer_index": 2,
       "explanation": "Catch an exception where the code can recover, add useful context, or translate the failure for a caller. Catching too early often leaves the program with no real response."
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "How should standard C++ exceptions usually be caught?",
       "choices": [
-        "Ignore cleanup around code that can fail.",
-        "Catch a base exception type when a specific one is known.",
-        "Turn every invalid input into the same generic message.",
-        "Catch standard exceptions by const reference."
+        "Catch standard exceptions by const reference.",
+        "Catch standard exceptions by value so derived details are copied away.",
+        "Catch standard exceptions as raw pointers.",
+        "Catch standard exceptions only with catch-all syntax."
       ],
-      "answer_index": 3,
+      "answer_index": 0,
       "explanation": "Catching by `const` reference avoids copying and preserves the real exception type for polymorphic exceptions. Catching by value can slice derived exception details away."
     },
     {

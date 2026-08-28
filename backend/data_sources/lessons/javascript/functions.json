@@ -334,7 +334,7 @@
     {
       "id": "arrow-functions-and-checklist",
       "title": "Arrow functions and checklist",
-      "summary": "Watch braced arrow returns and test **edge** **arguments**.",
+      "summary": "Check braced arrow returns and test **edge** **arguments**.",
       "blocks": [
         {
           "kind": "check",

@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Dynamic Programming",
+  "summary": "**Dynamic programming** saves smaller answers so later states can reuse them.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "**Dynamic programming** works when a problem has repeated smaller states. Name the state, write base cases, then fill each state after its dependencies are ready.",
+  "refresher_code": "ways for 0,1,2,3 steps",
+  "learn_cards": {
+    "advanced-dp-state": {
+      "title": "DP state",
+      "notice": "Trace ways for 0,1,2,3 steps before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "name-the-state",
+      "body": "**Dynamic programming** works when a problem has repeated smaller states. Name the state, write base cases, then fill each state after its dependencies are ready."
+    },
+    "advanced-dp-base": {
+      "title": "Base case",
+      "notice": "Trace ways for 0,1,2,3 steps before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "start-with-bases",
+      "body": "**Dynamic programming** works when a problem has repeated smaller states. Name the state, write base cases, then fill each state after its dependencies are ready."
+    },
+    "advanced-dp-transition": {
+      "title": "Transition",
+      "notice": "Trace ways for 0,1,2,3 steps before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "write-the-transition",
+      "body": "**Dynamic programming** works when a problem has repeated smaller states. Name the state, write base cases, then fill each state after its dependencies are ready."
+    },
+    "advanced-dp-order": {
+      "title": "Fill order",
+      "notice": "Trace ways for 0,1,2,3 steps before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-dp-helps",
+      "body": "**Dynamic programming** works when a problem has repeated smaller states. Name the state, write base cases, then fill each state after its dependencies are ready."
+    }
+  },
+  "sections": [
+    {
+      "id": "name-the-state",
+      "title": "Name the state",
+      "summary": "**Dynamic programming** saves smaller answers so later states can reuse them. Use ways for 0, 1, 2, and 3 steps because ",
+      "question_ids": [
+        "advanced-dp-state"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Dynamic programming** saves smaller answers so later states can reuse them. Use ways for 0, 1, 2, and 3 steps because the recurrence has enough room to appear without a long table."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace dynamic programming state",
+          "concept": "dynamic-programming",
+          "caption": "Fill ways for 0, 1, 2, and 3 steps until ways[3] = 3.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "ways for 0,1,2,3 steps",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "dynamic programming: load sample",
+              "input_value": "ways for 0,1,2,3 steps",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "ways for 0,1,2,3 steps",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "dynamic programming: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "ways for 0,1,2,3 steps",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "dynamic programming: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "ways for 0,1,2,3 steps",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "dynamic programming: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "ways for 0,1,2,3 steps",
+                "active": "answer state",
+                "changed": "ways[3] = 3",
+                "result": "ways[3] = 3"
+              },
+              "code_focus": "dynamic programming: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "ways[3] = 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with ways[3] = 3.",
+              "state": {
+                "sample": "ways for 0,1,2,3 steps",
+                "active": "complete",
+                "result": "ways[3] = 3",
+                "goal": "ways[3] = 3"
+              },
+              "code_focus": "dynamic programming: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "ways[3] = 3"
+                }
+              ],
+              "decision": "The compact trace ends with ways[3] = 3.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "ways[3] = 3"
+                }
+              ],
+              "output": "ways[3] = 3",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "start-with-bases",
+      "title": "Start with bases",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-dp-base"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "DP syntax changes by language, but the table dependency order is the main idea.",
+          "variants": {
+            "python": {
+              "code": "ways = [0] * (n + 1)\nways[0] = 1\nfor i in range(1, n + 1):\n    ways[i] += ways[i - 1]\n    if i >= 2:\n        ways[i] += ways[i - 2]",
+              "output": ""
+            },
+            "java": {
+              "code": "int[] ways = new int[n + 1];\nways[0] = 1;\nfor (int i = 1; i <= n; i++) {\n    ways[i] += ways[i - 1];\n    if (i >= 2) ways[i] += ways[i - 2];\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "const ways = Array(n + 1).fill(0);\nways[0] = 1;\nfor (let i = 1; i <= n; i++) {\n  ways[i] += ways[i - 1];\n  if (i >= 2) ways[i] += ways[i - 2];\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "std::vector<int> ways(n + 1);\nways[0] = 1;\nfor (int i = 1; i <= n; i++) {\n    ways[i] += ways[i - 1];\n    if (i >= 2) ways[i] += ways[i - 2];\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a DP trace check first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Check what one table entry means first. A recurrence is hard to debug when the state meaning is vague."
+        }
+      ]
+    },
+    {
+      "id": "write-the-transition",
+      "title": "Write the transition",
+      "summary": "In dynamic programming, the table is the story. Each new cell should read older cells whose answers are already trustwor",
+      "question_ids": [
+        "advanced-dp-transition"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "In dynamic programming, the table is the story. Each new cell should read older cells whose answers are already trustworthy."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Name what one state means.",
+            "Fill base states first.",
+            "Read only ready dependencies.",
+            "Write the current state before moving on."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-dp-helps",
+      "title": "When DP helps",
+      "summary": "Use dynamic programming when many branches ask the same smaller question and saved answers prevent repeated work.",
+      "question_ids": [
+        "advanced-dp-order"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use dynamic programming when many branches ask the same smaller question and saved answers prevent repeated work."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits dynamic programming best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "A tiny table exposes whether the recurrence is reading the right earlier cells before large inputs hide the error."
+        }
+      ]
+    },
+    {
+      "id": "common-dp-mistakes",
+      "title": "Common DP mistakes",
+      "summary": "DP code often fails when the base case is correct but the fill order reads a state that has not been computed yet.",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "DP code often fails when the base case is correct but the fill order reads a state that has not been computed yet."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace ways for 0, 1, 2, and 3 steps and explain why ways[3] is 3."
+        }
+      ]
+    }
+  ]
+}

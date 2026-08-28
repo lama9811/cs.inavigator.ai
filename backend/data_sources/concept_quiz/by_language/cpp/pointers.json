@@ -176,10 +176,10 @@
       "code": null,
       "prompt": "What should C++ code use when a pointer intentionally has no target?",
       "choices": [
-        "Return a pointer to a local variable.",
-        "Share raw ownership without deciding who deletes.",
+        "Leave the pointer uninitialized until it is used.",
+        "Store the integer 0 in an ordinary int variable instead.",
         "Use nullptr for no target.",
-        "Use pointer arithmetic when an index would be clearer."
+        "Dereference the pointer once to test whether it has a target."
       ],
       "answer_index": 2,
       "explanation": "`nullptr` clearly says the pointer is empty on purpose. That is safer and more readable than leaving the pointer uninitialized, and it gives code a value it can check before dereferencing."

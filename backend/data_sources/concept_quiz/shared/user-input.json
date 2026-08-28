@@ -179,19 +179,19 @@
       "concept": "user-input",
       "difficulty": "easy",
       "kind": "mcq-behavior",
-      "title": "User Input practice 5",
+      "title": "User Input practice 3",
       "variants": {
         "python": {
           "code": "a = int(input(\"First: \"))\nb = int(input(\"Second: \"))\nprint(a + b)",
-          "prompt": "`a = input(\"First: \")` and `b = input(\"Second: \")` read \"1\" and \"2\". What does `print(a + b)` show?",
+          "prompt": "Why does this version add the typed digits instead of gluing them together?",
           "choices": [
-            "12 — input returns text, so + glues the strings",
-            "3 — the digits are added",
-            "\"1\" \"2\"",
-            "It raises a TypeError"
+            "`int(...)` converts each input string into a number before `+` runs",
+            "`input(...)` automatically returns numbers when the user types digits",
+            "`+` always adds typed input, even when the values are strings",
+            "Python tries string joining first, then changes the answer to a number"
           ],
           "answer_index": 0,
-          "explanation": "`input` always returns a string, so `a` and `b` are \"1\" and \"2\", and `+` on strings concatenates into \"12\". To add, convert first with `int(...)`, as in the correct version, which prints 3. No error occurs; the wrong answer is just silently produced."
+          "explanation": "`input` reads text first, but the surrounding `int(...)` converts each answer into a number before it is stored. That means `a` is 1, `b` is 2, and `print(a + b)` shows 3. Without `int(...)`, the strings \"1\" and \"2\" would concatenate into \"12\"."
         },
         "java": {
           "code": "int age = sc.nextInt();\nsc.nextLine();   // eat the newline\nString name = sc.nextLine();",
@@ -381,7 +381,7 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 3",
           "code": null,
-          "prompt": "Before using a typed value, what question should Python code ask?",
+          "prompt": "A Python program asks for a name on one line and an age on another. Before using each typed value, what should the code decide?",
           "choices": [
             "Convert every answer to a number before knowing how it will be used.",
             "Ask for input inside reusable helpers so each call controls the prompt.",
@@ -389,7 +389,7 @@
             "Print an error and keep calculating with the unconverted text."
           ],
           "answer_index": 2,
-          "explanation": "Decide whether the typed value is meant to stay text or become a number. Names and short answers can remain strings. Counts, prices, ages, and scores need conversion before arithmetic or numeric comparisons."
+          "explanation": "Decide how the value will be used. A name should stay as text, while an age should be converted before arithmetic or numeric comparison. Input starts as text, but not every typed value should become a number."
         },
         "java": {
           "difficulty": "medium",

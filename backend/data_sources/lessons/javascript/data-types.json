@@ -141,7 +141,7 @@
         {
           "kind": "callout",
           "tone": "mistake",
-          "title": "Watch this detail",
+          "title": "Check this detail",
           "body": "A failed conversion produces `NaN`. Since its typeof result is number, detect it with `Number.isNaN(value)`."
         }
       ]

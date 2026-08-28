@@ -46,7 +46,7 @@
           "kind": "visual",
           "title": "Trace a tree traversal",
           "concept": "trees",
-          "caption": "Watch preorder visit the **node**, then left side, then right side.",
+          "caption": "Visit the **node**, then the left side, then the right side.",
           "initial_state": {},
           "steps": [
             {
@@ -469,7 +469,7 @@
           "kind": "visual",
           "title": "Preorder: node, left, right",
           "concept": "trees",
-          "caption": "Watch preorder visit the current **node** before its children.",
+          "caption": "Visit the current **node** before its children.",
           "initial_state": {},
           "steps": [
             {
@@ -818,7 +818,7 @@
           "kind": "visual",
           "title": "Inorder: left, node, right",
           "concept": "trees",
-          "caption": "Watch inorder finish the left side before recording the current **node**.",
+          "caption": "Finish the left side before recording the current **node**.",
           "initial_state": {},
           "steps": [
             {
@@ -1171,7 +1171,7 @@
           "kind": "visual",
           "title": "Postorder: left, right, node",
           "concept": "trees",
-          "caption": "Watch postorder finish children before recording the parent **node**.",
+          "caption": "Finish children before recording the parent **node**.",
           "initial_state": {},
           "steps": [
             {
@@ -1639,7 +1639,7 @@
           "kind": "visual",
           "title": "Level order uses queue order",
           "concept": "trees",
-          "caption": "Watch a **tree** **traversal** visit one level at a time by using a **queue**.",
+          "caption": "Use a **queue** to visit one **tree** level at a time.",
           "initial_state": {},
           "steps": [
             {

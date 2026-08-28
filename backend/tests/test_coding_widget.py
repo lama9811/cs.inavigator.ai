@@ -57,6 +57,72 @@ def test_floating_chat_exposes_history_and_accessibility_controls():
     assert 'aria-label="Start voice input"' in source
 
 
+def test_floating_chat_has_concept_question_shortcut():
+    source = read(FLOATING_CHAT)
+    chatbox_source = read(CHATBOX)
+
+    assert "Ask concept" in source
+    assert 'onQuickAction("AskConcept")' in source
+    assert "Ask about Big O, recursion, hash maps, syntax, or a language feature." in chatbox_source
+    assert "Concept-question mode" in chatbox_source
+
+
+def test_coding_tutor_routes_non_coding_questions_out_of_coding_mode():
+    source = read(CHATBOX)
+
+    assert "CODING_CONCEPT_RE" in source
+    assert "hashmaps?" in source
+    assert "CODING_MORGAN_ROUTE_RE" in source
+    assert 'redirectMode: "regular"' in source
+    assert 'redirectMode: "general"' in source
+    assert "Current editor code is optional background" in source
+
+
+def test_pending_chat_actions_respect_destination_mode():
+    source = read(CHATBOX)
+
+    assert "const pendingMode = pendingChatAction.mode" in source
+    assert 'pendingMode === "coding_tutor" ? "widget" : "main"' in source
+    assert '"coding_tutor", sessionId, "widget"' not in source
+
+
+def test_full_coding_chat_route_renders_selected_history_messages():
+    source = read(CHATBOX)
+    app_source = read(ROOT / "frontend" / "src" / "App.jsx")
+
+    assert "if (isCodingChatRoute) return true;" in source
+    assert "setCodingWidgetSessionId(sessionId)" in source
+    assert 'path="/chat/coding"' in app_source
+    assert "activeSelectionRef.current" in app_source
+    assert "activeSelectionRef.current = id;" in app_source
+    assert "shouldPreserveSelection" in app_source
+    assert "setActiveId(shouldPreserveSelection ? selectedId : freshId)" in app_source
+
+
+def test_sidebar_history_navigation_leaves_workspace_before_session_swap():
+    app_source = read(ROOT / "frontend" / "src" / "App.jsx")
+    handle_select = app_source.split("const handleSelect = (id) => {", 1)[1]
+    handle_select = handle_select.split("  // Header/brand click:", 1)[0]
+
+    assert "workspace restore effects can pull the URL back" in handle_select
+    assert "navigate(targetRoute);" in handle_select
+    assert "window.setTimeout" in handle_select
+    assert "activeSelectionRef.current === id" in handle_select
+    assert handle_select.index("navigate(targetRoute);") < handle_select.index("setActiveId(id);")
+
+
+def test_coding_widget_close_clears_transient_surfaces_without_navigation():
+    source = read(CHATBOX)
+    app_source = read(ROOT / "frontend" / "src" / "App.jsx")
+
+    assert 'navigate: action.navigate ?? true' in source
+    assert 'startFreshCodingWidgetSession({ type: "closed", title: "Coding Tutor", navigate: false })' in source
+    assert "onSessionChange(messages, sessionId)" in source
+    assert "if (config.navigate === false) return id;" in app_source
+    assert "const handleUpdateSession = (msgs, sessionId = activeId)" in app_source
+    assert "s.id === sessionId" in app_source
+
+
 def test_floating_chat_previews_tutor_code_before_applying():
     source = read(FLOATING_CHAT)
     tutor_source = read(CODING_TUTOR)

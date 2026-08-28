@@ -1212,15 +1212,7 @@ body.coding-dark .cq-question-kind.group-parsons {
   position: relative;
 }
 .cq-runner-full::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  background: var(--ct-border);
-  pointer-events: none;
-  z-index: 1;
+  content: none;
 }
 /* Header bar split to mirror the columns below: tabs (left) | progress (right). */
 .cq-runner-top {
@@ -1242,6 +1234,7 @@ body.coding-dark .cq-question-kind.group-parsons {
   justify-content: center;
   gap: 0.3rem;
   padding: 0.45rem 1.75rem;
+  border-left: 1px solid var(--ct-border);
 }
 @media (max-width: 860px) {
   .cq-runner-top {
@@ -1310,6 +1303,9 @@ body.coding-dark .cq-question-kind.group-parsons {
   display: flex;
   flex-direction: column;
 }
+.cq-runner-right {
+  border-left: 1px solid var(--ct-border);
+}
 /* No per-pane borders — the continuous center line on .cq-runner-full::before
    draws the split, unbroken from header through footer. */
 /* The scrolling content area of each pane. */
@@ -1337,6 +1333,140 @@ body.coding-dark .cq-question-kind.group-parsons {
   .cq-runner-left {
     border-right: none;
     border-bottom: 1px solid var(--ct-border);
+  }
+}
+
+/* Narrow and tablet-width quiz screens should read as one continuous page. The
+   desktop divider and independent pane scrolling feel broken between 640-860px. */
+@media (max-width: 860px) {
+  .coding-quiz-runner-active .cq-runner-full,
+  .cq-runner-full {
+    height: auto;
+    min-height: 0;
+  }
+
+  .cq-runner-full::before {
+    display: none;
+  }
+
+  .cq-runner-top {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--ct-border);
+  }
+
+  .cq-runner-top-right {
+    border-left: 0;
+  }
+
+  .cq-runner-top-left,
+  .cq-runner-top-right {
+    padding-inline: 1rem;
+  }
+
+  .cq-runner-top-right {
+    padding-block: 0.5rem 0.65rem;
+  }
+
+  .cq-progress-meta {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.45rem;
+    font-size: 0.78rem;
+  }
+
+  .cq-progress-segments {
+    gap: 3px;
+  }
+
+  .cq-runner-split {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .cq-runner-left,
+  .cq-runner-right {
+    display: block;
+    min-height: 0;
+    border: 0;
+  }
+
+  .cq-runner-left {
+    border-bottom: 1px solid color-mix(in srgb, var(--ct-border) 70%, transparent);
+  }
+
+  .cq-pane-body {
+    min-height: 0;
+    overflow: visible;
+    padding: 1rem;
+  }
+
+  .cq-runner-right .cq-pane-body {
+    padding-bottom: 1.25rem;
+  }
+
+  .cq-pane-nav {
+    padding: 0.75rem 1rem;
+    background: color-mix(in srgb, var(--ct-panel) 94%, transparent);
+  }
+
+  .cq-tabs {
+    gap: 1rem;
+  }
+
+  .coding-app .cq-tab,
+  .coding-app .cq-tab:hover {
+    font-size: 0.95rem;
+  }
+
+  .cq-question-tools {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+
+  .cq-prompt {
+    font-size: clamp(1.05rem, 5.6vw, 1.24rem);
+    line-height: 1.25;
+  }
+
+  .cq-code {
+    padding: 0.85rem;
+    font-size: 0.78rem;
+    overflow-x: auto;
+  }
+
+  .cq-answer-heading {
+    margin-top: 0;
+  }
+
+  .cq-choice {
+    padding: 0.8rem 0.9rem;
+  }
+
+  .cq-immediate-feedback {
+    margin-top: 0.9rem;
+    padding: 0.9rem;
+    border-radius: 14px;
+  }
+
+  .cq-immediate-feedback-head {
+    gap: 0.55rem;
+  }
+
+  .cq-immediate-answer-review {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .cq-feedback-points {
+    padding-left: 1.1rem;
+  }
+
+  .cq-immediate-more summary,
+  .cq-result-correct-more summary {
+    min-height: 38px;
   }
 }
 
@@ -1381,6 +1511,50 @@ body.coding-dark .cq-question-kind.group-parsons {
   color: var(--ct-primary);
   font-weight: 700;
   border-bottom-color: var(--ct-accent);
+}
+
+.cq-question-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.coding-app .cq-read-aloud,
+.coding-app .cq-read-aloud:hover:not(:disabled) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  min-height: 34px;
+  padding: 0.38rem 0.72rem !important;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 34%, var(--ct-border)) !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.coding-app .cq-read-aloud:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 14%, var(--ct-panel)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 55%, var(--ct-border)) !important;
+}
+
+.coding-app .cq-read-aloud.speaking,
+.coding-app .cq-read-aloud.speaking:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-accent) 62%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 14%, var(--ct-panel)) !important;
+  color: var(--ct-accent) !important;
+}
+
+.cq-read-aloud svg {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
 }
 
 /* Larger, bolder question prompt in the display font so it anchors the pane. */
@@ -1790,6 +1964,7 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   border: 1px solid var(--ct-border-strong);
   border-radius: 8px;
   cursor: grab;
+  min-width: 0;
 }
 .cq-parsons-line.locked {
   cursor: default;
@@ -1799,29 +1974,46 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   cursor: grabbing;
 }
 .cq-parsons-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   color: var(--ct-soft);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
 }
 .cq-parsons-line code {
   flex: 1;
+  min-width: 0;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.86rem;
-  white-space: pre;
-  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .cq-parsons-controls {
   display: flex;
   gap: 0.2rem;
+  flex: 0 0 auto;
 }
 .cq-parsons-controls button {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: 999px;
   border: 1px solid var(--ct-border);
   background: var(--ct-panel);
   color: var(--ct-text);
   cursor: pointer;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+}
+.cq-parsons-controls button:not(:disabled):hover {
+  border-color: var(--ct-primary);
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel));
 }
 .cq-parsons-controls button:disabled {
   opacity: 0.35;
@@ -1960,6 +2152,7 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   align-items: center;
   gap: 0.6rem;
   margin-bottom: 0.35rem;
+  flex-wrap: wrap;
 }
 .cq-result-num {
   font-weight: 700;
@@ -1981,6 +2174,12 @@ body:not(.coding-dark) .coding-app .cq-prompt {
 .cq-result-row.incorrect .cq-result-tag {
   color: #d0493b;
   background: color-mix(in srgb, #d0493b 12%, var(--ct-panel));
+}
+.coding-app .cq-result-read {
+  margin-left: auto;
+  min-height: 28px;
+  padding: 0.25rem 0.58rem !important;
+  font-size: 0.72rem;
 }
 .cq-result-prompt {
   margin: 0 0 0.3rem;
@@ -2422,5 +2621,123 @@ body.coding-dark .cq-mistake-review-head > span {
 
   .cq-placement-dialog-inner {
     padding: 18px;
+  }
+}
+
+/* Final phone runner override. This intentionally lives at the end so the base
+   prompt/code/choice styles above cannot reintroduce the desktop split feel. */
+@media (max-width: 640px) {
+  .coding-app.coding-quiz-runner-active {
+    min-height: 0;
+  }
+
+  .coding-app.coding-quiz-runner-active .coding-page-panel {
+    overflow: visible;
+  }
+
+  .coding-app .cq-runner-full::before {
+    content: none;
+  }
+
+  .coding-app .cq-runner-split,
+  .coding-app .cq-runner-left,
+  .coding-app .cq-runner-right,
+  .coding-app .cq-pane-body {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .coding-app .cq-runner-left {
+    border-bottom: 1px solid color-mix(in srgb, var(--ct-border) 70%, transparent);
+  }
+
+  .coding-app .cq-runner-right .cq-pane-body {
+    padding-top: 0.65rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .coding-app .cq-runner-full.cq-tab-learn .cq-runner-left {
+    border-bottom: 0;
+  }
+
+  .coding-app .cq-runner-full.cq-tab-learn .cq-runner-top-right {
+    display: none;
+  }
+
+  .coding-app .cq-runner-full.cq-tab-learn .cq-runner-right .cq-pane-body {
+    display: none;
+  }
+
+  .coding-app .cq-runner-full.cq-tab-learn .cq-pane-nav {
+    display: none;
+  }
+
+  .coding-app .cq-question-panel {
+    display: block;
+    overflow: visible;
+  }
+
+  .coding-app .cq-question-tools {
+    margin-bottom: 0.8rem;
+    justify-content: flex-end;
+  }
+
+  .coding-app .cq-prompt {
+    position: static;
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.05rem, 5.6vw, 1.24rem);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .coding-app .cq-code {
+    display: block;
+    clear: both;
+    max-width: 100%;
+    margin: 0 0 0.85rem;
+    padding: 0.8rem 0.9rem;
+    overflow-x: auto;
+    white-space: pre;
+    font-size: 0.76rem;
+    line-height: 1.48;
+  }
+
+  .coding-app .cq-code code {
+    white-space: inherit;
+  }
+
+  .coding-app .cq-answer-heading {
+    clear: both;
+    margin: 0 0 0.75rem;
+    font-size: 0.92rem;
+    line-height: 1.35;
+  }
+
+  .coding-app .cq-choices {
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .coding-app .cq-choice {
+    min-height: 54px;
+    padding: 0.78rem 0.9rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .coding-app .cq-immediate-feedback {
+    margin: 0.95rem 0 0;
+    padding: 0.9rem;
+  }
+
+  .coding-app .cq-pane-nav {
+    position: static;
+    margin: 0 1rem 1rem;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--ct-border) 70%, transparent);
+    background: transparent;
+    box-shadow: none;
   }
 }

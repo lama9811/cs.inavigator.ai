@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { FaBook, FaChartLine, FaLaptopCode, FaPlay, FaRegCompass } from "react-icons/fa";
-import { currentUserStorageScope } from "./storageScope";
 import {
   buildStartingCheckResult,
   buildStartingQuestionSet,
-  clearStartingCheck,
-  readStartingCheck,
-  writeStartingCheck,
 } from "./startingPath";
+import { hasMeaningfulAdaptiveSignal } from "./adaptiveRecommendation";
 import useFocusTrap from "./useFocusTrap";
 
 function findResumeItem(questions, progressByQuestion) {
@@ -15,7 +12,7 @@ function findResumeItem(questions, progressByQuestion) {
     .map(([id, progress]) => ({ id, progress, question: questions.find(q => q.id === id) }))
     .filter(item => item.question && item.progress
       && item.progress.status !== "solved"
-      && (item.progress.attempt_count > 0 || item.progress.status === "in_progress"))
+      && item.progress.attempt_count > 0)
     .sort((a, b) => new Date(b.progress.updated_at || 0) - new Date(a.progress.updated_at || 0))[0] || null;
 }
 
@@ -25,7 +22,8 @@ function difficultyClass(value) {
 
 // One concrete next step, derived from real data — not generic filler.
 // Priority: resume in-progress → today's daily → recommended next → library.
-function buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday }) {
+function buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday, codingRecommendation }) {
+  if (codingRecommendation?.reason) return codingRecommendation.reason;
   if (resumeItem?.question) {
     return `Finish ${resumeItem.question.title} — run your tests, then ask for one hint if you're stuck.`;
   }
@@ -65,8 +63,14 @@ const DIFFICULTY_RANK = { easy: 0, medium: 1, hard: 2 };
 
 function statusOf(progress) {
   if (progress?.status === "solved") return "solved";
-  if (progress?.status === "in_progress" || (progress?.attempt_count || 0) > 0) return "in_progress";
+  if ((progress?.attempt_count || 0) > 0) return "in_progress";
   return "not_started";
+}
+
+function hasScoredPracticeProgress(progress) {
+  const status = String(progress?.status || "").toLowerCase();
+  const attempts = Number(progress?.attempt_count || progress?.attempts || 0);
+  return status === "solved" || attempts > 0;
 }
 
 function problemRank(question) {
@@ -75,6 +79,98 @@ function problemRank(question) {
 
 function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
+}
+
+function useCompactHomeCards() {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia("(max-width: 560px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+  return compact;
+}
+
+function stepMarker(item, index) {
+  if (item?.status === "completed") return "✓";
+  if (item?.status === "dismissed") return "-";
+  return index + 1;
+}
+
+function MiniPlanList({ items, onOpenStep }) {
+  const plan = Array.isArray(items) ? items.filter(item => item?.label).slice(0, 5) : [];
+  if (!plan.length) return null;
+  return (
+    <div className="campus-mini-plan-wrap">
+      <span>Plan progress</span>
+      <ol className="campus-mini-plan" aria-label="Suggested plan">
+      {plan.map((item, index) => (
+        <li
+          key={item.id || `${item.label}-${index}`}
+          className={`${item.status ? `is-${item.status}` : "is-upcoming"}${item.is_current ? " is-current" : ""}`}
+        >
+          <span>{stepMarker(item, index)}</span>
+          <button
+            type="button"
+            onClick={() => onOpenStep?.(item)}
+            disabled={!onOpenStep || item.status === "completed"}
+          >
+            {item.label}
+          </button>
+        </li>
+      ))}
+      </ol>
+    </div>
+  );
+}
+
+function cleanRecommendationEvidence(item = "") {
+  return String(item)
+    .replace(/^Recommendation source:\s*/i, "Based on ")
+    .replace(/\bworkspace state\b/i, "your saved workspace")
+    .replace(/\badaptive practice\b/i, "recent practice")
+    .replace(/\blearn progress\b/i, "completed lessons")
+    .replace(/\bconcept quiz\b/i, "quiz checks");
+}
+
+function WhyThisDetails({ recommendation, onDismiss }) {
+  const explanation = recommendation?.explanation;
+  if (!explanation) return null;
+  const evidence = Array.isArray(explanation.evidence_used) ? explanation.evidence_used : [];
+  const usefulEvidence = evidence
+    .map(cleanRecommendationEvidence)
+    .filter(Boolean)
+    .slice(0, 2);
+  return (
+    <details className="campus-why-this">
+      <summary>Why this?</summary>
+      <div>
+        {explanation.why_topic ? <p>{explanation.why_topic}</p> : null}
+        {usefulEvidence.length ? (
+          <ul>
+            {usefulEvidence.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+          </ul>
+        ) : null}
+        {explanation.what_would_change ? <small>{explanation.what_would_change}</small> : null}
+        {onDismiss ? (
+          <button
+            type="button"
+            className="campus-dismiss-recommendation"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onDismiss?.();
+            }}
+          >
+            Dismiss for now
+          </button>
+        ) : null}
+      </div>
+    </details>
+  );
 }
 
 function learningStyleHint(style) {
@@ -91,8 +187,22 @@ function compactWeakTopicReason({ mastery, weakTopic }) {
   if (mastery?.weakest?.topic) {
     return `Recent practice points to ${titleCase(weakTopic)}.`;
   }
-  if (weakTopic) return `This topic could use another pass.`;
-  return "Pick one shaky topic.";
+  if (weakTopic) return `Review ${titleCase(weakTopic)} next.`;
+  return "Pick one topic to review.";
+}
+
+function conciseAdaptiveReason(value = "") {
+  const text = String(value || "").trim();
+  const reviewMarker = /this topic is review-only for now/i;
+  const match = reviewMarker.exec(text);
+  const visible = match ? text.slice(0, match.index) : text;
+  return visible
+    .replace(new RegExp("\\bladder\\s+steps?\\b", "gi"), "practice")
+    .replace(new RegExp("\\bweak\\s+spot\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bshaky\\s+topic\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bcould\\s+use\\s+another\\s+pass\\b", "gi"), "should be reviewed next")
+    .trim()
+    .replace(/[.:;\s]+$/, ".");
 }
 
 function firstUnsolved(questions, progressByQuestion, predicate = () => true) {
@@ -138,9 +248,9 @@ function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuest
     .find(q => !used.has(q.id));
   add(
     "practice",
-    weakTopic ? `Practice ${titleCase(weakTopic)}` : "Practice a weak spot",
+    weakTopic ? `Practice ${titleCase(weakTopic)}` : "Practice a topic",
     weakPick,
-    "Pick one topic that feels shaky and solve one problem from it.",
+    "Pick one topic to review and solve one problem from it.",
     compactWeakTopicReason({ mastery, weakTopic })
   );
 
@@ -166,6 +276,9 @@ function CampusHero({
   nextUpQuestion,
   dailyChallenge,
   dailyDoneToday,
+  codingRecommendation,
+  beginnerMode,
+  onOpenRecommendation,
   onResume,
   onOpenLearnStart,
   onOpenBeginnerWarmup,
@@ -173,11 +286,11 @@ function CampusHero({
 }) {
   // State-first hero: lead with the student's status and ONE primary action —
   // resume in-progress work if any, otherwise start the recommended problem.
-  const primaryQuestion = resumeItem?.question || nextUpQuestion || null;
+  const primaryQuestion = resumeItem?.question || codingRecommendation?.question || nextUpQuestion || null;
   const isResume = Boolean(resumeItem?.question);
   // The hero owns the next action: one concrete "Today's Focus" line (was a
   // separate strip below the hero).
-  const focusPlan = buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday });
+  const focusPlan = buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday, codingRecommendation });
   const streakDays = Number(progressSummary.displayStreak) || 0;
   const streakValue = streakDays > 0 ? `${streakDays}-day` : "0";
   const streakLabel = streakDays > 0 ? "streak" : "day streak";
@@ -205,7 +318,16 @@ function CampusHero({
           </span>
         </div>
         <div className="campus-hero-actions">
-          {primaryQuestion ? (
+          {codingRecommendation ? (
+            <button
+              type="button"
+              className="campus-primary-action"
+              onClick={onOpenRecommendation}
+            >
+              <FaPlay aria-hidden="true" />
+              {codingRecommendation.actionLabel}
+            </button>
+          ) : primaryQuestion ? (
             <button
               type="button"
               className="campus-primary-action"
@@ -220,9 +342,9 @@ function CampusHero({
               Start Python Beginner
             </button>
           )}
-          <button type="button" className="campus-secondary-action" onClick={onOpenBeginnerWarmup}>
+          <button type="button" className="campus-secondary-action" onClick={beginnerMode ? onOpenLearnStart : onOpenBeginnerWarmup}>
             <FaRegCompass aria-hidden="true" />
-            Before Class Warmup
+            {beginnerMode ? "Open Beginner Track" : "Before Class Warmup"}
           </button>
         </div>
         <div className="campus-hero-focus" role="note">
@@ -268,6 +390,10 @@ function CampusLearningQueue({
   mastery,
   adaptivePractice,
   startingCheck,
+  codingRecommendation,
+  onOpenRecommendation,
+  onOpenMiniPlanStep,
+  onDismissRecommendation,
   onSelect,
   onOpenQuizBank,
   onOpenBeginnerWarmup,
@@ -275,6 +401,7 @@ function CampusLearningQueue({
   onOpenLessonReview,
   onOpenStartingPath,
   learningStyle,
+  hasCodingHistory,
 }) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
   // guided path: next track, personal workspace, and a data-driven focus nudge.
@@ -287,9 +414,7 @@ function CampusLearningQueue({
     focus,
   });
   const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
-  const hasRealProgress = Object.values(progressByQuestion || {}).some(progress =>
-    progress?.status === "solved" || (progress?.attempt_count || 0) > 0
-  );
+  const hasRealProgress = hasCodingHistory || Object.values(progressByQuestion || {}).some(hasScoredPracticeProgress);
   const adaptiveRecommendation = hasRealProgress ? adaptivePractice?.recommendation || null : null;
   const reviewSignal = adaptivePractice?.review_signal || null;
   const adaptiveTopic = adaptiveRecommendation?.topic || "";
@@ -298,27 +423,53 @@ function CampusLearningQueue({
   const focusTopic = adaptiveTopic || (focus?.hasProgress ? focus.next?.topic : focus?.first?.topic);
   const needsStartingCheck = !hasRealProgress && !startingCheck;
   const placementProfile = !hasRealProgress ? startingCheck : null;
-  const focusTitle = needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
-    ? `${titleCase(adaptiveTopic)} adaptive ladder`
+  const currentPlanStep = (codingRecommendation?.miniPlan || codingRecommendation?.mini_plan || [])
+    .find(step => step?.is_current) || null;
+  const focusTitle = currentPlanStep?.label || codingRecommendation?.title || (needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
+    ? `${titleCase(adaptiveTopic)} practice`
     : adaptiveRecommendation?.action === "practice_review"
       ? `Review ${titleCase(adaptiveTopic)}`
       : focus?.hasProgress
     ? `Practice ${titleCase(focus.next.topic)}`
     : focus
       ? `Start with ${titleCase(focus.first.topic)}`
-      : "Choose a topic");
-  const focusBlurb = needsStartingCheck
-    ? "Take the quick check above so this card can recommend a calm first step instead of guessing."
+      : "Choose a topic"));
+  const focusBlurb = codingRecommendation?.reason || (needsStartingCheck
+    ? "Take the quick check above so this card can suggest where to start."
     : placementProfile?.blurb || (adaptiveRecommendation?.reason
-    ? adaptiveRecommendation.reason
+    ? conciseAdaptiveReason(adaptiveRecommendation.reason)
     : focusTopic
       ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
-    : "Pick one topic and solve the first problem you see.");
+    : "Pick one topic and solve the first problem you see."));
   const focusAction = adaptiveReady ? "practice" : focusActionKind(learningStyle);
   const focusButton = adaptiveReady
     ? `Open ${titleCase(adaptiveDifficulty)} step`
     : focusAction === "practice" ? "Open practice" : "Open topic lesson";
+  const showFocusActions = !(codingRecommendation && currentPlanStep);
+  const compactCards = useCompactHomeCards();
+  const [expandedMobileCards, setExpandedMobileCards] = useState({});
+  const toggleCard = (card) => {
+    setExpandedMobileCards(current => ({ ...current, [card]: !current[card] }));
+  };
+  const mobileToggle = (card) => compactCards ? (
+    <button
+      type="button"
+      className="campus-card-details-toggle"
+      aria-expanded={!!expandedMobileCards[card]}
+      onClick={() => toggleCard(card)}
+    >
+      {expandedMobileCards[card] ? "Hide details" : "Show details"}
+    </button>
+  ) : null;
   const focusClick = () => {
+    if (codingRecommendation && currentPlanStep) {
+      onOpenMiniPlanStep?.(currentPlanStep);
+      return;
+    }
+    if (codingRecommendation) {
+      onOpenRecommendation?.();
+      return;
+    }
     if (needsStartingCheck) {
       onOpenStartingPath?.({ action: "syntax-quiz" });
       return;
@@ -339,6 +490,7 @@ function CampusLearningQueue({
         <article className="campus-queue-item featured">
           <span>One Small Step</span>
           <strong>{todayPath[0]?.question?.title || "Start with one problem"}</strong>
+          {mobileToggle("featured")}
           <ol className="campus-path-list">
             {todayPath.map((step, index) => (
               <li key={`${step.kind}-${index}`}>
@@ -377,43 +529,52 @@ function CampusLearningQueue({
         <article className="campus-queue-item warmup">
           <span>5-10 Minutes</span>
           <strong>Before Class Warmup</strong>
+          {mobileToggle("warmup")}
           <p>Open a small set of beginner-friendly problems: conditionals, arrays, strings, math, tuples, sets, and maps.</p>
           <button type="button" onClick={onOpenBeginnerWarmup}>Start warmup</button>
         </article>
         <article className="campus-queue-item focus">
           <span>Recommended Next</span>
           <strong>{focusTitle}</strong>
+          {mobileToggle("focus")}
           <p>{focusBlurb}</p>
           {placementProfile ? (
             <small className="campus-focus-badge is-ready">{placementProfile.label}</small>
           ) : null}
-          {adaptiveRecommendation ? (
+          {codingRecommendation?.source ? (
+            <small className="campus-focus-badge is-ready">
+              {codingRecommendation.confidence === "high" ? "Recommended" : "Suggested"}
+            </small>
+          ) : adaptiveRecommendation ? (
             <small className={adaptiveReady ? "campus-focus-badge is-ready" : "campus-focus-badge"}>
-              {adaptiveReady ? "Ladder-ready" : "Review-only for now"}
+              {adaptiveReady ? "Ready" : "Review"}
             </small>
           ) : null}
-          {reviewSignal ? (
-            <div className="campus-review-signal">
-              <small>Review pattern</small>
-              <strong>{reviewSignal.title || "Review recent errors"}</strong>
-              <p>{reviewSignal.reason}</p>
+          {showFocusActions ? (
+            <div className="campus-focus-actions">
+              {reviewSignal && !codingRecommendation ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenLessonReview?.(reviewSignal)}
+                >
+                  Review recent errors
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="campus-review-signal-btn"
-                onClick={() => onOpenLessonReview?.(reviewSignal)}
+                onClick={focusClick}
               >
-                Open review lesson
+                {codingRecommendation?.actionLabel || (needsStartingCheck
+                  ? "Start Syntax quiz"
+                  : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"))}
               </button>
             </div>
           ) : null}
-          <button
-            type="button"
-            onClick={focusClick}
-          >
-            {needsStartingCheck
-              ? "Start Syntax quiz"
-              : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library")}
-          </button>
+          <MiniPlanList
+            items={codingRecommendation?.miniPlan || codingRecommendation?.mini_plan}
+            onOpenStep={codingRecommendation ? onOpenMiniPlanStep : null}
+          />
+          <WhyThisDetails recommendation={codingRecommendation} onDismiss={codingRecommendation ? onDismissRecommendation : null} />
         </article>
       </div>
     </section>
@@ -509,7 +670,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
           <span className="coding-kicker">Starting Point</span>
           <h3>Find your starting point</h3>
           <p>
-            Answer a few quick questions so Coding Tutor can recommend the calmest first lesson or practice set.
+            Answer a few questions so we can recommend your first lesson or practice set.
           </p>
         </div>
         <div className="starting-check-actions">
@@ -539,7 +700,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
           <div>
             <span className="coding-kicker">Before You Start</span>
             <h3 id="starting-check-title">Find your starting point</h3>
-            <p id="starting-check-description">Answer a few quick questions so Coding Tutor can unlock a calmer first path.</p>
+            <p id="starting-check-description">Answer a few questions so we can suggest where to start.</p>
           </div>
           <button
             type="button"
@@ -584,7 +745,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
           <div className="starting-check-footer">
             <span>
               {isLastQuestion && complete
-                ? "Ready to unlock your starting path."
+                ? "Starting check ready."
                 : `${answeredCount}/${questionSet.length} answered`}
             </span>
             <div>
@@ -625,10 +786,6 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep,
         <span className="coding-kicker">Ask the Tutor</span>
       </div>
       <div className="campus-action-list compact">
-        <button type="button" onClick={() => onPrompt("Can you generate a practice quiz for me on arrays, strings, and loops?", { quizPdf: true, title: "Practice quiz" })}>
-          <FaBook aria-hidden="true" />
-          <span>Generate a 5-question quiz</span>
-        </button>
         <button type="button" onClick={() => onPrompt("Help me pick what to practice next based on my progress. Keep it short and give me three clear steps.", { title: "Practice plan" })}>
           <FaRegCompass aria-hidden="true" />
           <span>Plan my next practice</span>
@@ -653,6 +810,7 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep,
 
 function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displayStreak, onPractice, onOpenScratch }) {
   const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
+  const unavailable = dailyChallenge?.available === false;
   const problemNumber = dailyChallenge?.frontend_id;
   const tags = Array.isArray(dailyChallenge?.tags) ? dailyChallenge.tags.filter(Boolean) : [];
   const focusSkills = tags.slice(0, 3);
@@ -682,7 +840,7 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
   }
 
   return (
-    <section className="campus-daily-mission" aria-label="LeetCode daily challenge">
+    <section className={`campus-daily-mission ${unavailable ? "is-unavailable" : ""}`} aria-label="LeetCode daily challenge">
       {/* Left column: identity + meta. */}
       <div className="daily-mission-main">
         <span className="coding-kicker">
@@ -692,26 +850,35 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
           {problemNumber ? `${problemNumber}. ` : ""}
           {dailyChallenge?.title || "Daily practice"}
         </h2>
-        {dailyChallenge?.available === false && <p>{dailyChallenge.message}</p>}
-        {isLeetCode && dailyChallenge?.available !== false && (
+        {unavailable && <p className="daily-mission-summary">{dailyChallenge.message}</p>}
+        {isLeetCode && !unavailable && (
           <p className="daily-mission-summary">
             Open the full prompt on LeetCode. Use CS Navigator when you want a scratchpad, notes, or tutor help.
           </p>
         )}
         <div className="daily-meta-row">
-          <span className={`daily-difficulty ${difficultyClass(dailyChallenge?.difficulty)}`}>{dailyChallenge?.difficulty || "Easy"}</span>
+          {!unavailable && (
+            <span className={`daily-difficulty ${difficultyClass(dailyChallenge?.difficulty)}`}>
+              {dailyChallenge?.difficulty || "Easy"}
+            </span>
+          )}
           {isLeetCode && <span className="daily-source-pill">LeetCode</span>}
-          {dailyDoneToday
-            ? <span className="daily-streak-pill done">Practiced today - {displayStreak}-day streak</span>
-            : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
+          {!isLeetCode && dailyDoneToday
+            ? <span className="daily-streak-pill done">CS Navigator streak - {displayStreak}-day</span>
+            : !isLeetCode && displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
         </div>
+        {isLeetCode && !unavailable && (
+          <p className="daily-handoff-note">
+            Full prompt and official judging stay on LeetCode. The scratchpad is for notes, experiments, and tutor help.
+          </p>
+        )}
       </div>
 
       {/* Right column: focus skills + the actions. (Tags now live ONLY here as
           "Focus skills" — the left-column "Good for practicing" list was the same
           data shown twice, so it was removed.) */}
       <aside className="daily-mission-aside">
-        {focusSkills.length > 0 && (
+        {focusSkills.length > 0 && !unavailable && (
           <dl className="daily-mission-facts">
             <div>
               <dt>Focus skills</dt>
@@ -721,9 +888,9 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
         )}
         <div className="daily-actions">
           <button type="button" className="daily-practice-btn" onClick={onPractice}>
-            {isLeetCode ? "Open on LeetCode" : "Practice Now"}
+            {unavailable ? "Open LeetCode problemset" : isLeetCode ? "Open on LeetCode" : "Practice Now"}
           </button>
-          {isLeetCode && (
+          {isLeetCode && !unavailable && (
             <button type="button" className="daily-practice-btn secondary" onClick={onOpenScratch}>
               Use CS Navigator scratchpad
             </button>
@@ -734,11 +901,6 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
             </a>
           )}
         </div>
-        {isLeetCode && (
-          <p className="daily-handoff-note">
-            Full prompt and official judging stay on LeetCode. The scratchpad is for notes, experiments, and tutor help.
-          </p>
-        )}
       </aside>
     </section>
   );
@@ -750,6 +912,7 @@ export default function CampusLabHome({
   progressByQuestion,
   nextUpQuestion,
   topicPacks,
+  listLoading = false,
   dailyChallenge,
   dailyChallengeLoading,
   dailyDoneToday,
@@ -770,41 +933,31 @@ export default function CampusLabHome({
   onSaveQuiz,
   mastery,
   adaptivePractice,
+  codingRecommendation,
+  startingCheckResult,
+  onCompleteStartingCheck,
+  onSkipStartingCheck,
+  onResetStartingCheck,
+  onOpenRecommendation,
+  onOpenMiniPlanStep,
+  onDismissRecommendation,
+  learnQuizStats,
   learningStyle = "try_then_hint",
 }) {
   const queueQuestions = questions || [];
   const resumeItem = findResumeItem(queueQuestions, progressByQuestion);
   const focus = pickFocusTopics(topicPacks);
-  const storageScope = currentUserStorageScope();
-  const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
-  const hasCodingHistory =
-    (Number(progressSummary?.solvedCount) || 0) > 0 ||
-    (Number(progressSummary?.attemptedCount) || 0) > 0 ||
-    Object.values(progressByQuestion || {}).some(progress =>
-      progress?.status === "solved" || (progress?.attempt_count || 0) > 0
-    );
+  const hasCodingHistory = hasMeaningfulAdaptiveSignal({
+    progressSummary,
+    progressByQuestion,
+    learnQuizStats,
+    startingCheck: startingCheckResult?.skipped ? null : startingCheckResult,
+  });
   const startingCheck = startingCheckResult?.skipped ? null : startingCheckResult;
-  const shouldShowStartingCheck = !hasCodingHistory && !startingCheckResult?.skipped;
-
-  useEffect(() => {
-    setStartingCheckResult(readStartingCheck());
-  }, [storageScope]);
-
-  const completeStartingCheck = (result) => {
-    writeStartingCheck(result);
-    setStartingCheckResult(result);
-  };
-
-  const skipStartingCheck = () => {
-    const result = { skipped: true, completedAt: new Date().toISOString() };
-    writeStartingCheck(result);
-    setStartingCheckResult(result);
-  };
-
-  const resetStartingCheck = () => {
-    clearStartingCheck();
-    setStartingCheckResult(null);
-  };
+  const shouldShowStartingCheck =
+    !listLoading &&
+    !hasCodingHistory &&
+    !startingCheckResult?.skipped;
 
   // One landing for everyone. The hero already handles the brand-new case
   // gracefully (0 streak / 0 solved, recommended starter, start-here focus copy),
@@ -818,6 +971,9 @@ export default function CampusLabHome({
         nextUpQuestion={nextUpQuestion}
         dailyChallenge={dailyChallenge}
         dailyDoneToday={dailyDoneToday}
+        codingRecommendation={codingRecommendation}
+        beginnerMode={Boolean(codingRecommendation?.beginnerMode)}
+        onOpenRecommendation={onOpenRecommendation}
         onResume={onSelectQuestion}
         onOpenLearnStart={onOpenLearnStart}
         onOpenBeginnerWarmup={onOpenBeginnerWarmup}
@@ -827,31 +983,18 @@ export default function CampusLabHome({
       {shouldShowStartingCheck ? (
         <StartingCheckCard
           result={startingCheck}
-          onComplete={completeStartingCheck}
-          onSkip={skipStartingCheck}
-          onReset={resetStartingCheck}
+          onComplete={onCompleteStartingCheck}
+          onSkip={onSkipStartingCheck}
+          onReset={onResetStartingCheck}
         />
-      ) : startingCheck ? (
+      ) : startingCheck && !hasCodingHistory ? (
         <StartingCheckCard
           result={startingCheck}
-          onComplete={completeStartingCheck}
-          onSkip={skipStartingCheck}
-          onReset={resetStartingCheck}
+          onComplete={onCompleteStartingCheck}
+          onSkip={onSkipStartingCheck}
+          onReset={onResetStartingCheck}
         />
       ) : null}
-
-      {/* The hero already shows streak / solved / % complete and the "Today's
-          focus" line, so the standalone progress/plan strips were redundant and
-          removed. Starting Point now comes before the LeetCode daily card so new
-          students get placed before they see outside challenge work. */}
-      <CampusDailyMission
-        dailyChallenge={dailyChallenge}
-        loading={dailyChallengeLoading}
-        dailyDoneToday={dailyDoneToday}
-        displayStreak={displayStreak}
-        onPractice={onStartDaily}
-        onOpenScratch={onOpenDailyScratch}
-      />
 
       <CampusLearningQueue
         questions={queueQuestions}
@@ -862,6 +1005,10 @@ export default function CampusLabHome({
         mastery={mastery}
         adaptivePractice={adaptivePractice}
         startingCheck={startingCheck}
+        codingRecommendation={codingRecommendation}
+        onOpenRecommendation={onOpenRecommendation}
+        onOpenMiniPlanStep={onOpenMiniPlanStep}
+        onDismissRecommendation={onDismissRecommendation}
         onSelect={onSelectQuestion}
         onOpenQuizBank={onOpenQuizBank}
         onOpenBeginnerWarmup={onOpenBeginnerWarmup}
@@ -869,6 +1016,18 @@ export default function CampusLabHome({
         onOpenLessonReview={onOpenLessonReview}
         onOpenStartingPath={onOpenStartingPath}
         learningStyle={learningStyle}
+        hasCodingHistory={hasCodingHistory}
+      />
+
+      {/* LeetCode is useful, but the adaptive path should come first for new
+          students. Keep the outside challenge as a tertiary Home action. */}
+      <CampusDailyMission
+        dailyChallenge={dailyChallenge}
+        loading={dailyChallengeLoading}
+        dailyDoneToday={dailyDoneToday}
+        displayStreak={displayStreak}
+        onPractice={onStartDaily}
+        onOpenScratch={onOpenDailyScratch}
       />
 
       <CampusTutorActions

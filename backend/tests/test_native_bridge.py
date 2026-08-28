@@ -666,6 +666,71 @@ CPP_SOLUTIONS = {
     for(size_t i=1;i<intervals.size();i++){ if(intervals[i][0] <= end) end=max(end, intervals[i][1]); else { total += end - start; start=intervals[i][0]; end=intervals[i][1]; } }
     return total + end - start;
 }""",
+    "allWordsWithPrefix": """bool allWordsWithPrefix(vector<string> words, string prefix){
+    if(words.empty()) return false;
+    for(auto& w: words) if(w.size()<prefix.size() || w.compare(0,prefix.size(),prefix)!=0) return false;
+    return true;
+}""",
+    "bestNonAdjacentTotal": """long long bestNonAdjacentTotal(vector<long long> points){
+    long long take=0, skip=0;
+    for(long long value: points){ long long nextTake=skip+value; skip=max(skip,take); take=nextTake; }
+    return max(take, skip);
+}""",
+    "blockedStairWays": """long long blockedStairWays(vector<long long> openSteps){
+    int n=openSteps.size(); if(n==0) return 0; vector<long long> dp(n,0);
+    for(int i=0;i<n;i++){ if(openSteps[i]==0) continue; dp[i]=(i==0?1:dp[i-1]) + (i==1?1:(i>=2?dp[i-2]:0)); }
+    return dp[n-1];
+}""",
+    "coinChangeWaysSmall": """long long coinChangeWaysSmall(vector<long long> coins, long long amount){
+    vector<long long> dp(amount+1,0); dp[0]=1;
+    for(long long coin: coins) for(long long total=coin; total<=amount; total++) dp[total]+=dp[total-coin];
+    return dp[amount];
+}""",
+    "firstWordWithPrefix": """string firstWordWithPrefix(vector<string> words, string prefix){
+    for(auto& word: words) if(word.size()>=prefix.size() && word.compare(0,prefix.size(),prefix)==0) return word;
+    return "none";
+}""",
+    "hasRepeatedGroupLink": """bool hasRepeatedGroupLink(long long n, vector<vector<long long>> pairs){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& pair: pairs){ long long a=find(pair[0]), b=find(pair[1]); if(a==b) return true; parent[a]=b; }
+    return false;
+}""",
+    "largestGroupAfterLinks": """long long largestGroupAfterLinks(long long n, vector<vector<long long>> pairs){
+    vector<long long> parent(n), size(n,1); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    long long best = n > 0 ? 1 : 0;
+    for(auto& pair: pairs){ long long a=find(pair[0]), b=find(pair[1]); if(a!=b){ parent[a]=b; size[b]+=size[a]; best=max(best,size[b]); } }
+    return best;
+}""",
+    "mainDiagonalValues": """vector<long long> mainDiagonalValues(vector<vector<long long>> matrix){
+    vector<long long> out; for(size_t i=0;i<matrix.size();i++) if(i<matrix[i].size()) out.push_back(matrix[i][i]); return out;
+}""",
+    "membersConnectedToZero": """vector<long long> membersConnectedToZero(long long n, vector<vector<long long>> pairs){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& pair: pairs) parent[find(pair[0])] = find(pair[1]);
+    vector<long long> out; long long root = find(0); for(long long i=0;i<n;i++) if(find(i)==root) out.push_back(i); return out;
+}""",
+    "neighborCount": """long long neighborCount(vector<vector<string>> edges, string node){
+    set<string> neighbors; for(auto& edge: edges){ if(edge[0]==node) neighbors.insert(edge[1]); if(edge[1]==node) neighbors.insert(edge[0]); }
+    return neighbors.size();
+}""",
+    "prefixSumAt": """long long prefixSumAt(vector<long long> nums, long long index){
+    long long total=0; for(long long i=0;i<=index && i<(long long)nums.size();i++) total += nums[i]; return total;
+}""",
+    "rangeSumOneQuery": """long long rangeSumOneQuery(vector<long long> nums, long long left, long long right){
+    vector<long long> prefix{0}; for(long long value: nums) prefix.push_back(prefix.back()+value);
+    return prefix[right+1] - prefix[left];
+}""",
+    "turnOffLowestBit": """long long turnOffLowestBit(long long n){
+    return n == 0 ? 0 : (n & (n - 1));
+}""",
+    "waysOneThreeSteps": """long long waysOneThreeSteps(long long n){
+    vector<long long> dp(n+1,0); dp[0]=1;
+    for(long long i=1;i<=n;i++){ dp[i]+=dp[i-1]; if(i>=3) dp[i]+=dp[i-3]; }
+    return dp[n];
+}""",
 }
 
 

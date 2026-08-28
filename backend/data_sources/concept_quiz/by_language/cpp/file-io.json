@@ -83,9 +83,9 @@
       "prompt": "A C++ program opens `courses.txt` and cannot find it. What path detail should the student check?",
       "choices": [
         "Relative paths are resolved from the program's current working directory.",
-        "Overwrite existing records when the task calls for appending.",
-        "Assume every file path starts in the source-code folder.",
-        "Read data before checking for an I/O failure."
+        "Relative paths are always resolved from the folder that contains the .cpp file.",
+        "The compiler moves input files beside the executable automatically.",
+        "ifstream searches every project folder until it finds a matching file."
       ],
       "answer_index": 0,
       "explanation": "A relative path is not automatically based on the source file's folder. It is resolved from the process working directory, which can differ between an IDE, terminal, test runner, and deployed program."
@@ -100,10 +100,10 @@
       "code": null,
       "prompt": "What should code check before reading from an input file stream?",
       "choices": [
-        "Ignore character encoding for shared text files.",
+        "Assume a missing file behaves like an empty file.",
         "Check that opening succeeded.",
-        "Leave closeable resources unmanaged.",
-        "Catch an IOException where no useful response is possible."
+        "Read one line first and only then check whether the stream opened.",
+        "Check only the filename extension, not the stream state."
       ],
       "answer_index": 1,
       "explanation": "Opening a stream can fail because the path is wrong, permissions block access, or the file is missing. Checking the stream before reading prevents the program from processing data that was never loaded."
@@ -118,8 +118,8 @@
       "code": null,
       "prompt": "When should parsed file data be trusted?",
       "choices": [
-        "Use one giant string for a large file.",
-        "Build paths with fragile string concatenation.",
+        "Before checking whether the file opened successfully.",
+        "After reaching end-of-file, even if the last read failed.",
         "Process data only after a successful read.",
         "Treat a missing file as an empty valid file every time."
       ],

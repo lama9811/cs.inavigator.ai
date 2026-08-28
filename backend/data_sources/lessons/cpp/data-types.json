@@ -113,7 +113,7 @@
     {
       "id": "math",
       "title": "Types affect calculations",
-      "summary": "Watch integer division and decimal division produce different results.",
+      "summary": "Compare integer division and decimal division results.",
       "blocks": [
         {
           "kind": "text",
@@ -217,7 +217,7 @@
             "Match type to meaning.",
             "Use long long when the starter or problem may use large whole numbers.",
             "Cast before **integer division**.",
-            "Watch narrowing conversions.",
+            "Check narrowing conversions.",
             "Use **string** for text."
           ]
         }

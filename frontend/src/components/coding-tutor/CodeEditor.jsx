@@ -30,7 +30,7 @@ function getActiveBlockGuide(lines, activeIndex) {
   const safeIndex = Math.min(Math.max(activeIndex, 0), lines.length - 1);
   const stack = [];
 
-  for (let index = 0; index <= safeIndex; index += 1) {
+  for (let index = 0; index < safeIndex; index += 1) {
     const line = lines[index] || "";
     if (!line.trim()) continue;
 
@@ -52,8 +52,21 @@ function getActiveBlockGuide(lines, activeIndex) {
     }
   }
 
+  const activeLineText = lines[safeIndex] || "";
+  const activeIndentLevel = getIndentLevel(activeLineText);
+  if (activeLineText.trim()) {
+    while (
+      stack.length > 0 &&
+      activeIndentLevel <= stack[stack.length - 1].ownerLevel
+    ) {
+      stack.pop();
+    }
+  }
+
   const owner = stack[stack.length - 1];
   if (!owner) return null;
+
+  if (activeLineText.trim() && activeIndentLevel < owner.bodyLevel) return null;
 
   const start = owner.ownerIndex + 1;
   let end = start - 1;
@@ -84,6 +97,7 @@ export default function CodeEditor({ code, onCodeChange, onCursorChange, onSelec
   const historyIndexRef = useRef(0);
   const pendingLocalCodeRef = useRef(null);
   const [activeLine, setActiveLine] = useState(1);
+  const [editorScroll, setEditorScroll] = useState({ top: 0, left: 0 });
 
   // Syntax-colored HTML for the overlay. Trailing newline keeps overlay height
   // in sync with the textarea so the last line never clips.
@@ -106,7 +120,7 @@ export default function CodeEditor({ code, onCodeChange, onCursorChange, onSelec
     return getActiveBlockGuide(editorLines, activeLine - 1);
   }, [activeLine, editorLines]);
 
-  // Keep the gutter and the highlight overlay scrolled in lockstep with the textarea.
+  // Keep the gutter and overlay math in lockstep with the textarea.
   const syncScroll = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -115,10 +129,10 @@ export default function CodeEditor({ code, onCodeChange, onCursorChange, onSelec
       highlightRef.current.scrollTop = ta.scrollTop;
       highlightRef.current.scrollLeft = ta.scrollLeft;
     }
-    if (guideRef.current) {
-      guideRef.current.scrollTop = ta.scrollTop;
-      guideRef.current.scrollLeft = ta.scrollLeft;
-    }
+    setEditorScroll((current) => {
+      if (current.top === ta.scrollTop && current.left === ta.scrollLeft) return current;
+      return { top: ta.scrollTop, left: ta.scrollLeft };
+    });
   }, []);
 
   // Report the caret line/column (for the status bar) and track the active line.
@@ -367,18 +381,25 @@ export default function CodeEditor({ code, onCodeChange, onCursorChange, onSelec
         ))}
       </div>
       <div className="code-editor-input-wrap">
-        {activeIndentGuide && (
-          <div ref={guideRef} className="code-editor-active-indent-layer" aria-hidden="true">
+        <div ref={guideRef} className="code-editor-active-indent-layer" aria-hidden="true">
+          <span
+            className="code-editor-active-line-layer"
+            style={{
+              "--active-line-top": `calc(var(--ed-pad-y) + ${(activeLine - 1) * EDITOR_LINE_HEIGHT_EM}em - ${editorScroll.top}px)`,
+            }}
+          />
+          {activeIndentGuide && (
             <span
               className="code-editor-active-indent-guide"
               style={{
                 "--guide-level": String(activeIndentGuide.level),
-                "--guide-top": `${activeIndentGuide.start * EDITOR_LINE_HEIGHT_EM}em`,
+                "--guide-top": `calc(var(--ed-pad-y) + ${activeIndentGuide.start * EDITOR_LINE_HEIGHT_EM}em - ${editorScroll.top}px)`,
+                "--guide-scroll-left": `${editorScroll.left}px`,
                 "--guide-height": `${activeIndentGuide.lines * EDITOR_LINE_HEIGHT_EM}em`,
               }}
             />
-          </div>
-        )}
+          )}
+        </div>
         {/* Colored layer behind the transparent textarea. Must share the same
             font metrics + padding as the textarea so the colors stay aligned. */}
         <pre

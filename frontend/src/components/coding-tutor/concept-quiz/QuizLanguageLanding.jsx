@@ -16,6 +16,8 @@ import {
   fetchQuizCategories,
   fetchQuizProgress,
   fetchQuizQuestions,
+  readCachedQuizCategories,
+  readCachedQuizQuestions,
 } from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
 import {
@@ -164,14 +166,18 @@ function CategoryQuestions({
   onLoaded,
   onOpenQuestion,
 }) {
+  const cachedQuestions = cached || readCachedQuizQuestions(apiBase, language, category.id)?.questions || null;
   const statusByQuestion = progress?.questions || {};
   const draftAnswers = readQuizDraftAnswers(language, category.id);
-  const [loading, setLoading] = useState(!cached);
+  const [loading, setLoading] = useState(!cachedQuestions);
   const [error, setError] = useState("");
-  const questions = cached || [];
+  const questions = cachedQuestions || [];
 
   useEffect(() => {
-    if (cached) return;
+    if (cachedQuestions) {
+      if (!cached) onLoaded(category.id, cachedQuestions);
+      return;
+    }
     let alive = true;
     setLoading(true);
     setError("");
@@ -341,22 +347,34 @@ export default function QuizLanguageLanding({
   onOpenQuestion,
   onOpenMistakeBank,
 }) {
-  const [categories, setCategories] = useState([]);
-  const [openId, setOpenId] = useState("");
+  const cachedCategoryData = readCachedQuizCategories(apiBase, language);
+  const cachedCategories = (cachedCategoryData?.categories || []).filter((category) => !category.lesson_only);
+  const [categories, setCategories] = useState(cachedCategories);
+  const [openId, setOpenId] = useState(cachedCategories.find((category) => category.count > 0)?.id || "");
   const [openTracks, setOpenTracks] = useState({
     ...CLOSED_TRACKS,
     beginner: true,
   });
   // Per-category question cache: { [categoryId]: question[] }.
   const [questionsByCat, setQuestionsByCat] = useState({});
-  const [loadingCats, setLoadingCats] = useState(true);
+  const [loadingCats, setLoadingCats] = useState(!cachedCategoryData);
   const [error, setError] = useState("");
   const [serverProgress, setServerProgress] = useState({ categories: [], mistakes: [] });
 
   // Load the available shared and language-specific categories.
   useEffect(() => {
     let alive = true;
-    setLoadingCats(true);
+    const cached = readCachedQuizCategories(apiBase, language);
+    if (cached) {
+      const cats = (cached.categories || []).filter((category) => !category.lesson_only);
+      setCategories(cats);
+      setOpenTracks({ ...CLOSED_TRACKS, beginner: true });
+      const firstReady = cats.find((c) => c.count > 0);
+      setOpenId(firstReady ? firstReady.id : "");
+      setLoadingCats(false);
+    } else {
+      setLoadingCats(true);
+    }
     setError("");
     setQuestionsByCat({});
     fetchQuizCategories(apiBase, language)

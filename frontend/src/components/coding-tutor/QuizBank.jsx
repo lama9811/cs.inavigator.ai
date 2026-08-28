@@ -3,9 +3,37 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FaFire, FaCheckCircle, FaPenFancy, FaChartLine, FaSearch, FaSlidersH } from "react-icons/fa";
 import QuizProblemCard from "./QuizProblemCard";
 import useFocusTrap from "./useFocusTrap";
+import { buildPracticeGuideRecommendation } from "./adaptiveRecommendation";
 
 function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
+}
+
+function conciseGuideReason(value = "") {
+  const text = String(value || "");
+  const marker = text.toLowerCase().indexOf("this topic is review-only for now");
+  const visible = marker >= 0 ? text.slice(0, marker) : text;
+  return visible
+    .replace(/\s*This topic is review-only for now:\s*[^.]+\.?\s*/i, " ")
+    .replace(new RegExp("\\bladder\\s+step\\b", "gi"), "problem")
+    .replace(new RegExp("\\blow-" + "pressure\\s+warmup\\b", "gi"), "short warmup")
+    .replace(new RegExp("\\bweak\\s+spot\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bshaky\\s+topic\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bcould\\s+use\\s+another\\s+pass\\b", "gi"), "should be reviewed next")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function firstSentence(value = "", fallback = "") {
+  const text = String(value || fallback || "").replace(/\s+/g, " ").trim();
+  if (!text) return "";
+  const match = text.match(/^.*?[.!?](?=\s|$)/);
+  return (match ? match[0] : text).trim();
+}
+
+function practiceGuideBand(value = "Review") {
+  const label = titleCase(value || "Review");
+  return label.toLowerCase().includes("review-only") ? "Review" : label;
 }
 
 // How many problem cards to show per routed library page.
@@ -47,6 +75,12 @@ const SORT_VALUES = new Set(SORT_OPTIONS.map(option => option.value));
 const DIFFICULTY_VALUES = new Set(DIFFICULTY_OPTIONS.map(option => option.value));
 const STATUS_VALUES = new Set(STATUS_OPTIONS.map(option => option.value));
 const BEGINNER_STARTER_TOPICS = ["conditionals", "arrays", "strings", "math", "tuples", "sets", "hash maps"];
+
+function hasScoredPracticeProgress(progress) {
+  const status = String(progress?.status || "").toLowerCase();
+  const attempts = Number(progress?.attempt_count || progress?.attempts || 0);
+  return status === "solved" || attempts > 0;
+}
 
 function splitParam(value, allowed = null) {
   return String(value || "")
@@ -157,6 +191,9 @@ export default function QuizBank({
   // loads, and `weakest` is null until some topic has enough attempts to score.
   mastery = null,
   adaptivePractice = null,
+  codingRecommendation = null,
+  onDismissRecommendation = null,
+  onOpenMiniPlanStep = null,
   onOpenLessonReview = null,
 }) {
   const location = useLocation();
@@ -305,6 +342,10 @@ export default function QuizBank({
         return list;
     }
   }, [matchedQuestions, sortBy, progressByQuestion]);
+
+  const selectFromFilteredSet = useCallback((question) => {
+    onSelectProblem?.(question, anyFilterActive ? filteredQuestions : null);
+  }, [anyFilterActive, filteredQuestions, onSelectProblem]);
 
   // Grouping rule: group by topic only in the default "Topic order" sort with no
   // search/topic filter. Any search, topic filter, or non-topic sort shows a
@@ -491,6 +532,15 @@ export default function QuizBank({
     const difficulty = String(question.difficulty || "").toLowerCase();
     return difficulty === "easy" && BEGINNER_STARTER_TOPICS.includes(topic);
   }).length;
+  const hasAnyPracticeProgress = useMemo(
+    () => Object.values(progressByQuestion || {}).some(hasScoredPracticeProgress),
+    [progressByQuestion],
+  );
+  const beginnerTopicInView = useMemo(
+    () => topicsInView.find(topic => BEGINNER_STARTER_TOPICS.includes(String(topic || "").toLowerCase())) || BEGINNER_STARTER_TOPICS[0],
+    [topicsInView],
+  );
+  const beginnerTopicTitle = titleCase(beginnerTopicInView);
   const applyBeginnerStarter = () => {
     updateFilter({
       difficulty: ["easy"],
@@ -501,13 +551,26 @@ export default function QuizBank({
     setFiltersOpen(false);
   };
 
-  const guideRecommendation = adaptiveReviewSignal
+  const fallbackGuideRecommendation = !hasAnyPracticeProgress
+    ? {
+      label: "Recommended next",
+      title: beginnerTopicTitle,
+      band: "Easy",
+      bandClass: "steady",
+      reason: `Start with ${beginnerTopicTitle}. These Easy problems use short rules before longer code.`,
+      cta: `Start ${beginnerTopicTitle}`,
+      onClick: () => {
+        updateFilter({ difficulty: ["easy"], topic: [beginnerTopicInView], status: [], sort: "topic" });
+        setFiltersOpen(false);
+      },
+    }
+    : adaptiveReviewSignal
     ? {
       label: "Recommended next",
       title: adaptiveReviewSignal.title || "Review recent errors",
-      band: titleCase(adaptiveReviewSignal.error_class || "Review"),
+      band: practiceGuideBand(adaptiveReviewSignal.error_class || "Review"),
       bandClass: "shaky",
-      reason: adaptiveReviewSignal.reason,
+      reason: conciseGuideReason(adaptiveReviewSignal.reason),
       cta: "Open review lesson",
       onClick: () => onOpenLessonReview?.(adaptiveReviewSignal),
     }
@@ -517,9 +580,9 @@ export default function QuizBank({
         title: titleCase(adaptiveRecommendation.topic),
         band: adaptiveReady ? titleCase(adaptiveRecommendation.difficulty) : "Review",
         bandClass: adaptiveReady ? "steady" : "shaky",
-        reason: adaptiveRecommendation.reason,
+        reason: conciseGuideReason(adaptiveRecommendation.reason),
         cta: adaptiveReady
-          ? `Open ${titleCase(adaptiveRecommendation.difficulty)} ladder step`
+          ? `Open ${titleCase(adaptiveRecommendation.difficulty)} problem`
           : `Review ${titleCase(adaptiveRecommendation.topic)}`,
         onClick: () => {
           updateFilter({
@@ -535,7 +598,7 @@ export default function QuizBank({
           title: titleCase(masteryWeakest.topic),
           band: Math.round(masteryWeakest.score),
           bandClass: masteryWeakest.band,
-          reason: masteryWeakest.reason,
+          reason: conciseGuideReason(masteryWeakest.reason),
           cta: `Practice ${titleCase(masteryWeakest.topic)}`,
           onClick: () => {
             updateFilter({ topic: [masteryWeakest.topic] });
@@ -560,10 +623,20 @@ export default function QuizBank({
             title: "Beginner starter set",
             band: "Easy",
             bandClass: "steady",
-            reason: "A short COSC 101/102-friendly set is ready when you want a low-pressure warmup.",
+            reason: "Start with a short COSC 101/102-friendly warmup.",
             cta: "Open beginner starter set",
             onClick: applyBeginnerStarter,
           };
+  const sharedGuideRecommendation = buildPracticeGuideRecommendation({
+    codingRecommendation,
+    topicsInView,
+    filteredQuestions,
+    progressByQuestion,
+    updateFilter,
+    onOpenLessonReview,
+    onOpenMiniPlanStep,
+  });
+  const guideRecommendation = sharedGuideRecommendation || fallbackGuideRecommendation;
 
   // Per-topic mastery scores, keyed for a quick lookup in the topic-progress list.
   const scoreByTopic = useMemo(() => {
@@ -806,7 +879,8 @@ export default function QuizBank({
                             question={question}
                             progress={progressByQuestion[question.id]}
                             recommended={question.id === recommendedId}
-                            onSelect={onSelectProblem}
+                            onSelect={selectFromFilteredSet}
+                            showTopic={false}
                           />
                         ))}
                       </div>
@@ -830,7 +904,7 @@ export default function QuizBank({
                     question={question}
                     progress={progressByQuestion[question.id]}
                     recommended={question.id === recommendedId}
-                    onSelect={onSelectProblem}
+                    onSelect={selectFromFilteredSet}
                   />
                 ))}
               </div>
@@ -900,6 +974,53 @@ export default function QuizBank({
                 >
                   {guideRecommendation.cta}
                 </button>
+                {Array.isArray(guideRecommendation.miniPlan) && guideRecommendation.miniPlan.length ? (
+                  <ol className="practice-guide-mini-plan" aria-label="Suggested plan">
+                    {guideRecommendation.miniPlan.slice(0, 5).map((item, index) => (
+                      <li
+                        key={item?.id || `${item?.label || "step"}-${index}`}
+                        className={`${item?.status ? `is-${item.status}` : "is-upcoming"}${item?.is_current ? " is-current" : ""}`}
+                      >
+                        <span>{item?.status === "completed" ? "✓" : index + 1}</span>
+                        <button
+                          type="button"
+                          disabled={!onOpenMiniPlanStep || item?.status === "completed"}
+                          onClick={() => onOpenMiniPlanStep?.(item, guideRecommendation.recommendation)}
+                        >
+                          {item?.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+                {guideRecommendation.explanation ? (
+                  <details className="practice-guide-why">
+                    <summary>Why this?</summary>
+                    {guideRecommendation.explanation.why_topic ? <p>{guideRecommendation.explanation.why_topic}</p> : null}
+                    {guideRecommendation.explanation.why_difficulty ? <p>{guideRecommendation.explanation.why_difficulty}</p> : null}
+                    {guideRecommendation.explanation.why_not_advanced ? <p>{guideRecommendation.explanation.why_not_advanced}</p> : null}
+                    {Array.isArray(guideRecommendation.explanation.evidence_used) && guideRecommendation.explanation.evidence_used.length ? (
+                      <ul>
+                        {guideRecommendation.explanation.evidence_used.map((item, index) => (
+                          <li key={`${item}-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {onDismissRecommendation ? (
+                      <button
+                        type="button"
+                        className="practice-guide-dismiss"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onDismissRecommendation?.();
+                        }}
+                      >
+                        Dismiss for now
+                      </button>
+                    ) : null}
+                  </details>
+                ) : null}
               </div>
             </section>
           )}
@@ -914,14 +1035,14 @@ export default function QuizBank({
                       <strong>{pattern.title || `${titleCase(pattern.topic)} pattern`}</strong>
                       <span>{pattern.count}x</span>
                     </div>
-                    <p>{pattern.summary}</p>
-                    <small>{pattern.next_step}</small>
+                    <p>{firstSentence(pattern.summary, `${titleCase(pattern.topic)} attempts are showing one repeated issue.`)}</p>
+                    <small>{firstSentence(pattern.next_step, "Run the smallest failing case first.")}</small>
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="practice-guide-unlocked-note">
-                Run a few tests and this will unlock patterns from your own attempts.
+                Run a few tests to see patterns from your own attempts.
               </p>
             )}
           </section>

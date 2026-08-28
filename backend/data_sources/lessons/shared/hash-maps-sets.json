@@ -55,7 +55,7 @@
           "kind": "visual",
           "title": "Check membership before adding",
           "concept": "hash-maps-sets",
-          "caption": "Watch a **set** answer \"have I seen this before?\" without counting every **value**.",
+          "caption": "Use a **set** to answer \"have I seen this before?\" without counting every **value**.",
           "initial_state": {
             "items": [
               4,
@@ -250,7 +250,7 @@
           "kind": "visual",
           "title": "Lookup before insert",
           "concept": "hash-maps-sets",
-          "caption": "Watch a **map** use a missing-**key** default before it updates a count.",
+          "caption": "Use a **map** default before updating a missing-**key** count.",
           "initial_state": {
             "items": [
               "b",
@@ -386,7 +386,7 @@
           "kind": "visual",
           "title": "Track counts with a map",
           "concept": "hash-maps-sets",
-          "caption": "Watch a frequency table change as **values** are read.",
+          "caption": "Update a frequency table as **values** are read.",
           "initial_state": {
             "items": [
               "cat",
@@ -573,7 +573,7 @@
           "kind": "visual",
           "title": "Lookup, default, update",
           "concept": "hash-map",
-          "caption": "Watch a key land in a bucket, then either reuse an entry or create one.",
+          "caption": "Place a key in a bucket, then reuse an entry or create one.",
           "initial_state": {},
           "steps": [
             {

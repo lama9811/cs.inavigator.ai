@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for heaps.",
+  "concept": "heaps",
+  "questions": [
+    {
+      "id": "advanced-heaps-root",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Heap root",
+      "code": "Max-heap array: [7, 5, 3, 2]\n\n      7\n     / \\\n    5   3\n   /\n  2",
+      "prompt": "A max-heap stores priorities 7, 5, 3, and 2. Which value must be at the root?",
+      "choices": [
+        "7",
+        "2",
+        "Any leaf value",
+        "The value added first"
+      ],
+      "answer_index": 0,
+      "explanation": "In a max-heap, the root is the largest priority because every parent is at least as large as its children.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-heaps-insert",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Insert bubble-up",
+      "code": "Before insert: [7, 5, 3]\nAppend 9 as newest leaf:\n[7, 5, 3, 9]\n\nparent of 9 = 5",
+      "prompt": "After inserting priority 9 into a max-heap whose root is 7, what has to happen?",
+      "choices": [
+        "9 compares with parents and can move upward",
+        "9 stays at the newest leaf forever",
+        "Every value must be sorted left to right",
+        "The heap becomes empty first"
+      ],
+      "answer_index": 0,
+      "explanation": "Insertion starts at a leaf, then swaps upward until the parent rule is true again.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-heaps-pop",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Remove priority",
+      "code": null,
+      "prompt": "Why does removing from a heap usually move the last item to the root first?",
+      "choices": [
+        "It fills the empty root before bubbling down",
+        "It sorts the whole array immediately",
+        "It deletes every child of the root",
+        "It avoids comparing priorities"
+      ],
+      "answer_index": 0,
+      "explanation": "The last array slot is cheap to remove. Moving it to the root restores the shape, then bubbling down restores priority order.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-heaps-shape",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Complete shape",
+      "code": null,
+      "prompt": "Which heap property keeps the array representation simple?",
+      "choices": [
+        "The tree is filled level by level",
+        "Every node has exactly two children",
+        "The values are stored alphabetically",
+        "The root has no children"
+      ],
+      "answer_index": 0,
+      "explanation": "A heap is a complete tree, so parent and child indexes can be calculated without node pointers.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-heaps-min",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Min-heap choice",
+      "code": null,
+      "prompt": "A scheduler needs the smallest wait time first. Which heap direction fits best?",
+      "choices": [
+        "Min-heap",
+        "Max-heap",
+        "Stack",
+        "Trie"
+      ],
+      "answer_index": 0,
+      "explanation": "A min-heap keeps the smallest priority at the root, so the next shortest wait is quick to remove.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-heaps-compare",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Parent check",
+      "code": null,
+      "prompt": "Parent priority is 4 and a new child priority is 8 in a max-heap. What should the insert step do?",
+      "choices": [
+        "Swap the child upward",
+        "Leave the child below 4",
+        "Delete the parent",
+        "Convert the heap to a queue"
+      ],
+      "answer_index": 0,
+      "explanation": "For a max-heap, a child with priority 8 breaks the parent rule under 4, so it must move upward.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-heaps-use",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "When heaps fit",
+      "code": null,
+      "prompt": "Which problem is a natural heap problem?",
+      "choices": [
+        "Repeatedly choose the highest-priority ticket",
+        "Check whether a word is a palindrome",
+        "Count characters in a short string",
+        "Reverse every item once"
+      ],
+      "answer_index": 0,
+      "explanation": "Heaps are strongest when the next highest or lowest priority must be retrieved many times.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-heaps-mistake",
+      "concept": "heaps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Heap mistake",
+      "code": null,
+      "prompt": "What is a common mistake when reading a heap stored in an array?",
+      "choices": [
+        "Assuming siblings are sorted with each other",
+        "Checking the root first",
+        "Comparing a child with its parent",
+        "Keeping the tree complete"
+      ],
+      "answer_index": 0,
+      "explanation": "A heap orders parents against children, but siblings do not have to be sorted left to right.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

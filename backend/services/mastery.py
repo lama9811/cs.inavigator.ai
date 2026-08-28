@@ -177,26 +177,54 @@ def _trend(sequence: list[str]) -> str:
 # as machine-assembled, which is exactly the thing we're fixing.
 _ERROR_COPY = {
     "syntax": {
-        "what": "didn't compile",
-        "reassure": "That's the language tripping you up, not your thinking",
-        "next": "Slow down on the syntax and the rest will follow.",
+        "what": "stopped before the tests could run",
+        "meaning": "This usually points to punctuation, indentation or braces, or a name the language cannot parse.",
+        "reassure": "That is the language tripping you up, not your thinking",
+        "next": "Open the first error line and fix only that syntax issue before changing the algorithm.",
     },
     "runtime": {
-        "what": "crashed partway through",
-        "reassure": "Your approach is running, so it's the edge cases biting",
-        "next": "Try an empty input and a single-element input before you submit.",
+        "what": "started running, then crashed",
+        "meaning": "This usually means one input reaches a value your code did not guard, such as an empty list, missing key, or out-of-range index.",
+        "reassure": "Your approach is running, so the next job is guarding the edge case that breaks it",
+        "next": "Run the smallest failing case and inspect the value on the crash line.",
     },
     "wrong_answer": {
-        "what": "ran fine but returned the wrong answer",
-        "reassure": "The code works, so this is the algorithm rather than your coding",
-        "next": "Trace one failing example by hand before changing anything.",
+        "what": "finished, but produced the wrong result",
+        "meaning": "This usually means the update rule or branch condition is close, but one case is being counted, skipped, or returned incorrectly.",
+        "reassure": "The code runs, so this is about the algorithm rule or state update rather than syntax",
+        "next": "Compare the first failing input's expected value with your actual value, then check the line that updates the result.",
     },
     "timeout": {
         "what": "timed out",
-        "reassure": "Your logic is right, it's just too slow",
-        "next": "Look for a nested loop you can trade for a hash map.",
+        "meaning": "This usually means the code repeats too much work as the input grows.",
+        "reassure": "The idea may be close, but the amount of repeated work is too high",
+        "next": "Look for a nested loop or repeated scan that can be replaced with saved state.",
     },
 }
+
+
+def _pattern_focus(topic: str, error_class: str) -> str:
+    normalized = (topic or "").strip().lower()
+    if error_class == "runtime":
+        if normalized in {"arrays", "lists", "strings"}:
+            return "Check empty input, one item, and the last index."
+        if normalized in {"hash maps", "sets", "dictionaries", "maps"}:
+            return "Check the case where the key is missing before reading it."
+        if normalized in {"linked lists", "trees", "graphs"}:
+            return "Check the null or missing-node case before following a link."
+    if error_class == "wrong_answer":
+        if normalized in {"conditionals", "loops"}:
+            return "Check which branch or loop pass changes the answer first."
+        if normalized in {"arrays", "lists", "strings"}:
+            return "Check whether the current item is skipped, counted twice, or returned too early."
+        if normalized in {"two pointers", "sliding window", "binary search"}:
+            return "Check when the pointer or boundary moves and when it should stop."
+    if error_class == "syntax":
+        if normalized in {"functions", "classes", "objects"}:
+            return "Check the function/class header and indentation or braces first."
+        if normalized in {"conditionals", "loops"}:
+            return "Check the condition line, colon/braces, and indentation first."
+    return ""
 
 
 def compute_topic_mastery(
@@ -560,12 +588,16 @@ def summarize_mistake_patterns(
         count = bucket["count"]
         question_count = len(bucket["question_ids"])
         what = copy.get("what", "didn't pass")
+        meaning = copy.get("meaning", "This points to a specific case that needs another look.")
+        focus = _pattern_focus(topic, error_class)
         next_step = copy.get("next", "Trace one small example before changing code.")
         summary = (
-            f"{count} recent {titleize(topic)} run{'s' if count != 1 else ''} {what}."
+            f"{count} recent {titleize(topic)} run{'s' if count != 1 else ''} {what}. {meaning}"
         )
         if question_count > 1:
-            summary += f" This showed up across {question_count} problems."
+            summary += f" It showed up across {question_count} problems."
+        if focus:
+            summary += f" {focus}"
         patterns.append({
             "topic": topic,
             "error_class": error_class,

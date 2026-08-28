@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Matrices",
+  "summary": "A **matrix** is a grid where row and column together choose one cell.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A **matrix** trace keeps row and column separate. Bounds checks protect edge moves, and visited state prevents repeated grid work.",
+  "refresher_code": "grid=[[1,2],[3,4]]",
+  "learn_cards": {
+    "advanced-matrix-coordinates": {
+      "title": "Coordinates",
+      "notice": "Trace grid=[[1,2],[3,4]] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "read-row-and-column",
+      "body": "A **matrix** trace keeps row and column separate. Bounds checks protect edge moves, and visited state prevents repeated grid work."
+    },
+    "advanced-matrix-neighbors": {
+      "title": "Neighbor check",
+      "notice": "Trace grid=[[1,2],[3,4]] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "move-through-neighbors",
+      "body": "A **matrix** trace keeps row and column separate. Bounds checks protect edge moves, and visited state prevents repeated grid work."
+    },
+    "advanced-matrix-bounds": {
+      "title": "Bounds guard",
+      "notice": "Trace grid=[[1,2],[3,4]] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "track-visited-cells",
+      "body": "A **matrix** trace keeps row and column separate. Bounds checks protect edge moves, and visited state prevents repeated grid work."
+    },
+    "advanced-matrix-visited": {
+      "title": "Visited state",
+      "notice": "Trace grid=[[1,2],[3,4]] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-matrices-appear",
+      "body": "A **matrix** trace keeps row and column separate. Bounds checks protect edge moves, and visited state prevents repeated grid work."
+    }
+  },
+  "sections": [
+    {
+      "id": "read-row-and-column",
+      "title": "Read row and column",
+      "summary": "A **matrix** is a grid where row and column together choose one cell. Use grid=[[1,2],[3,4]] because a two-by-two grid m",
+      "question_ids": [
+        "advanced-matrix-coordinates"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **matrix** is a grid where row and column together choose one cell. Use grid=[[1,2],[3,4]] because a two-by-two grid makes row and column swaps easy to spot."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace matrices state",
+          "concept": "matrix",
+          "caption": "Read grid=[[1,2],[3,4]] until row 1, col 0 gives 3.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "grid=[[1,2],[3,4]]",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "matrices: load sample",
+              "input_value": "grid=[[1,2],[3,4]]",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "grid=[[1,2],[3,4]]",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "matrices: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "grid=[[1,2],[3,4]]",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "matrices: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "grid=[[1,2],[3,4]]",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "matrices: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "grid=[[1,2],[3,4]]",
+                "active": "answer state",
+                "changed": "cell row 1 col 0 is 3",
+                "result": "cell row 1 col 0 is 3"
+              },
+              "code_focus": "matrices: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "cell row 1 col 0 is 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with cell row 1 col 0 is 3.",
+              "state": {
+                "sample": "grid=[[1,2],[3,4]]",
+                "active": "complete",
+                "result": "cell row 1 col 0 is 3",
+                "goal": "cell row 1 col 0 is 3"
+              },
+              "code_focus": "matrices: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "cell row 1 col 0 is 3"
+                }
+              ],
+              "decision": "The compact trace ends with cell row 1 col 0 is 3.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "cell row 1 col 0 is 3"
+                }
+              ],
+              "output": "cell row 1 col 0 is 3",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "move-through-neighbors",
+      "title": "Move through neighbors",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-matrix-neighbors"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Matrix loops look similar in each language, but bounds and coordinates do the teaching.",
+          "variants": {
+            "python": {
+              "code": "for row in range(len(grid)):\n    for col in range(len(grid[row])):\n        value = grid[row][col]",
+              "output": ""
+            },
+            "java": {
+              "code": "for (int row = 0; row < grid.length; row++) {\n    for (int col = 0; col < grid[row].length; col++) {\n        int value = grid[row][col];\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "for (let row = 0; row < grid.length; row++) {\n  for (let col = 0; col < grid[row].length; col++) {\n    const value = grid[row][col];\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "for (int row = 0; row < (int)grid.size(); row++) {\n    for (int col = 0; col < (int)grid[row].size(); col++) {\n        int value = grid[row][col];\n    }\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a matrix trace check first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Check row and column together. Treating one dimension as the other causes many grid bugs."
+        }
+      ]
+    },
+    {
+      "id": "track-visited-cells",
+      "title": "Track visited cells",
+      "summary": "A matrix trace should keep row and column visible together. Moving through a grid means changing one or both coordinates",
+      "question_ids": [
+        "advanced-matrix-bounds"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A matrix trace should keep row and column visible together. Moving through a grid means changing one or both coordinates deliberately."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Write row and column separately.",
+            "Check bounds before reading a neighbor.",
+            "Mark visited cells when paths can loop.",
+            "Use row count and column count independently."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-matrices-appear",
+      "title": "When matrices appear",
+      "summary": "Use matrix reasoning for grids, images, boards, seating charts, maps, or any prompt that moves through rows and columns.",
+      "question_ids": [
+        "advanced-matrix-visited"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use matrix reasoning for grids, images, boards, seating charts, maps, or any prompt that moves through rows and columns."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits matrices best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "Grid bugs are concrete. A two-by-two example shows whether row and column were swapped before the algorithm grows."
+        }
+      ]
+    },
+    {
+      "id": "common-matrix-mistakes",
+      "title": "Common matrix mistakes",
+      "summary": "Matrix code often uses the number of rows as the column limit. Rectangular grids expose that mistake quickly.",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "Matrix code often uses the number of rows as the column limit. Rectangular grids expose that mistake quickly."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace grid=[[1,2],[3,4]] and identify row 1, column 0."
+        }
+      ]
+    }
+  ]
+}

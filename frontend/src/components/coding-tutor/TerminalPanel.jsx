@@ -23,6 +23,36 @@ function normalizeDiffLines(value = "") {
   return String(value).replace(/\r\n/g, "\n").replace(/\s+$/g, "").split("\n");
 }
 
+function isPlaceholderReference(value = "") {
+  const text = String(value || "").toLowerCase();
+  return [
+    "use the prompt",
+    "prompt's hints",
+    "build a focused",
+    "prefer readable loops",
+    "prefer readable loops and helper",
+    "before optimizing",
+  ].some((phrase) => text.includes(phrase));
+}
+
+function isUsefulReferenceCode(value = "") {
+  const text = String(value || "").trim();
+  if (!text || isPlaceholderReference(text)) return false;
+  const codeSignals = [
+    /\bdef\s+\w+\s*\(/,
+    /\bclass\s+\w+/,
+    /\bfunction\s+\w*\s*\(/,
+    /\breturn\b/,
+    /\b(?:let|const|var)\s+\w+/,
+    /=>/,
+    /#include\s*</,
+    /\b(?:public|private|static)\b/,
+    /\b(?:for|while|if|else)\s*(?:\(|\b)/,
+    /[{};]/,
+  ];
+  return codeSignals.some((pattern) => pattern.test(text));
+}
+
 function buildLineDiff(studentCode = "", referenceCode = "") {
   const student = normalizeDiffLines(studentCode);
   const reference = normalizeDiffLines(referenceCode);
@@ -118,12 +148,6 @@ function buildSolutionInsights(studentCode = "", referenceCode = "", diffLines =
 function TerminalOutputPane({ output, tests, onExplainError }) {
   const capturedOutput = [output.stdout, output.stderr].filter(Boolean).join("\n");
   const hasRunResults = ["passed", "failed", "error"].includes(output.status) && tests.length > 0;
-  const returnOutput = hasRunResults
-    ? tests.map((test) => {
-        if (test.error) return test.error;
-        return formatValue(test.actual);
-      }).join("\n")
-    : "";
   // An actual crash/runtime/syntax error: status "error" or stderr present.
   const hasError = output.status === "error" || Boolean(output.stderr);
 
@@ -142,14 +166,13 @@ function TerminalOutputPane({ output, tests, onExplainError }) {
           <span className="terminal-output-kind">Program output</span>
           <pre>{capturedOutput}</pre>
         </>
-      ) : returnOutput ? (
-        <>
-          <span className="terminal-output-kind">Return value</span>
-          <pre>{returnOutput}</pre>
-        </>
+      ) : hasRunResults ? (
+        <div className="terminal-panel-empty">
+          No program output. The grader called your function for the tests below.
+        </div>
       ) : (
         <div className="terminal-panel-empty">
-          Terminal output is empty. Return values will appear here after a run, and print / console output will appear here when your code writes it.
+          No output yet.
         </div>
       )}
     </section>
@@ -204,10 +227,9 @@ function SolutionReview({ review }) {
   const [open, setOpen] = useState(false);
   if (!review?.studentCode || !review?.reference) return null;
 
-  const referenceLooksLikeCode = /\n|\b(def|class|function|return)\b|[{};]/.test(review.reference);
-  const diffLines = referenceLooksLikeCode
-    ? buildLineDiff(review.studentCode, review.reference)
-    : [];
+  if (!isUsefulReferenceCode(review.reference)) return null;
+
+  const diffLines = buildLineDiff(review.studentCode, review.reference);
   const insights = buildSolutionInsights(review.studentCode, review.reference, diffLines);
   return (
     <section className="terminal-solution-review">
@@ -267,9 +289,7 @@ function SolutionReview({ review }) {
             </div>
             <div>
               <span>Reference approach</span>
-              {referenceLooksLikeCode
-                ? <pre><code>{review.reference}</code></pre>
-                : <p className="terminal-reference-note">{review.reference}</p>}
+              <pre><code>{review.reference}</code></pre>
             </div>
           </div>
           {review.complexity ? (
@@ -347,7 +367,7 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestRevie
         </div>
       ) : (
         <div className="terminal-panel-empty">
-          Test cases will appear here after you run a local practice problem.
+          Run code to see tests.
         </div>
       )}
       {output.status === "passed" ? <SolutionReview review={solutionReview} /> : null}

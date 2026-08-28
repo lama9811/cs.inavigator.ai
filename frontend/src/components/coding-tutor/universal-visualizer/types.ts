@@ -45,7 +45,8 @@ export type NodeState =
   | "matched"
   | "queued"
   | "path"
-  | "inactive";
+  | "inactive"
+  | "skipped";
 
 export type EdgeType = "pointer" | "parent-child" | "graph-edge" | "branch";
 
@@ -110,6 +111,7 @@ export interface GeneratorContext {
   prompt?: string;
   exampleInput?: string;
   exampleOutput?: string;
+  examples?: Array<{ input?: string; output?: string }>;
   constraints?: string[];
   visualizer?: {
     concept?: string;

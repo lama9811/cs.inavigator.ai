@@ -7,7 +7,7 @@
     "wrong_answer",
     "syntax"
   ],
-  "refresher": "**Operators** are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as **integers** and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those **booleans**. Assignment is `=`. Comparison is `==`. They are different operators.",
+  "refresher": "**Operators** are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to check: if both sides are `int`, Java divides as **integers** and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those **booleans**. Assignment is `=`. Comparison is `==`. They are different operators.",
   "refresher_code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\n// 3\n\nSystem.out.println(total / 2.0);\n// 3.5",
   "learn_cards": {
     "operators-lesson-check-1": {
@@ -145,7 +145,7 @@
       "blocks": [
         {
           "kind": "code",
-          "caption": "Java gives you shortcuts for updating a **variable** from its own current **value**. `score += 3` is short for `score = score + 3`, and `score++` adds exactly 1. Each line changes the variable in place, so the prints let you watch it move: 5 becomes 8, then 9, then back down to 5.",
+          "caption": "Java gives you shortcuts for updating a **variable** from its own current **value**. `score += 3` is short for `score = score + 3`, and `score++` adds exactly 1. Each line changes the variable in place, so the prints show it move: 5 becomes 8, then 9, then back down to 5.",
           "code": "int score = 5;\n\nscore += 3;\nSystem.out.println(score);\n\nscore++;\nSystem.out.println(score);\n\nscore -= 4;\nSystem.out.println(score);",
           "output": "8\n9\n5"
         },
@@ -237,7 +237,7 @@
             "6"
           ],
           "answer_index": 0,
-          "why": "Take it one line at a time. `x` starts at 10, and `x += 5` makes it 15. Then `15 / 3` is an int divided by an int, and this one happens to come out even, so the answer is 5 and no fraction is lost. It prints as `5` rather than `5.0` because int division produces an `int`, and Java prints an int with no decimal point. If you picked 5.0, you were watching for the truncation trap, which is the right instinct aimed at the wrong line. The trap costs you nothing here, because 15 divides by 3 exactly."
+          "why": "Take it one line at a time. `x` starts at 10, and `x += 5` makes it 15. Then `15 / 3` is an int divided by an int, and this one happens to come out even, so the answer is 5 and no fraction is lost. It prints as `5` rather than `5.0` because int division produces an `int`, and Java prints an int with no decimal point. If you picked 5.0, you were checking for the truncation trap, which is the right instinct aimed at the wrong line. The trap costs you nothing here, because 15 divides by 3 exactly."
         },
         {
           "kind": "list",

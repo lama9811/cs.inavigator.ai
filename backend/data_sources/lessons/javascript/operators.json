@@ -96,7 +96,7 @@
     {
       "id": "arithmetic-operators",
       "title": "Mathematical operators",
-      "summary": "Calculate values and watch how JavaScript treats numbers and strings.",
+      "summary": "Calculate values and compare how JavaScript treats numbers and strings.",
       "blocks": [
         {
           "kind": "text",
@@ -170,7 +170,7 @@
         {
           "kind": "callout",
           "tone": "mistake",
-          "title": "Watch this detail",
+          "title": "Check this detail",
           "body": "Loose equality may convert an operand first, so `5 == \"5\"` is true while `5 === \"5\"` is false."
         },
         {

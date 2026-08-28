@@ -48,6 +48,27 @@ def test_recommendation_blocks_thin_topic_from_ladder():
     assert "review-only" in recommendation["reason"]
 
 
+def test_recommendation_without_scored_signal_prefers_beginner_starter_topic():
+    questions = [
+        {"id": "window-a", "title": "Window A", "topic": "sliding window", "difficulty": "easy"},
+        {"id": "cond-a", "title": "Condition A", "topic": "conditionals", "difficulty": "easy"},
+        {"id": "array-a", "title": "Array A", "topic": "arrays", "difficulty": "easy"},
+    ]
+    readiness = adaptive_practice.build_topic_readiness(questions, _answers(["window-a", "cond-a", "array-a"]))
+    recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=questions,
+        readiness=readiness,
+        progress_items=[{"question_id": "cond-a", "status": "in_progress", "attempt_count": 0}],
+        attempt_events=[],
+        mastery_payload={"weakest": None},
+        language="python",
+    )
+
+    assert recommendation["action"] == "on_ramp"
+    assert recommendation["topic"] == "conditionals"
+    assert recommendation["question_id"] == "cond-a"
+
+
 def test_ladder_moves_up_after_low_hint_easy_solve():
     questions = _questions()
     readiness = adaptive_practice.build_topic_readiness(questions, _answers(["easy-a", "easy-b", "medium-a", "medium-b", "hard-a"]))
@@ -108,7 +129,7 @@ def test_ladder_drops_after_repeated_medium_failures():
 
     assert recommendation["action"] == "ladder"
     assert recommendation["difficulty"] == "easy"
-    assert "steps back to easy" in recommendation["reason"]
+    assert "try an easy problem next" in recommendation["reason"]
 
 
 def test_error_review_signal_routes_repeated_syntax_errors_to_syntax_lesson():

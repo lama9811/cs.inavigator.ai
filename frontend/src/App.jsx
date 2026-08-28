@@ -28,10 +28,13 @@ import "./index.css";
 
 import { getApiBase } from "./lib/apiBase";
 import { generateChatTitle, shouldAutoRenameSession } from "./lib/chatTitles";
+import { startChatHistoryNavigationLock } from "./lib/chatHistoryNavigation";
 import { ENABLE_LEGACY_ADVISING_FORM } from "./config/features";
 const API_BASE = getApiBase();
 const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
 const REGULAR_CHAT_RESET_KEY = "csnav_opening_regular_chat";
+const CODING_PRACTICE_ROUTES_BASE_KEY = "csnav.lastPracticeRoutes";
+const CODING_TRANSIENT_QUIZ_PREFIXES = ["cq_answers", "cq_last_result", "cq_choice_seed"];
 
 function makeBlankSession(id) {
   return { id, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" };
@@ -78,15 +81,37 @@ function isTokenExpired(token) {
   return Date.now() >= (exp * 1000) - 30_000;
 }
 
+function storageScopeForToken(token) {
+  const payload = parseJwt(token);
+  const id = payload.user_id || payload.sub || payload.email;
+  return id ? `user:${String(id).toLowerCase()}` : "anonymous";
+}
+
+function clearCodingTutorResumeStorage(token) {
+  const scope = storageScopeForToken(token);
+  localStorage.removeItem("concept_quiz_last_path");
+  localStorage.removeItem(`${CODING_PRACTICE_ROUTES_BASE_KEY}:${scope}`);
+  try {
+    CODING_TRANSIENT_QUIZ_PREFIXES.forEach((prefix) => {
+      const scopedPrefix = `${prefix}:`;
+      const scopedSuffix = `:${scope}`;
+      Object.keys(sessionStorage)
+        .filter((key) => key.startsWith(scopedPrefix) && key.endsWith(scopedSuffix))
+        .forEach((key) => sessionStorage.removeItem(key));
+    });
+  } catch {
+    // Storage access can be blocked; stale quiz resume state is non-critical.
+  }
+}
+
 // Clear all auth/session state from storage. Shared by manual logout and the
 // automatic session-expiry paths so they never drift.
 function clearAuthStorage() {
+  const token = localStorage.getItem("token");
+  clearCodingTutorResumeStorage(token);
   localStorage.removeItem("token");
   localStorage.removeItem("chat_sessions");
   localStorage.removeItem(ACTIVE_CHAT_SESSION_KEY);
-  // Reset the remembered Concept Quiz location on logout so the next sign-in
-  // doesn't jump back into the previous user's quiz spot.
-  localStorage.removeItem("concept_quiz_last_path");
 }
 
 // Module-level guard so the expiry toast fires once even if several RequireAuth
@@ -381,6 +406,7 @@ export default function App() {
 
   // Always the fresh blank session created above — the app opens on the welcome screen.
   const [activeId, setActiveId] = useState(() => sessions[0]?.id || "");
+  const activeSelectionRef = useRef(activeId);
   const [pendingChatAction, setPendingChatAction] = useState(null);
   
   useEffect(() => {
@@ -389,6 +415,7 @@ export default function App() {
 
   useEffect(() => {
     if (activeId) {
+      activeSelectionRef.current = activeId;
       localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, activeId);
     }
   }, [activeId]);
@@ -464,9 +491,11 @@ export default function App() {
               // Always land on a fresh blank "New Chat" (welcome screen); keep the
               // full server-side history in the sidebar. Never auto-resume a prior
               // conversation on app open — the user opens a new chat every time.
+              const selectedId = activeSelectionRef.current;
+              const shouldPreserveSelection = dbSessions.some((session) => session.id === selectedId);
               const freshId = Date.now().toString();
               setSessions([makeBlankSession(freshId), ...dbSessions]);
-              setActiveId(freshId);
+              setActiveId(shouldPreserveSelection ? selectedId : freshId);
           } else {
               // New account or no history - just the fresh blank session.
               const freshId = Date.now().toString();
@@ -502,6 +531,7 @@ export default function App() {
       mode,
     };
     setSessions((prev) => [...prev, newChat]); // Append to end
+    activeSelectionRef.current = id;
     setActiveId(id);
     if (config.pendingAction) {
       setPendingChatAction({
@@ -511,16 +541,27 @@ export default function App() {
         mode,
       });
     }
+    if (config.navigate === false) return id;
     if (config.replace) navigate(targetRoute, { replace: true });
     else navigate(targetRoute);
     return id;
   };
 
   const handleSelect = (id) => {
-    setActiveId(id);
+    activeSelectionRef.current = id;
     localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, id);
     const selected = sessions.find((s) => s.id === id);
-    navigate(selected?.mode === "coding_tutor" || String(id).startsWith("coding-") ? "/chat/coding" : "/chat");
+    const targetRoute =
+      selected?.mode === "coding_tutor" || String(id).startsWith("coding-")
+        ? "/chat/coding"
+        : "/chat";
+
+    // Sidebar history owns this navigation. Workspace restore/bootstrap effects
+    // check this short lock so they cannot pull the route back while the chat
+    // history view is opening.
+    startChatHistoryNavigationLock(targetRoute);
+    setActiveId(id);
+    navigate(targetRoute);
   };
 
   // Header/brand click: start a fresh regular chat so the student lands on the
@@ -549,9 +590,9 @@ export default function App() {
   };
   
   // 🔥 FIXED: Prevent infinite re-renders by checking if messages actually changed
-  const handleUpdateSession = (msgs) => {
+  const handleUpdateSession = (msgs, sessionId = activeId) => {
     setSessions((prev) => {
-      const currentSession = prev.find((s) => s.id === activeId);
+      const currentSession = prev.find((s) => s.id === sessionId);
 
       // Only update if messages actually changed
       if (currentSession && JSON.stringify(currentSession.messages) === JSON.stringify(msgs)) {
@@ -567,7 +608,7 @@ export default function App() {
       const isNewMessage = msgs.length > prevCount;
 
       return prev.map((s) =>
-        s.id === activeId
+        s.id === sessionId
           ? {
               ...s,
               messages: msgs,

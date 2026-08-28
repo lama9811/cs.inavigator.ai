@@ -25,10 +25,15 @@ from coding_runner import (
     get_cached_practice_run,
     run_cpp_freeform,
     run_cpp_practice_tests,
+    run_cpp_practice_trace,
     run_java_freeform,
     run_java_practice_tests,
+    run_java_practice_trace,
     run_javascript_freeform,
     run_javascript_practice_tests,
+    run_javascript_freeform_trace,
+    run_javascript_practice_trace,
+    run_python_freeform_trace,
     run_python_freeform,
     run_python_practice_tests,
     run_python_practice_trace,
@@ -150,7 +155,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, ScheduleRefreshRun, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingLearningEvent, CodingWorkspaceState, CodingLearnProgress, CodingStartingCheckProgress, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, ScheduleRefreshRun, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -798,7 +803,9 @@ CODING TUTOR MODE:
 - Java graded practice usually runs from Solution.java and calls class Solution. Do not rename it to another public class or add a main method for a replacement answer.
 - C++ graded practice calls a top-level native function directly. Do not wrap C++ answers in class Solution, and do not add a main function for a replacement answer.
 - Python and JavaScript graded practice should keep the required function name instead of replacing the answer with only print statements or an unrelated script.
-- For debug requests: answer in small chunks. Give the first likely issue, why it matters, and one quick check/test before moving on.
+- For debug requests: inspect the current code and runner output as a debugging pass. Start with what failed (syntax error, runtime error, failed test, timeout, or wrong answer), then name the exact suspicious line(s) or logic step(s), explain why each one breaks the expected behavior, and give the smallest next check or edit. If several issues are visible, mention them in priority order instead of stopping at one. Do not just restate the problem prompt.
+- If the request includes structured workspace debug context, use it before any broad text summary. Prefer the first failing test's expected/actual values for wrong answers, and prefer the latest trace exception/current line for runtime errors.
+- For Java and C++ practice, preserve the runner contract in the context. Do not suggest adding a `main` method or changing the required function/class shape unless the student is working in scratch/free-run code.
 - For hint requests: give hints progressively and avoid dumping a full final solution unless the student explicitly asks after attempting.
 - If a student asks for a full solution without showing work, politely refuse that part and offer a plan, hints, tests, or the next small step.
 - When code is pasted or uploaded, identify the likely intent, explain what is happening, point to the suspicious lines/logic, and suggest how the student can verify the fix.
@@ -817,7 +824,7 @@ def build_coding_tutor_query(user_query: str) -> str:
 
 RESPONSE PRIORITY:
 - If this request is asking to rewrite, convert, translate, refactor, or generate code, respond like a coding assistant: code block first, concise notes second.
-- If this request is asking for debugging, keep the response short and step-by-step.
+- If this request is asking for debugging, keep the response short and step-by-step, but diagnose the current code and latest runner output rather than paraphrasing the assignment.
 - If this request is asking for hints, guide without giving the entire answer immediately.
 
 STUDENT CODING REQUEST:
@@ -833,7 +840,8 @@ def _coding_tutor_query_has_workspace_code(query: str) -> bool:
         and "```" in query
     )
 
-_leetcode_daily_cache = {"date": None, "data": None}
+_leetcode_daily_cache = {"date": None, "data": None, "fetched_at": 0.0}
+LEETCODE_FAILURE_CACHE_SECONDS = 10 * 60
 _practice_cache: dict[str, dict[str, Any]] = {}
 QUIZ_DIR = os.path.join(BACKEND_DIR, "data_sources", "quiz")
 QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
@@ -1017,8 +1025,70 @@ class CodingWorkspaceStateUpdate(BaseModel):
             raise ValueError("source must be practice or interview")
         return normalized
 
+VALID_LEARN_PROGRESS_STATUSES = {"opened", "completed"}
+
+class CodingLearnProgressUpdate(BaseModel):
+    language: str = "python"
+    category: str
+    status: str = "completed"
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        normalized = (value or "completed").strip().lower()
+        if normalized not in VALID_LEARN_PROGRESS_STATUSES:
+            raise ValueError("status must be opened or completed")
+        return normalized
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise ValueError("category is required")
+        return normalized[:80]
+
+VALID_STARTING_CHECK_STATUSES = {"completed", "skipped"}
+
+class CodingStartingCheckProgressUpdate(BaseModel):
+    language: str = "python"
+    status: str = "completed"
+    result_level: Optional[str] = None
+    recommendation: Optional[dict[str, Any]] = None
+    answers: Optional[dict[str, Any]] = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        normalized = (value or "completed").strip().lower()
+        if normalized not in VALID_STARTING_CHECK_STATUSES:
+            raise ValueError("status must be completed or skipped")
+        return normalized
+
+class CodingLearningEventCreate(BaseModel):
+    event_type: str
+    language: str = "python"
+    surface: Optional[str] = None
+    category: Optional[str] = None
+    topic: Optional[str] = None
+    question_id: Optional[str] = None
+    source: Optional[str] = None
+    difficulty: Optional[str] = None
+    outcome: Optional[str] = None
+    error_class: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    @field_validator("event_type")
+    @classmethod
+    def validate_event_type(cls, value):
+        normalized = (value or "").strip().lower()
+        if normalized not in learning_events.FRONTEND_EVENT_TYPES:
+            allowed = ", ".join(sorted(learning_events.FRONTEND_EVENT_TYPES))
+            raise ValueError(f"event_type must be one of: {allowed}")
+        return normalized
+
 class PracticeRunRequest(BaseModel):
-    question_id: str
+    question_id: Optional[str] = None
     language: str = "python"
     code: str
     trace_test_index: int = 0
@@ -4891,12 +4961,12 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
 
     # Verified video resources (curated + YouTube Data API) for explicit video asks.
     if is_video_request(original_q):
-        resolved_topic = resolve_video_topic(original_q, history_dicts)
-        topic_is_vague = _topic_is_pronoun_only(clean_video_topic_label(original_q, fallback=""))
-        if is_coding_tutor and topic_is_vague:
-            video_query = build_video_search_query(original_q, user_q, is_coding_tutor)
-        else:
-            video_query = resolved_topic
+        resolved_topic, video_query = resolve_video_request_topic_and_query(
+            original_q,
+            user_q,
+            history_dicts,
+            is_coding_tutor,
+        )
         verified_videos = await asyncio.to_thread(find_verified_videos, video_query, None, 3)
         video_block = build_video_context(verified_videos)
         # "explain X and give me a video" -> inject links and let the AI explain.
@@ -5145,15 +5215,12 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     if is_video_request(original_q):
         # Resolve pronoun follow-ups ("show me a video about it") to the real topic
         # from the previous turn so we never search/label on "it".
-        resolved_topic = resolve_video_topic(original_q, history_dicts)
-        # When the student named a clear topic in their message, search on that.
-        # Only fall back to Coding Tutor workspace context if the message itself
-        # had no real topic (e.g. "show me a video on this problem").
-        topic_is_vague = _topic_is_pronoun_only(clean_video_topic_label(original_q, fallback=""))
-        if is_coding_tutor and topic_is_vague:
-            video_query = build_video_search_query(original_q, user_q, is_coding_tutor)
-        else:
-            video_query = resolved_topic
+        resolved_topic, video_query = resolve_video_request_topic_and_query(
+            original_q,
+            user_q,
+            history_dicts,
+            is_coding_tutor,
+        )
         verified_videos = await asyncio.to_thread(find_verified_videos, video_query, None, 3)
         print(
             f"[VIDEO] request detected | key_loaded={youtube_api_available()} "
@@ -5656,15 +5723,24 @@ async def text_to_speech(req: TTSRequest, _user=Depends(get_current_user)):
 async def get_daily_coding_challenge():
     """Return safe metadata for LeetCode's daily challenge without copying the full prompt."""
     today = datetime.now(timezone.utc).date().isoformat()
-    if _leetcode_daily_cache.get("date") == today and _leetcode_daily_cache.get("data"):
-        return _leetcode_daily_cache["data"]
+    cached = _leetcode_daily_cache.get("data")
+    if _leetcode_daily_cache.get("date") == today and cached:
+        # Successful LeetCode metadata is stable for the day. Failed fetches are
+        # cached briefly only, so a temporary cloud/IP block does not poison the
+        # deployed card until tomorrow.
+        if cached.get("available") is not False:
+            return cached
+        if time.time() - float(_leetcode_daily_cache.get("fetched_at") or 0) < LEETCODE_FAILURE_CACHE_SECONDS:
+            return cached
 
     fallback = {
         "available": False,
         "source": "LeetCode",
         "date": today,
-        "message": "Daily challenge metadata is unavailable right now. You can still practice by asking Coding Tutor for a debugging or algorithm exercise.",
+        "title": "LeetCode daily unavailable",
+        "message": "LeetCode metadata is unavailable right now. Open LeetCode directly for today's problem.",
         "url": "https://leetcode.com/problemset/",
+        "cache_ttl_seconds": LEETCODE_FAILURE_CACHE_SECONDS,
     }
 
     graphql_query = """
@@ -5719,11 +5795,13 @@ async def get_daily_coding_challenge():
         }
         _leetcode_daily_cache["date"] = today
         _leetcode_daily_cache["data"] = data
+        _leetcode_daily_cache["fetched_at"] = time.time()
         return data
     except Exception as e:
         print(f"[WARN] LeetCode daily challenge unavailable: {e}")
         _leetcode_daily_cache["date"] = today
         _leetcode_daily_cache["data"] = fallback
+        _leetcode_daily_cache["fetched_at"] = time.time()
         return fallback
 
 def _read_quiz_json(path: str) -> Any:
@@ -5833,7 +5911,9 @@ def build_video_search_query(display_query: str, full_query: str, is_coding_tuto
 # Words that carry no topic on their own. If a video request reduces to only
 # these ("a video about it", "show me this"), the real subject is in the prior turn.
 _PRONOUN_TOPIC_RE = re.compile(
-    r"^(?:it|this|that|them|those|these|one|ones|the topic|the subject|the same|same)$",
+    r"^(?:it|this|that|them|those|these|one|ones|the topic|the subject|the concept|"
+    r"the idea|the same|same|topic|subject|concept|concepts|idea|ideas|thing|"
+    r"explaining concepts?)$",
     re.IGNORECASE,
 )
 
@@ -5842,6 +5922,46 @@ def _topic_is_pronoun_only(topic: str) -> bool:
     """True when the extracted topic is just a pronoun/filler with no real subject."""
     cleaned = re.sub(r"\s+", " ", (topic or "")).strip(" ?!.:").lower()
     return not cleaned or bool(_PRONOUN_TOPIC_RE.match(cleaned))
+
+
+_CS_TOPIC_ALIASES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bhash\s*maps?\b|\bhashmaps?\b", re.IGNORECASE), "hash maps"),
+    (re.compile(r"\btime\s+complexity\b|\bbig\s*o\b", re.IGNORECASE), "time complexity"),
+    (re.compile(r"\bspace\s+complexity\b", re.IGNORECASE), "space complexity"),
+    (re.compile(r"\bdynamic\s+programming\b", re.IGNORECASE), "dynamic programming"),
+    (re.compile(r"\bbinary\s+search\b", re.IGNORECASE), "binary search"),
+    (re.compile(r"\bsliding\s+window\b", re.IGNORECASE), "sliding window"),
+    (re.compile(r"\btwo\s+pointers?\b", re.IGNORECASE), "two pointers"),
+    (re.compile(r"\brecursion\b", re.IGNORECASE), "recursion"),
+    (re.compile(r"\bstacks?\b", re.IGNORECASE), "stacks"),
+    (re.compile(r"\bqueues?\b", re.IGNORECASE), "queues"),
+    (re.compile(r"\bsets?\b", re.IGNORECASE), "sets"),
+    (re.compile(r"\barrays?\b|\blists?\b", re.IGNORECASE), "arrays and lists"),
+    (re.compile(r"\bstrings?\b", re.IGNORECASE), "strings"),
+    (re.compile(r"\btuples?\b", re.IGNORECASE), "tuples"),
+    (re.compile(r"\btrees?\b", re.IGNORECASE), "trees"),
+    (re.compile(r"\bgraphs?\b", re.IGNORECASE), "graphs"),
+]
+
+
+def _extract_coding_student_message(text: str) -> str:
+    """Return the visible student request from a wrapped Coding Tutor prompt."""
+    body = str(text or "")
+    marker = "Student message:"
+    if "Current coding workspace context:" in body and marker in body:
+        return body.rsplit(marker, 1)[-1].strip()
+    if "STUDENT CODING REQUEST:" in body:
+        return body.rsplit("STUDENT CODING REQUEST:", 1)[-1].strip()
+    return body.strip()
+
+
+def _canonical_coding_topic(text: str) -> str:
+    """Normalize common CS topic spellings so video search hits curated tags."""
+    visible = _extract_coding_student_message(text)
+    for pattern, label in _CS_TOPIC_ALIASES:
+        if pattern.search(visible):
+            return label
+    return ""
 
 
 def _topic_from_history(history: list[dict[str, Any]] | None) -> str:
@@ -5853,6 +5973,9 @@ def _topic_from_history(history: list[dict[str, Any]] | None) -> str:
         prev_q = (turn.get("user_query") or "").strip()
         if not prev_q or is_video_request(prev_q):
             continue  # skip empty turns and prior video asks
+        canonical = _canonical_coding_topic(prev_q)
+        if canonical:
+            return canonical
         topic = clean_video_topic_label(prev_q, fallback="")
         if topic and not _topic_is_pronoun_only(topic):
             return topic
@@ -5867,7 +5990,39 @@ def resolve_video_topic(display_query: str, history: list[dict[str, Any]] | None
         prior = _topic_from_history(history)
         if prior:
             return prior
-    return topic or display_query
+    return topic or ""
+
+
+def resolve_video_request_topic_and_query(
+    display_query: str,
+    full_query: str,
+    history: list[dict[str, Any]] | None,
+    is_coding_tutor: bool,
+) -> tuple[str, str]:
+    """Return (visible_topic, search_query) for a video request.
+
+    Coding Tutor only falls back to workspace context when both the current
+    request and the resolved history topic are vague. This keeps follow-ups like
+    "a video explaining the concept" attached to the previous concrete concept
+    ("time complexity") instead of searching for generic words or the active
+    workspace problem.
+    """
+    resolved_topic = resolve_video_topic(display_query, history)
+    current_topic = clean_video_topic_label(display_query, fallback="")
+    current_is_vague = _topic_is_pronoun_only(current_topic)
+    resolved_is_vague = _topic_is_pronoun_only(resolved_topic)
+    if is_coding_tutor and current_is_vague and resolved_is_vague:
+        hinted_topic = ""
+        hint_match = re.search(r"^Recent coding conversation topic:\s*(.+)$", full_query or "", re.MULTILINE)
+        if hint_match:
+            hinted_topic = _canonical_coding_topic(hint_match.group(1)) or clean_video_topic_label(hint_match.group(1), fallback="")
+        if hinted_topic and not _topic_is_pronoun_only(hinted_topic):
+            return hinted_topic, hinted_topic
+        workspace_query = build_video_search_query(display_query, full_query, is_coding_tutor)
+        problem_match = re.search(r"^Problem:\s*(.+)$", full_query or "", re.MULTILINE)
+        visible_topic = problem_match.group(1).strip() if problem_match else "this coding topic"
+        return visible_topic, workspace_query
+    return resolved_topic, resolved_topic
 
 
 def find_verified_videos(query: str, language: str | None = None, limit: int = 3) -> list[dict[str, Any]]:
@@ -5983,9 +6138,10 @@ def _strip_topic_filler(text: str) -> str:
     )
     # Remove remaining filler words.
     out = re.sub(
-        r"\b(?:the concept of|concept of|a|an|the|some|youtube|video|videos|tutorial|tutorials|"
-        r"lesson|lessons|clip|clips|that|this|it|explains?|explain|teach(?:es)?|me|please|pls|"
-        r"for|about|on|of)\b",
+        r"\b(?:the concept of|concept of|concepts?|ideas?|topics?|subjects?|a|an|the|some|"
+        r"youtube|video|videos|tutorial|tutorials|lesson|lessons|clip|clips|that|this|it|"
+        r"explain(?:s|ing)?|teach(?:es|ing)?|me|please|pls|"
+        r"for|about|on|of|to)\b",
         " ",
         out,
         flags=re.IGNORECASE,
@@ -6016,6 +6172,7 @@ def clean_video_topic_label(query: str, fallback: str = "that topic") -> str:
 
     # Keep only the first clause if upstream context got appended.
     candidate = re.split(r"[?!.]\s+", candidate, 1)[0].strip(" ?!.:,")
+    candidate = _canonical_coding_topic(candidate) or candidate
     return candidate or fallback
 
 
@@ -6765,6 +6922,19 @@ async def request_practice_question_hint(
         language=language_key,
         level=req.level,
     ))
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type="hint_used",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source=source,
+        difficulty=question.get("difficulty"),
+        metadata={"level": req.level},
+    )
     db.commit()
     hint = next((item for item in state["hints"] if item["level"] == req.level), None)
     return {
@@ -6887,6 +7057,46 @@ def _save_concept_attempt(
     )
     try:
         db.add(row)
+        stored_results = _stored_concept_results(results)
+        missed = [item for item in stored_results if not item.get("correct")]
+        base_event_type = "quiz_retried" if category == "mistake-bank" else "quiz_checked"
+        learning_events.record_event(
+            db,
+            user_id=user_id,
+            event_type=base_event_type,
+            language=concept_quiz.normalize_language(language),
+            surface="quiz",
+            category=str(category)[:80],
+            source="concept_quiz",
+            outcome="pass" if correct == total and total else "miss",
+            metadata={
+                "correct": max(0, int(correct)),
+                "total": max(0, int(total)),
+                "score": max(0.0, min(1.0, float(score))),
+                "missed_count": len(missed),
+            },
+        )
+        if missed:
+            missed_categories = sorted({
+                str(item.get("category") or category)[:80]
+                for item in missed
+                if item.get("question_id")
+            })
+            learning_events.record_event(
+                db,
+                user_id=user_id,
+                event_type="quiz_missed",
+                language=concept_quiz.normalize_language(language),
+                surface="quiz",
+                category=str(category)[:80],
+                source="concept_quiz",
+                outcome="miss",
+                metadata={
+                    "missed_count": len(missed),
+                    "missed_categories": missed_categories,
+                    "question_ids": [item.get("question_id") for item in missed[:10]],
+                },
+            )
         db.commit()
         db.refresh(row)
         return row
@@ -7106,6 +7316,341 @@ async def list_concept_quiz_categories(language: str):
 # The lesson and the in-quiz refresher come from the SAME file (see lessons.py), so
 # they cannot drift apart and tell a student two different things.
 # ---------------------------------------------------------------------------
+LANGUAGE_LIBRARY_FILE = os.path.join(DATA_DIR, "coding_language_library.json")
+LANGUAGE_LIBRARY_COMPACT_KEYS = (
+    "category",
+    "method_name",
+    "syntax",
+    "description",
+    "example",
+    "complexity",
+    "lesson_label",
+    "lesson_track",
+    "lesson_category",
+    "common_mistake",
+)
+
+
+def _language_library_setup_lines(lang: str, category: str, method_name: str, example: str) -> list[str]:
+    """Small snippet setup for reference examples.
+
+    The library examples are intentionally short, but Java/JS/C++ one-liners can
+    feel abrupt when they use `scores`, `nums`, or `items` without showing what
+    those values are. This adds tiny setup lines without turning each card into a
+    full program.
+    """
+    text = example or ""
+    setup: list[str] = []
+
+    def needs(name: str) -> bool:
+        if not re.search(rf"\b{re.escape(name)}\b", text):
+            return False
+        if re.search(rf"\b{re.escape(name)}\b\s*=", text):
+            return False
+        if re.search(rf"\b{re.escape(name)}\b\s*:", text):
+            return False
+        return True
+
+    def add(line: str) -> None:
+        if line not in setup and line not in text:
+            setup.append(line)
+
+    if lang == "javascript":
+        if needs("text"):
+            add('const text = "Morgan State";')
+        if needs("input"):
+            add('const input = "42";')
+        if needs("value"):
+            add("const value = 42;")
+        if needs("name"):
+            add('const name = "Ada";')
+        if needs("code"):
+            add('const code = "CS101";')
+        if needs("student"):
+            add('const student = { name: "Ada", major: "CS" };')
+        if needs("data"):
+            add('const data = { course: "CS101", credits: 3 };')
+        if needs("items"):
+            add("const items = [3, 1, 2];")
+        if needs("nums"):
+            add("const nums = [3, 1, 2];")
+        if needs("names"):
+            add('const names = ["Ada", "Grace", "Mae"];')
+        if needs("counts"):
+            add('const counts = { Ada: 2, Grace: 1 };')
+        if needs("scores"):
+            if "scores.get" in text or "scores.set" in text or "scores.has" in text or "scores.delete" in text:
+                add('const scores = new Map([["Ada", 95], ["Grace", 88]]);')
+            elif "Math." in text:
+                add("const scores = [88, 91, 84];")
+            else:
+                add('const scores = { Ada: 95, Grace: 88 };')
+        if needs("map"):
+            add('const map = new Map([["Ada", 95]]);')
+        if needs("seen"):
+            add('const seen = new Set(["Ada", "Grace"]);')
+        if needs("a"):
+            add("const a = new Set([1, 2]);")
+        if needs("b"):
+            add("const b = new Set([2, 3]);")
+
+    elif lang == "java":
+        if needs("text"):
+            add('String text = "Morgan State";')
+        if needs("input"):
+            add('String input = "42";')
+        if needs("value"):
+            add("int value = 42;")
+        if needs("name"):
+            add('String name = "Ada";')
+        if needs("code"):
+            add('String code = "CS101";')
+        if needs("array"):
+            add("int[] array = {3, 1, 2};")
+        if needs("nums"):
+            add("int[] nums = {3, 1, 2};")
+        if needs("names"):
+            add('ArrayList<String> names = new ArrayList<>(List.of("Ada", "Grace"));')
+        if needs("scores"):
+            if "scores.put" in text or "scores.get" in text or "scores.contains" in text or "scores.entrySet" in text or "scores.keySet" in text:
+                add('HashMap<String, Integer> scores = new HashMap<>(Map.of("Ada", 95, "Grace", 88));')
+            else:
+                add("ArrayList<Integer> scores = new ArrayList<>(List.of(88, 91, 84));")
+        if needs("counts"):
+            add('HashMap<String, Integer> counts = new HashMap<>(Map.of("Ada", 2));')
+        if needs("list"):
+            add("ArrayList<Integer> list = new ArrayList<>(List.of(3, 1, 2));")
+        if needs("map"):
+            add('HashMap<String, Integer> map = new HashMap<>();')
+        if needs("set"):
+            add('HashSet<String> set = new HashSet<>(Set.of("Ada", "Grace"));')
+        if needs("seen"):
+            add('HashSet<String> seen = new HashSet<>(Set.of("Ada", "Grace"));')
+        if needs("required"):
+            add('HashSet<String> required = new HashSet<>(Set.of("Ada"));')
+        if needs("items"):
+            add("ArrayList<Integer> items = new ArrayList<>(List.of(3, 1, 2));")
+        numeric_pair_example = method_name in {"Math.max", "Math.min"}
+        if numeric_pair_example:
+            if needs("a"):
+                add("int a = 3;")
+            if needs("b"):
+                add("int b = 5;")
+        if not numeric_pair_example and needs("a"):
+            add("HashSet<Integer> a = new HashSet<>(Set.of(1, 2));")
+        if not numeric_pair_example and needs("b"):
+            add("HashSet<Integer> b = new HashSet<>(Set.of(2, 3));")
+
+    elif lang == "cpp":
+        if needs("text"):
+            add('string text = "Morgan State";')
+        if needs("input"):
+            add('string input = "42";')
+        if needs("value"):
+            add("int value = 42;")
+        if needs("name"):
+            add('string name = "Ada";')
+        if needs("code"):
+            add('string code = "CS101";')
+        if needs("part"):
+            add('string part = "CS";')
+        if needs("ch"):
+            add("char ch = '!';")
+        if needs("items"):
+            add("vector<int> items = {3, 1, 2};")
+        if needs("nums"):
+            add("vector<int> nums = {3, 1, 2};")
+        if needs("names"):
+            add('vector<string> names = {"Ada", "Grace"};')
+        if needs("scores"):
+            if "scores." in text or "scores[" in text:
+                add('unordered_map<string, int> scores = {{"Ada", 95}, {"Grace", 88}};')
+            else:
+                add("vector<int> scores = {88, 91, 84};")
+        if needs("counts"):
+            add('unordered_map<string, int> counts = {{"Ada", 2}};')
+        if needs("table"):
+            add('unordered_map<string, int> table = {{"Ada", 95}};')
+        if needs("seen"):
+            add("unordered_set<int> seen = {3, 5};")
+        if needs("ordered"):
+            add("set<int> ordered = {3, 10, 12};")
+        numeric_pair_example = method_name in {"min", "max", "swap"}
+        if numeric_pair_example:
+            if needs("a"):
+                add("int a = 3;")
+            if needs("b"):
+                add("int b = 5;")
+        if not numeric_pair_example and needs("a"):
+            add("unordered_set<int> a = {1, 2};")
+        if not numeric_pair_example and needs("b"):
+            add("unordered_set<int> b = {2, 3};")
+        if needs("left"):
+            add("int left = 1;")
+        if needs("right"):
+            add("int right = 2;")
+        if needs("target"):
+            add("int target = 2;")
+
+    if not setup:
+        return []
+    return setup
+
+
+def _language_library_result_comment(lang: str, method_name: str, example: str) -> str | None:
+    if "//" in example or "#" in example:
+        return None
+
+    if lang == "javascript":
+        if method_name == "clear":
+            if "seen" in example:
+                return "// seen.size === 0"
+            return "// size is now 0"
+        if method_name == "add":
+            return "// seen.has(\"Ada\") === true"
+        if method_name == "delete":
+            return "// removed === true when the value existed"
+        if method_name == "discard":
+            return "// no error when the value is missing"
+        if method_name == "has":
+            return "// ok === true when the value is present"
+        if method_name == "includes":
+            return "// ok === true when the value is found"
+        if method_name == "join":
+            return '// line === "Ada, Grace, Mae"'
+        if method_name == "map":
+            return "// doubled === [6, 2, 4]"
+        if method_name == "pop":
+            return "// last === 2; items === [3, 1]"
+        if method_name == "push":
+            return "// items === [3, 1, 2, 95]"
+        if method_name == "set":
+            return '// scores.get("Ada") === 95'
+        if method_name == "shift":
+            return "// first === 3; items === [1, 2]"
+        if method_name == "slice":
+            return "// part has the selected values"
+        if method_name == "sort":
+            return "// nums === [1, 2, 3]"
+        if method_name == "splice":
+            return "// items changes at the selected index"
+        if method_name == "unshift":
+            return "// items === [0, 3, 1, 2]"
+
+    if lang == "java":
+        if method_name == "add":
+            if "names.add(1" in example:
+                return "// names == [Ada, Grace, Grace]"
+            if "names" in example:
+                return "// names == [Ada, Grace, Ada]"
+            if "seen" in example:
+                return '// seen.contains("Ada") == true'
+            return "// size increases by 1"
+        if method_name == "addAll":
+            return "// seen contains every value from names"
+        if method_name == "clear":
+            return "// collection.size() == 0"
+        if method_name == "contains":
+            return "// ok == true when the value is present"
+        if method_name == "get":
+            return "// first is the value at that index"
+        if method_name == "put":
+            return '// scores.get("Ada") == 96'
+        if method_name == "remove":
+            return "// removed == true when the value existed"
+        if method_name == "set":
+            if "scores" in example:
+                return "// scores.get(0) == 100"
+            return '// names.get(0).equals("Mae")'
+
+    if lang == "java" and method_name == "Collections.reverse":
+        if "names" in example:
+            return "// names == [Grace, Ada]"
+        return "// scores == [84, 91, 88]"
+    if lang == "java" and method_name == "Collections.sort":
+        if "names" in example:
+            return "// names == [Ada, Grace]"
+        return "// scores == [84, 88, 91]"
+
+    comments = {
+        ("javascript", "Array.isArray"): "// ok === true",
+        ("javascript", "Math.max"): "// best === 91",
+        ("javascript", "Math.min"): "// low === 84",
+        ("javascript", "Number"): "// amount === 42",
+        ("javascript", "Object.keys"): '// keys === ["course", "credits"]',
+        ("javascript", "parseInt"): "// amount === 42",
+        ("java", "Arrays.binarySearch"): "// index == 1",
+        ("java", "Arrays.sort"): "// nums == [1, 2, 3]",
+        ("java", "Collections.max"): "// best == 91",
+        ("java", "Collections.min"): "// low == 84",
+        ("java", "Integer.parseInt"): "// amount == 42",
+        ("java", "Math.abs"): "// distance == 5",
+        ("java", "Math.max"): "// best == 5",
+        ("java", "Math.min"): "// low == 3",
+        ("java", "String.valueOf"): '// text.equals("42")',
+        ("cpp", "accumulate"): "// total == 6",
+        ("cpp", "binary_search"): "// ok == true",
+        ("cpp", "count"): "// matches == 1",
+        ("cpp", "max"): "// best == 5",
+        ("cpp", "max_element"): "// *best == 91",
+        ("cpp", "min"): "// low == 3",
+        ("cpp", "min_element"): "// *low == 84",
+        ("cpp", "sort"): "// nums == {1, 2, 3}",
+        ("cpp", "stoi"): "// amount == 42",
+        ("cpp", "swap"): "// a == 5; b == 3",
+        ("cpp", "to_string"): '// text == "42"',
+    }
+    if lang == "cpp":
+        cpp_mutation_comments = {
+            "clear": "// container.size() == 0",
+            "contains": "// ok == true when the key/value is present",
+            "count": "// matches is 1 when the value exists",
+            "erase": "// removed is the number of values removed",
+            "find": "// found == true when the value exists",
+            "insert": "// container now includes the value",
+            "replace": "// text contains the replacement",
+            "substr": "// part contains the selected characters",
+        }
+        if method_name == "operator[]":
+            if "nums[" in example:
+                return "// nums == {10, 1, 2}"
+            if "counts[" in example:
+                return '// counts["Ada"] == 3'
+            if "text[" in example:
+                return "// c == 'M'"
+            return "// bracket access reads or updates one slot"
+        if method_name == "pop_back":
+            if "text." in example:
+                return '// text == "Morgan Stat"'
+            return "// nums has one fewer value"
+        if method_name == "push_back":
+            if "text." in example:
+                return '// text == "Morgan State!"'
+            return "// nums == {3, 1, 2, 5}"
+        if method_name in cpp_mutation_comments:
+            return cpp_mutation_comments[method_name]
+    return comments.get((lang, method_name))
+
+
+def _flesh_language_library_example(lang: str, entry: dict[str, Any]) -> dict[str, Any]:
+    if lang not in {"javascript", "java", "cpp"}:
+        return entry
+    example = entry.get("example")
+    if not isinstance(example, str) or "\n" in example:
+        return entry
+    method_name = str(entry.get("method_name") or "")
+    setup = _language_library_setup_lines(lang, str(entry.get("category") or ""), method_name, example)
+    result_comment = _language_library_result_comment(lang, method_name, example)
+    if not setup and not result_comment:
+        return entry
+    enriched = dict(entry)
+    lines = [*setup, example]
+    if result_comment and result_comment not in example:
+        lines.append(result_comment)
+    enriched["example"] = "\n".join(lines)
+    return enriched
+
+
 def _lesson_call(fn, *args):
     """Run a lesson loader function, mapping its exceptions onto HTTP status codes."""
     try:
@@ -7116,6 +7661,80 @@ def _lesson_call(fn, *args):
         # Malformed content is OUR bug, not the student's — 500, and loudly.
         print(f"[ERROR] Lesson content is malformed: {exc}")
         raise HTTPException(status_code=500, detail="This lesson is temporarily unavailable.") from exc
+
+
+def _read_language_library(language: str) -> dict[str, Any]:
+    lang = _concept_quiz_call(concept_quiz.normalize_language, language)
+    try:
+        with open(LANGUAGE_LIBRARY_FILE, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="Language library content is missing.") from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="Language library content is invalid.") from exc
+
+    library = data.get(lang)
+    if not isinstance(library, dict):
+        raise HTTPException(status_code=404, detail="Language library is not available for this language.")
+
+    categories = library.get("categories")
+    entries = library.get("entries") or []
+    compact_entries = library.get("entries_compact") or []
+    if not isinstance(categories, list) or not isinstance(entries, list) or not isinstance(compact_entries, list):
+        raise HTTPException(status_code=500, detail="Language library content is malformed.")
+
+    expanded_entries = list(entries)
+    for index, row in enumerate(compact_entries, start=1):
+        if not isinstance(row, list) or len(row) != len(LANGUAGE_LIBRARY_COMPACT_KEYS):
+            raise HTTPException(status_code=500, detail="Language library compact content is malformed.")
+        item = dict(zip(LANGUAGE_LIBRARY_COMPACT_KEYS, row))
+        slug = re.sub(r"[^a-z0-9]+", "-", str(item["method_name"]).lower()).strip("-") or str(index)
+        expanded_entries.append({
+            "id": f"{lang}-{item['category']}-{slug}-{index}",
+            "category": item["category"],
+            "method_name": item["method_name"],
+            "syntax": item["syntax"],
+            "description": item["description"],
+            "example": item["example"],
+            "complexity": item["complexity"],
+            "lesson_link": {
+                "label": item["lesson_label"],
+                "track": item["lesson_track"],
+                "category": item["lesson_category"],
+            },
+            "common_mistake": item["common_mistake"],
+        })
+
+    sorted_categories = sorted(
+        categories,
+        key=lambda item: str(item.get("label") or item.get("id") or "").lower(),
+    )
+    sorted_entries = sorted(
+        [_flesh_language_library_example(lang, entry) for entry in expanded_entries],
+        key=lambda item: (
+            str(item.get("category") or "").lower(),
+            str(item.get("method_name") or "").lower(),
+            str(item.get("syntax") or "").lower(),
+        ),
+    )
+
+    return {
+        "language": lang,
+        "label": library.get("label") or lang.title(),
+        "categories": sorted_categories,
+        "entries": sorted_entries,
+    }
+
+
+@app.get("/api/coding/language-library/{language}")
+async def read_language_library(language: str):
+    """Curated language reference cards for Learn mode.
+
+    This is intentionally local, static content in V1: no grading, no generated
+    answers, and no scrape dependency. Keeping it in data_sources lets chat/search
+    reuse the same reference text later.
+    """
+    return _read_language_library(language)
 
 
 @app.get("/api/coding/learn/{language}/{category}")
@@ -7456,7 +8075,7 @@ async def search_coding_study_resources(
         "source": "curated_cs_navigator_resources",
     }
 
-from services import adaptive_practice, attempt_telemetry, mastery
+from services import adaptive_next_step, adaptive_practice, attempt_telemetry, learning_events, mastery
 
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
@@ -7476,6 +8095,8 @@ async def run_practice_solution(
     if language_key not in {"python", "javascript", "java", "cpp"}:
         return empty_practice_run_response("Graded runs support Python, JavaScript, Java, and C++.")
 
+    if not req.question_id:
+        return empty_practice_run_response("Choose a Practice Library problem before running graded tests.")
     question = _find_practice_question(req.question_id)
     solution = _find_language_solution(question["id"], language_key, question)
     function_name = str(solution.get("function_name") or "solve")
@@ -7532,6 +8153,46 @@ async def run_practice_solution(
         hints_used=req.hints_used,
         seconds_since_open=req.seconds_since_open,
     )
+    outcome, error_class = attempt_telemetry.classify(run_result)
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="practice_run",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source="practice",
+        difficulty=question.get("difficulty"),
+        outcome=outcome,
+        error_class=error_class,
+        metadata={
+            "passed": run_result.get("passed"),
+            "total": run_result.get("total"),
+            "status": status_value,
+        },
+    )
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="practice_solved" if outcome == "pass" else "practice_failed",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source="practice",
+        difficulty=question.get("difficulty"),
+        outcome=outcome,
+        error_class=error_class,
+        metadata={
+            "passed": run_result.get("passed"),
+            "total": run_result.get("total"),
+            "status": status_value,
+            "hints_used": req.hints_used,
+        },
+    )
 
     return {
         **run_result,
@@ -7544,6 +8205,7 @@ async def run_practice_solution(
 async def trace_practice_solution(
     req: PracticeRunRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     retry_after = check_practice_run_rate_limit(str(user["user_id"]))
     if retry_after is not None:
@@ -7554,13 +8216,68 @@ async def trace_practice_solution(
         )
 
     language_key, _ = _normalize_practice_language(req.language)
-    if language_key != "python":
+    if language_key not in {"python", "javascript", "java", "cpp"}:
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": {
+                "schema_version": "trace_v2",
+                "steps": [],
+                "limits": {},
+                "language": language_key,
+                "requested_language": language_key,
+                "capability": "unsupported",
+                "trace_mode": "unavailable",
+                "supported_languages": ["python", "javascript", "java", "cpp"],
+            },
             "stdout": "",
-            "stderr": "Code tracing is available for Python first. JavaScript, Java, and C++ can still use Visualize this idea.",
+            "stderr": "Execution tracing is available for Python, JavaScript, Java, and C++ right now. Use Run for this language, or open Visualize this idea for a concept walkthrough.",
+            "message": "Trace My Code supports Python, JavaScript, Java, and C++ right now.",
+            "supported_languages": ["python", "javascript", "java", "cpp"],
+            "requested_language": language_key,
             "duration_ms": 0,
+        }
+
+    if not req.question_id:
+        if language_key in {"java", "cpp"}:
+            display_language = "Java" if language_key == "java" else "C++"
+            return {
+                "status": "error",
+                "trace": [],
+                "trace_v2": {
+                    "schema_version": "trace_v2",
+                    "steps": [],
+                    "limits": {},
+                    "language": language_key,
+                    "requested_language": language_key,
+                    "capability": "practice_only",
+                    "trace_mode": "freeform_unavailable",
+                    "supported_languages": ["python", "javascript", "java", "cpp"],
+                },
+                "stdout": "",
+                "stderr": f"{display_language} tracing currently works from authored Practice problems, where CS Navigator knows which function and test case to run. Freeform {display_language} tracing is planned next.",
+                "message": f"Open a {display_language} Practice problem and use Trace My Code there.",
+                "supported_languages": ["python", "javascript", "java", "cpp"],
+                "requested_language": language_key,
+                "duration_ms": 0,
+            }
+        run_result = run_javascript_freeform_trace(req.code) if language_key == "javascript" else run_python_freeform_trace(req.code)
+        outcome, error_class = attempt_telemetry.classify(run_result)
+        learning_events.record_event_safely(
+            db,
+            user_id=user["user_id"],
+            event_type="trace_used",
+            language=language_key,
+            surface="workspace",
+            source="freeform",
+            outcome=outcome,
+            error_class=error_class,
+            metadata={"status": run_result.get("status"), "steps": len((run_result.get("trace_v2") or {}).get("steps") or [])},
+        )
+        return {
+            **run_result,
+            "trace_test_index": None,
+            "message": f"Trace generated from this {'JavaScript' if language_key == 'javascript' else 'Python'} snippet.",
         }
 
     question = _find_practice_question(req.question_id)
@@ -7571,13 +8288,53 @@ async def trace_practice_solution(
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": {
+                "schema_version": "trace_v2",
+                "steps": [],
+                "limits": {},
+                "language": language_key,
+                "requested_language": language_key,
+                "capability": "practice_and_freeform" if language_key in {"python", "javascript"} else "practice_only",
+                "trace_mode": "unavailable",
+                "supported_languages": ["python", "javascript", "java", "cpp"],
+            },
             "stdout": "",
             "stderr": "No authored test is available to trace for this question yet.",
             "duration_ms": 0,
         }
 
     test_index = min(req.trace_test_index, len(tests) - 1)
-    run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
+    if language_key == "javascript":
+        run_result = run_javascript_practice_trace(req.code, function_name, tests[test_index])
+    elif language_key == "java":
+        arg_spec = get_arg_spec(function_name)
+        run_result = run_java_practice_trace(req.code, function_name, tests[test_index], arg_spec=arg_spec)
+    elif language_key == "cpp":
+        arg_spec = get_arg_spec(function_name)
+        run_result = run_cpp_practice_trace(req.code, function_name, tests[test_index], arg_spec=arg_spec)
+    else:
+        run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
+    outcome, error_class = attempt_telemetry.classify(run_result)
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="trace_used",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source="practice",
+        difficulty=question.get("difficulty"),
+        outcome=outcome,
+        error_class=error_class,
+        metadata={
+            "function_name": function_name,
+            "test_index": test_index,
+            "status": run_result.get("status"),
+            "steps": len((run_result.get("trace_v2") or {}).get("steps") or []),
+        },
+    )
     return {
         **run_result,
         "trace_test_index": test_index,
@@ -7714,6 +8471,18 @@ async def free_run_practice_solution(
         code=req.code,
         seconds_since_open=req.seconds_since_open,
     )
+    outcome, error_class = attempt_telemetry.classify(run_result)
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="practice_run",
+        language=language_key,
+        surface="workspace",
+        source="freerun",
+        outcome=outcome,
+        error_class=error_class,
+        metadata={"status": run_result.get("status")},
+    )
 
     message = (
         "Ran your code. Output is shown below (not graded)."
@@ -7802,8 +8571,49 @@ async def record_coding_tutor_action(
         language=language_key,
         metadata_json=json.dumps(safe_metadata) if safe_metadata else None,
     ))
+    event_type = "tutor_action_used"
+    if "debug" in req.action_type:
+        event_type = "tutor_debug_used"
+    elif "rewrite" in req.action_type or safe_metadata.get("mode") in {"replace", "append", "selection", "comment"}:
+        event_type = "tutor_rewrite_used"
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type=event_type,
+        language=language_key,
+        surface=safe_metadata.get("surface") or "workspace",
+        question_id=(req.question_id or None),
+        source=req.source,
+        metadata={"action_type": req.action_type, **safe_metadata},
+    )
     db.commit()
     return {"recorded": True, "milestones": mastery.build_milestone_signals(db, user["user_id"])}
+
+
+@app.post("/api/coding/learning-events")
+async def record_coding_learning_event(
+    req: CodingLearningEventCreate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    row = learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type=req.event_type,
+        language=language_key,
+        surface=req.surface,
+        category=req.category,
+        topic=req.topic,
+        question_id=req.question_id,
+        source=req.source,
+        difficulty=req.difficulty,
+        outcome=req.outcome,
+        error_class=req.error_class,
+        metadata=req.metadata,
+        commit=True,
+    )
+    return {"recorded": True, "event": learning_events.serialize_event(row)}
 
 def _practice_answer_items_by_language() -> dict[str, list[dict[str, Any]]]:
     items_by_language: dict[str, list[dict[str, Any]]] = {}
@@ -7901,6 +8711,151 @@ async def get_adaptive_practice_recommendations(
             "full_adaptive_enabled": False,
             "ladder_requires_readiness": True,
             "thresholds": adaptive_practice.READINESS_THRESHOLDS,
+        },
+    }
+
+
+@app.get("/api/coding/adaptive/next-step")
+async def get_coding_adaptive_next_step(
+    language: str = Query("python"),
+    surface: str = Query("home", pattern="^(home|practice|learn|workspace)$"),
+    explicit_advanced: bool = Query(False),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Canonical Coding Tutor recommendation.
+
+    Home, Practice Guide, Learn exits, and Workspace should render this same shape
+    instead of each assembling a separate "next" decision in the browser.
+    """
+    language_key, _ = _normalize_practice_language(language)
+    questions = _all_practice_questions()
+    readiness = adaptive_practice.build_topic_readiness(
+        questions,
+        _practice_answer_items_by_language(),
+    )
+
+    topics = mastery.compute_topic_mastery(db, user["user_id"])
+    weakest = mastery.weakest_topic(topics)
+    mastery_payload = {
+        "topics": topics,
+        "weakest": ({**weakest, "reason": mastery.explain(weakest)} if weakest else None),
+        "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
+
+    progress_rows = (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user["user_id"],
+            CodingPracticeProgress.language == language_key,
+        )
+        .all()
+    )
+    attempt_rows = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user["user_id"],
+            CodingAttemptEvent.source == "practice",
+            CodingAttemptEvent.language == language_key,
+            CodingAttemptEvent.topic.isnot(None),
+        )
+        .order_by(CodingAttemptEvent.created_at.asc())
+        .all()
+    )
+    concept_rows = (
+        db.query(CodingConceptQuizAttempt)
+        .filter(
+            CodingConceptQuizAttempt.user_id == user["user_id"],
+            CodingConceptQuizAttempt.language == language_key,
+        )
+        .order_by(CodingConceptQuizAttempt.created_at.asc())
+        .all()
+    )
+    learn_rows = (
+        db.query(CodingLearnProgress)
+        .filter(
+            CodingLearnProgress.user_id == user["user_id"],
+            CodingLearnProgress.language == language_key,
+        )
+        .all()
+    )
+    starting_row = (
+        db.query(CodingStartingCheckProgress)
+        .filter(
+            CodingStartingCheckProgress.user_id == user["user_id"],
+            CodingStartingCheckProgress.language == language_key,
+        )
+        .first()
+    )
+    workspace_state = (
+        db.query(CodingWorkspaceState)
+        .filter(CodingWorkspaceState.user_id == user["user_id"])
+        .first()
+    )
+    preference = (
+        db.query(CodingTutorPreference)
+        .filter(CodingTutorPreference.user_id == user["user_id"])
+        .first()
+    )
+    learning_event_rows = learning_events.recent_events(
+        db,
+        user["user_id"],
+        language=language_key,
+        days=30,
+        limit=200,
+    )
+
+    serialized_attempts = [_serialize_attempt_event(row) for row in attempt_rows]
+    adaptive_recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=questions,
+        readiness=readiness,
+        progress_items=[_serialize_practice_progress(row) for row in progress_rows],
+        attempt_events=serialized_attempts,
+        mastery_payload=mastery_payload,
+        language=language_key,
+    )
+    adaptive_payload = {
+        "recommendation": adaptive_recommendation,
+        "review_signal": adaptive_practice.build_error_review_signal(
+            attempt_events=serialized_attempts,
+            language=language_key,
+        ),
+    }
+
+    recommendation = adaptive_next_step.build_next_step(
+        language=language_key,
+        questions=questions,
+        progress_rows=progress_rows,
+        attempt_rows=attempt_rows,
+        concept_rows=concept_rows,
+        learn_rows=learn_rows,
+        starting_row=starting_row,
+        workspace_state=workspace_state,
+        mastery_payload=mastery_payload,
+        adaptive_payload=adaptive_payload,
+        explicit_advanced=explicit_advanced,
+        learning_style=(preference.learning_style if preference else DEFAULT_LEARNING_STYLE),
+        surface=surface,
+        learning_event_rows=learning_event_rows,
+    )
+    return {
+        "language": language_key,
+        "surface": surface,
+        "recommendation": recommendation,
+        "signals": {
+            "practice_progress_count": len(progress_rows),
+            "attempt_event_count": len(attempt_rows),
+            "concept_quiz_attempt_count": len(concept_rows),
+            "learn_progress_count": len(learn_rows),
+            "learning_event_count": len(learning_event_rows),
+            "starting_check_status": starting_row.status if starting_row else "not_started",
+            "mastery_scored_topics": sum(1 for topic in topics if topic.get("scored")),
+        },
+        "policy": {
+            "min_attempts_for_mastery": mastery.MIN_ATTEMPTS_FOR_SCORE,
+            "error_review_min_count": adaptive_practice.ERROR_REVIEW_MIN_COUNT,
+            "quiz_miss_threshold": adaptive_next_step.QUIZ_MISS_THRESHOLD,
+            "advanced_requires_evidence": not explicit_advanced,
         },
     }
 
@@ -8091,6 +9046,196 @@ async def update_coding_workspace_state(
         db.commit()
     db.refresh(row)
     return _serialize_workspace_state(row)
+
+
+def _serialize_learn_progress(row: CodingLearnProgress) -> dict[str, Any]:
+    return {
+        "language": row.language,
+        "category": row.category,
+        "status": row.status,
+        "completed_at": row.completed_at.isoformat() if row.completed_at else None,
+        "last_opened_at": row.last_opened_at.isoformat() if row.last_opened_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@app.get("/api/coding/learn/progress")
+async def list_coding_learn_progress(
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(language)
+    rows = (
+        db.query(CodingLearnProgress)
+        .filter(
+            CodingLearnProgress.user_id == user["user_id"],
+            CodingLearnProgress.language == language_key,
+        )
+        .order_by(CodingLearnProgress.updated_at.desc())
+        .all()
+    )
+    return {"language": language_key, "items": [_serialize_learn_progress(row) for row in rows]}
+
+
+@app.post("/api/coding/learn/progress")
+async def upsert_coding_learn_progress(
+    req: CodingLearnProgressUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    try:
+        lessons.get_lesson(language_key, req.category)
+    except lessons.LessonError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except lessons.LessonDataError as exc:
+        raise HTTPException(status_code=500, detail="This lesson is temporarily unavailable.") from exc
+
+    row = (
+        db.query(CodingLearnProgress)
+        .filter(
+            CodingLearnProgress.user_id == user["user_id"],
+            CodingLearnProgress.language == language_key,
+            CodingLearnProgress.category == req.category,
+        )
+        .first()
+    )
+    first_completion = False
+    now = datetime.utcnow()
+    if not row:
+        row = CodingLearnProgress(
+            user_id=user["user_id"],
+            language=language_key,
+            category=req.category,
+        )
+        db.add(row)
+    if req.status == "opened":
+        row.last_opened_at = now
+        if row.status != "completed":
+            row.status = "opened"
+    else:
+        first_completion = row.status != "completed"
+        row.status = "completed"
+        row.completed_at = row.completed_at or now
+        row.last_opened_at = row.last_opened_at or now
+    row.updated_at = now
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type="lesson_completed" if req.status == "completed" else "lesson_opened",
+        language=language_key,
+        surface="learn",
+        category=req.category,
+        topic=req.category,
+        source="learn",
+        outcome=req.status,
+        metadata={"first_completion": first_completion},
+    )
+    db.commit()
+    db.refresh(row)
+    return {
+        **_serialize_learn_progress(row),
+        "first_completion": first_completion,
+    }
+
+
+def _serialize_starting_check(row: Optional[CodingStartingCheckProgress], language: str) -> dict[str, Any]:
+    def _decode_optional_json(raw: Optional[str]):
+        if not raw:
+            return None
+        try:
+            return json.loads(raw)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return None
+
+    if not row:
+        return {
+            "language": language,
+            "status": "not_started",
+            "result_level": None,
+            "recommendation": None,
+            "answers": None,
+            "completed_at": None,
+            "skipped_at": None,
+            "updated_at": None,
+        }
+    return {
+        "language": row.language,
+        "status": row.status,
+        "result_level": row.result_level,
+        "recommendation": _decode_optional_json(row.recommendation_json),
+        "answers": _decode_optional_json(row.answers_json),
+        "completed_at": row.completed_at.isoformat() if row.completed_at else None,
+        "skipped_at": row.skipped_at.isoformat() if row.skipped_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@app.get("/api/coding/starting-check")
+async def get_coding_starting_check(
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(language)
+    row = (
+        db.query(CodingStartingCheckProgress)
+        .filter(
+            CodingStartingCheckProgress.user_id == user["user_id"],
+            CodingStartingCheckProgress.language == language_key,
+        )
+        .first()
+    )
+    return _serialize_starting_check(row, language_key)
+
+
+@app.post("/api/coding/starting-check")
+async def upsert_coding_starting_check(
+    req: CodingStartingCheckProgressUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    row = (
+        db.query(CodingStartingCheckProgress)
+        .filter(
+            CodingStartingCheckProgress.user_id == user["user_id"],
+            CodingStartingCheckProgress.language == language_key,
+        )
+        .first()
+    )
+    now = datetime.utcnow()
+    if not row:
+        row = CodingStartingCheckProgress(user_id=user["user_id"], language=language_key)
+        db.add(row)
+
+    row.status = req.status
+    row.result_level = req.result_level or (
+        req.recommendation.get("level") if isinstance(req.recommendation, dict) else None
+    )
+    row.recommendation_json = json.dumps(req.recommendation or {})
+    row.answers_json = json.dumps(req.answers or {})
+    if req.status == "skipped":
+        row.skipped_at = now
+        row.completed_at = None
+    else:
+        row.completed_at = now
+        row.skipped_at = None
+    row.updated_at = now
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type="starting_check_skipped" if req.status == "skipped" else "starting_check_completed",
+        language=language_key,
+        surface="home",
+        source="starting_check",
+        outcome=req.status,
+        metadata={"result_level": row.result_level},
+    )
+    db.commit()
+    db.refresh(row)
+    return _serialize_starting_check(row, language_key)
 
 
 MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay

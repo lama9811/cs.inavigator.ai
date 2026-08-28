@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FaClock,
   FaArrowRight,
@@ -17,6 +17,7 @@ import {
   FaRedo,
 } from "react-icons/fa";
 import { markLessonRead } from "../concept-quiz/conceptQuizProgress";
+import { saveLearnProgress } from "../adaptiveApi";
 import LessonPlayBar from "./LessonPlayBar";
 import useFocusTrap from "../useFocusTrap";
 
@@ -575,9 +576,22 @@ function conditionalFlowValue(flow, key, fallback = "") {
 }
 
 function VisualFlowCard({ id, label, detail, active, shape = "card" }) {
+  const semanticId = String(id || "").toLowerCase();
+  const semanticLabel = String(label || "").toLowerCase();
+  const isResult =
+    semanticId.includes("result") ||
+    semanticId.includes("output") ||
+    semanticId === "done" ||
+    semanticId === "end" ||
+    semanticId === "return" ||
+    semanticId === "resume" ||
+    semanticLabel.includes("result") ||
+    semanticLabel.includes("output") ||
+    semanticLabel.includes("done") ||
+    semanticLabel.includes("return");
   return (
     <div
-      className={`lesson-visual-flow-symbol ucv-flow-node-card ucv-flow-node-card--${shape} is-${shape} ${active ? "is-active ucv-flow-node-card--active" : ""}`}
+      className={`lesson-visual-flow-symbol ucv-flow-node-card ucv-flow-node-card--${shape} is-${shape} ${isResult ? "is-result ucv-flow-node-card--result" : ""} ${active ? "is-active ucv-flow-node-card--active" : ""}`}
       data-flow-id={id}
     >
       <strong>{label}</strong>
@@ -1066,8 +1080,14 @@ function VisualBlock({ block }) {
                 <span>Visualizer</span>
                 <h3 id="lesson-visual-title">{block.title}</h3>
               </div>
-              <button type="button" onClick={close} data-autofocus>
-                Close
+              <button
+                type="button"
+                className="lesson-visual-close"
+                onClick={close}
+                data-autofocus
+                aria-label="Close visualizer"
+              >
+                <FaTimes aria-hidden="true" />
               </button>
             </header>
 
@@ -1366,6 +1386,8 @@ export default function LessonView({
   const [error, setError] = useState("");
   const [activeSectionId, setActiveSectionId] = useState("");
   const [checkAnswers, setCheckAnswers] = useState({});
+  const openedProgressKeyRef = useRef("");
+  const completedProgressKeyRef = useRef("");
 
   useEffect(() => {
     let alive = true;
@@ -1395,6 +1417,14 @@ export default function LessonView({
       alive = false;
     };
   }, [apiBase, language, category]);
+
+  useEffect(() => {
+    if (!lesson || !category || !language) return;
+    const progressKey = `${language}:${category}:opened`;
+    if (openedProgressKeyRef.current === progressKey) return;
+    openedProgressKeyRef.current = progressKey;
+    saveLearnProgress(apiBase, { language, category, status: "opened" }).catch(() => {});
+  }, [apiBase, category, language, lesson]);
 
   const sections = useMemo(() => {
     if (!lesson) return [];
@@ -1452,10 +1482,22 @@ export default function LessonView({
       Object.prototype.hasOwnProperty.call(checkAnswers, key)
     ).length;
     if (answeredCount === checkKeys.length) {
-      markLessonRead(language, category);
-      onPracticeActivity?.();
+      const progressKey = `${language}:${category}:completed`;
+      if (completedProgressKeyRef.current === progressKey) return;
+      completedProgressKeyRef.current = progressKey;
+      const firstLocalCompletion = markLessonRead(language, category);
+      if (firstLocalCompletion) {
+        onPracticeActivity?.();
+      }
+      saveLearnProgress(apiBase, { language, category, status: "completed" })
+        .then((saved) => {
+          if (!firstLocalCompletion && saved?.first_completion) {
+            onPracticeActivity?.();
+          }
+        })
+        .catch(() => {});
     }
-  }, [category, checkAnswers, checkKeys, language, lesson, onPracticeActivity]);
+  }, [apiBase, category, checkAnswers, checkKeys, language, lesson, onPracticeActivity]);
 
   if (loading) return <p className="cq-loading">Loading lesson…</p>;
   if (error) return <p className="cq-error">{error}</p>;
@@ -1556,7 +1598,7 @@ export default function LessonView({
               className="is-practice"
               onClick={onPractice}
             >
-              Practice {lesson.title} <FaArrowRight aria-hidden="true" />
+              Check {lesson.title} <FaArrowRight aria-hidden="true" />
             </button>
           ) : (
             <button
@@ -1569,12 +1611,12 @@ export default function LessonView({
         </div>
       ) : null}
 
-      {/* The handoff. Reading without doing doesn't stick, so a lesson always exits
-          into the quiz on the same topic rather than into nothing. */}
+      {/* The handoff. Reading without doing doesn't stick, so a lesson exits into
+          the matching concept check instead of a broad library page. */}
       <footer className={`lesson-foot ${hasMultipleSections ? "is-sectioned" : ""}`}>
-        <p>Ready to check it?</p>
+        <p>Next: answer a few questions on this topic.</p>
         <button type="button" className="lesson-practice-cta" onClick={onPractice}>
-          Practice {lesson.title} <FaArrowRight aria-hidden="true" />
+          Check {lesson.title} <FaArrowRight aria-hidden="true" />
         </button>
       </footer>
     </article>

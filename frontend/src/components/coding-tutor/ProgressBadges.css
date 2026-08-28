@@ -808,4 +808,52 @@ body.coding-dark .progress-badge-card.not-started .progress-badge-rarity {
   .progress-badge-grid {
     grid-template-columns: 1fr;
   }
+
+  .progress-habits-head {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 11px;
+  }
+
+  .progress-habits-summary {
+    gap: 6px;
+  }
+
+  .progress-habits-summary > small {
+    display: none;
+  }
+
+  .progress-habits-body {
+    padding: 0 10px 10px;
+  }
+
+  .progress-habits-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .progress-habits-list li {
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 9px;
+  }
+
+  .progress-habit-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+  }
+
+  .progress-habits-list strong {
+    font-size: 0.82rem;
+  }
+
+  .progress-habits-list p {
+    font-size: 0.74rem;
+  }
+
+  .progress-habits-list small {
+    padding: 2px 6px;
+    font-size: 0.64rem;
+  }
 }

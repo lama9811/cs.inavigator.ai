@@ -19,7 +19,7 @@ export default function HintPanel({ hints, revealedHints, onShowHint, onShowAllH
           {!totalHints
             ? "No hints available"
             : !unlockedHints
-            ? "No hints unlocked yet"
+            ? "Run code to see hints"
             : allAvailableShown
             ? `All available hints shown (${revealedHints} of ${totalHints})`
             : `Show hint ${nextHintNumber} of ${totalHints}`}
@@ -44,7 +44,7 @@ export default function HintPanel({ hints, revealedHints, onShowHint, onShowAllH
             </li>
           ))}
         </ol>
-      ) : <p>Hints unlock one step at a time. Start with the question check, then run your code to unlock deeper guidance.</p>}
+      ) : <p>Hints appear one step at a time. Run your code to see the next hint.</p>}
     </div>
   );
 }

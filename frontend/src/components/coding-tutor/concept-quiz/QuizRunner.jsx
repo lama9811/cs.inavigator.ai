@@ -3,8 +3,13 @@ import {
   FaRegQuestionCircle,
   FaBookOpen,
   FaArrowRight,
+  FaArrowUp,
+  FaArrowDown,
   FaCheckCircle,
   FaTimesCircle,
+  FaVolumeUp,
+  FaStopCircle,
+  FaGripVertical,
 } from "react-icons/fa";
 import {
   clearQuizLastResult,
@@ -54,6 +59,186 @@ function seededShuffle(list, seed) {
 
 function isMcqQuestion(question) {
   return question?.kind === "mcq-output" || question?.kind === "mcq-behavior";
+}
+
+function cleanSpeechText(value) {
+  return String(value ?? "")
+    .replace(/`/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const SPEECH_PAUSE_TOKEN = "[[pause]]";
+const SPEECH_SEGMENT_PAUSE_MS = 650;
+const SPEECH_WAIT_FOR_REVIEW_MS = 9000;
+
+function speechSegmentsFromText(value) {
+  return String(value ?? "")
+    .split(SPEECH_PAUSE_TOKEN)
+    .map(cleanSpeechText)
+    .filter(Boolean);
+}
+
+function speechAvailable() {
+  return (
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    "SpeechSynthesisUtterance" in window
+  );
+}
+
+function ReadAloudButton({ text, label = "Read aloud", className = "", waitForUpdatesMs = 0 }) {
+  const [speaking, setSpeaking] = useState(false);
+  const speakingRef = useRef(false);
+  const waitingForUpdateRef = useRef(false);
+  const segmentsRef = useRef([]);
+  const segmentIndexRef = useRef(0);
+  const pauseTimerRef = useRef(null);
+  const waitTimerRef = useRef(null);
+  const lastTextRef = useRef("");
+  const supported = speechAvailable();
+  const spokenText = String(text ?? "");
+  const hasText = speechSegmentsFromText(spokenText).length > 0;
+
+  const stopSpeech = () => {
+    if (pauseTimerRef.current) {
+      window.clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    if (waitTimerRef.current) {
+      window.clearTimeout(waitTimerRef.current);
+      waitTimerRef.current = null;
+    }
+    window.speechSynthesis.cancel();
+    speakingRef.current = false;
+    waitingForUpdateRef.current = false;
+    segmentsRef.current = [];
+    segmentIndexRef.current = 0;
+    setSpeaking(false);
+  };
+
+  const waitForReviewUpdate = () => {
+    if (!waitForUpdatesMs) {
+      speakingRef.current = false;
+      waitingForUpdateRef.current = false;
+      setSpeaking(false);
+      return;
+    }
+
+    waitingForUpdateRef.current = true;
+    waitTimerRef.current = window.setTimeout(() => {
+      waitTimerRef.current = null;
+      waitingForUpdateRef.current = false;
+      speakingRef.current = false;
+      setSpeaking(false);
+    }, waitForUpdatesMs);
+  };
+
+  const speakNextSegment = () => {
+    if (!speakingRef.current) return;
+    const segment = segmentsRef.current[segmentIndexRef.current];
+    if (!segment) {
+      speakingRef.current = false;
+      setSpeaking(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(segment);
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    utterance.onend = () => {
+      segmentIndexRef.current += 1;
+      if (segmentIndexRef.current < segmentsRef.current.length) {
+        pauseTimerRef.current = window.setTimeout(() => {
+          pauseTimerRef.current = null;
+          speakNextSegment();
+        }, SPEECH_SEGMENT_PAUSE_MS);
+      } else {
+        waitForReviewUpdate();
+      }
+    };
+    utterance.onerror = () => stopSpeech();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const startSpeech = (nextText) => {
+    const nextSegments = speechSegmentsFromText(nextText);
+    if (!nextSegments.length) return;
+    window.speechSynthesis.cancel();
+    if (waitTimerRef.current) {
+      window.clearTimeout(waitTimerRef.current);
+      waitTimerRef.current = null;
+    }
+    segmentsRef.current = nextSegments;
+    segmentIndexRef.current = 0;
+    speakingRef.current = true;
+    waitingForUpdateRef.current = false;
+    lastTextRef.current = String(nextText ?? "");
+    setSpeaking(true);
+    speakNextSegment();
+  };
+
+  useEffect(() => {
+    if (!supported) return undefined;
+    return () => {
+      stopSpeech();
+    };
+  }, [supported]);
+
+  useEffect(() => {
+    if (!supported || !speakingRef.current) {
+      lastTextRef.current = spokenText;
+      return;
+    }
+
+    const previous = lastTextRef.current;
+    if (!previous || spokenText === previous) return;
+
+    if (spokenText.startsWith(previous)) {
+      const added = spokenText.slice(previous.length);
+      const addedSegments = speechSegmentsFromText(added);
+      if (addedSegments.length) {
+        segmentsRef.current = [...segmentsRef.current, ...addedSegments];
+        if (waitingForUpdateRef.current) {
+          if (waitTimerRef.current) {
+            window.clearTimeout(waitTimerRef.current);
+            waitTimerRef.current = null;
+          }
+          waitingForUpdateRef.current = false;
+          speakNextSegment();
+        }
+      }
+    } else {
+      startSpeech(spokenText);
+    }
+
+    lastTextRef.current = spokenText;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spokenText, supported]);
+
+  if (!supported || !hasText) return null;
+
+  const toggleSpeech = () => {
+    if (speaking) {
+      stopSpeech();
+      return;
+    }
+
+    startSpeech(spokenText);
+  };
+
+  return (
+    <button
+      type="button"
+      className={`cq-read-aloud ${speaking ? "speaking" : ""} ${className}`.trim()}
+      onClick={toggleSpeech}
+      aria-pressed={speaking}
+      title={speaking ? "Stop reading" : label}
+    >
+      {speaking ? <FaStopCircle aria-hidden="true" /> : <FaVolumeUp aria-hidden="true" />}
+      <span>{speaking ? "Stop" : label}</span>
+    </button>
+  );
 }
 
 function choiceOrderFor(question, seed) {
@@ -113,25 +298,27 @@ function ParsonsBoard({ question, value, onChange, disabled = false }) {
             }}
           >
             <span className="cq-parsons-grip" aria-hidden="true">
-              drag
+              <FaGripVertical />
             </span>
             <code>{line || " "}</code>
             <span className="cq-parsons-controls">
               <button
                 type="button"
                 aria-label="Move line up"
+                title="Move line up"
                 disabled={disabled || index === 0}
                 onClick={() => move(index, index - 1)}
               >
-                Up
+                <FaArrowUp aria-hidden="true" />
               </button>
               <button
                 type="button"
                 aria-label="Move line down"
+                title="Move line down"
                 disabled={disabled || index === order.length - 1}
                 onClick={() => move(index, index + 1)}
               >
-                Down
+                <FaArrowDown aria-hidden="true" />
               </button>
             </span>
           </li>
@@ -393,6 +580,44 @@ function formatAnswer(value) {
   return clean(value);
 }
 
+function sentence(text) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return "";
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function quotedAnswer(value) {
+  return `"${formatAnswer(value)}"`;
+}
+
+function buildAnswerOptionsSpeech(question, choiceOrder = []) {
+  if (!question) return "";
+
+  if (isMcqQuestion(question)) {
+    const displayOrder = choiceOrder.length
+      ? choiceOrder
+      : question.choices.map((_, index) => index);
+    return displayOrder
+      .map((originalIndex, displayIndex) => {
+        const letter = String.fromCharCode(65 + displayIndex);
+        return `Option ${letter}: ${question.choices[originalIndex]}.`;
+      })
+      .join(` ${SPEECH_PAUSE_TOKEN} `);
+  }
+
+  if (question.kind === "typein") {
+    return question.typein_mode === "code"
+      ? "Type the code answer in the answer box."
+      : "Type your answer in the answer box.";
+  }
+
+  if (question.kind === "parsons") {
+    return `Arrange these lines in the correct order: ${(question.lines || []).join("; ")}.`;
+  }
+
+  return "";
+}
+
 function isAnswerComplete(answer) {
   return (
     answer != null &&
@@ -472,34 +697,26 @@ function buildImmediateReview(question, result, explanation) {
   }
 
   const points = [];
-  let summary =
+  const correct = quotedAnswer(result.correctAnswer);
+  const picked = quotedAnswer(result.studentAnswer);
+  const explanationText = sentence(
     explanation.summary ||
-    "Your answer does not match the behavior this question is testing yet.";
+      "The correct answer follows the rule shown in the question."
+  );
+  let summary = `You picked ${picked}. That would make sense if that choice matched what the code or rule actually produces. ${explanationText} So the answer is ${correct}.`;
 
   if (question.kind === "mcq-output" || question.kind === "mcq-behavior") {
-    points.push(
-      `Your choice points to "${formatAnswer(result.studentAnswer)}", but this question expects "${formatAnswer(result.correctAnswer)}".`
-    );
-    if (question.code) {
-      points.push(
-        "Trace the code in order. Write down each value as it changes, then compare the final value or behavior to the choices."
-      );
-    } else {
-      points.push(
-        "Look for the rule in the prompt that separates the correct choice from the nearby choices."
-      );
+    if (explanation.detail) {
+      points.push(sentence(explanation.detail));
     }
   } else if (question.kind === "typein") {
-    points.push(
-      `You typed "${formatAnswer(result.studentAnswer)}", but the expected answer is "${formatAnswer(result.correctAnswer)}".`
-    );
-    points.push(
-      "For type-in questions, check the exact value first: spelling, punctuation, capitalization, spacing, and whether quotes are needed."
-    );
+    summary = `You typed ${picked}. The expected answer is ${correct}. ${explanationText}`;
+    const exactMatchNote =
+      "Check spelling, punctuation, capitalization, spacing, and quotes.";
     if (question.typein_mode === "code") {
-      points.push(
-        "If this is code, compare the operator, variable name, and syntax one piece at a time."
-      );
+      points.push(`${exactMatchNote} Then check the operator, variable name, and syntax.`);
+    } else {
+      points.push(exactMatchNote);
     }
   } else if (question.kind === "parsons") {
     const step = result.firstMismatch >= 0 ? result.firstMismatch + 1 : 1;
@@ -509,24 +726,80 @@ function buildImmediateReview(question, result, explanation) {
     const expectedLine = Array.isArray(result.correctAnswer)
       ? result.correctAnswer[result.firstMismatch]
       : null;
+    summary = `The first line out of order is step ${step}. ${explanationText}`;
     points.push(
       `The first line that looks out of place is step ${step}. You placed "${formatAnswer(studentLine)}", but that spot should be "${formatAnswer(expectedLine)}".`
     );
-    points.push(
-      "Read the lines like a small recipe: setup first, then the repeated work or decision, then the final return or print."
-    );
-  }
-
-  if (explanation.detail) {
-    points.push(explanation.detail);
   }
 
   return {
     summary,
     points,
-    nextStep:
-      "Use the Learn tab to review the exact idea, then move on when the rule makes sense.",
+    nextStep: "",
   };
+}
+
+function buildImmediateReviewSpeech(question, answer) {
+  if (!answer?.checked) return "";
+
+  const result = gradeAnswerLocally(question, answer);
+  const explanation = splitExplanation(question.explanation);
+  const review = buildImmediateReview(question, result, explanation);
+  const status = result.correct ? "Correct." : "Not quite.";
+  const answerReview = result.correct
+    ? ""
+    : `Your answer was ${formatAnswer(result.studentAnswer)}. The correct answer is ${formatAnswer(result.correctAnswer)}.`;
+  const points = review.points.length ? `Notes: ${review.points.join(" ")}` : "";
+
+  return [
+    status,
+    answerReview,
+    review.summary,
+    points,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildQuestionSpeech(question, index, total, choiceOrder = [], answer) {
+  if (!question) return "";
+
+  const optionsSpeech = buildAnswerOptionsSpeech(question, choiceOrder);
+  const reviewSpeech = buildImmediateReviewSpeech(question, answer);
+
+  return [
+    `Question ${index + 1} of ${total}.`,
+    question.prompt,
+    question.code ? `Code: ${question.code}` : "",
+    question.goal ? `Goal: ${question.goal}` : "",
+    optionsSpeech ? SPEECH_PAUSE_TOKEN : "",
+    optionsSpeech,
+    reviewSpeech ? SPEECH_PAUSE_TOKEN : "",
+    reviewSpeech,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildResultSpeech(question, result, index) {
+  if (!question || !result) return "";
+
+  const ok = Boolean(result.correct);
+  const explanation = splitExplanation(result.explanation || question.explanation || "");
+  const answerReview = ok
+    ? ""
+    : `Your answer was ${formatAnswer(result.student_answer)}. The correct answer is ${formatAnswer(result.correct_answer)}.`;
+
+  return [
+    `Question ${index + 1}.`,
+    question.prompt,
+    ok ? "Correct." : "Incorrect.",
+    answerReview,
+    explanation.summary,
+    explanation.detail,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function ImmediateFeedback({ question, answer, onReviewLesson }) {
@@ -645,6 +918,11 @@ function ResultsScreen({
                   <span className="cq-result-tag">
                     {ok ? "Correct" : "Incorrect"}
                   </span>
+                  <ReadAloudButton
+                    className="cq-result-read"
+                    label="Read review"
+                    text={buildResultSpeech(q, r, index)}
+                  />
                 </div>
                 <p className="cq-result-prompt">{q.prompt}</p>
                 {!ok ? (
@@ -780,6 +1058,18 @@ export default function QuizRunner({
     [questions, answersById]
   );
 
+  const currentReadAloudText = useMemo(
+    () =>
+      buildQuestionSpeech(
+        question,
+        index,
+        total,
+        question ? choiceOrders[question.id] : [],
+        answered
+      ),
+    [answered, choiceOrders, index, question, total]
+  );
+
   if (grade) {
     return (
       <ResultsScreen
@@ -863,7 +1153,7 @@ export default function QuizRunner({
   };
 
   return (
-    <div className="cq-runner cq-runner-full">
+    <div className={`cq-runner cq-runner-full cq-tab-${tab}`}>
       {/* Top header bar, split to match the columns below: Question/Learn tabs on
           the LEFT half, segmented progress + % on the RIGHT half. */}
       <header className="cq-runner-top">
@@ -938,6 +1228,9 @@ export default function QuizRunner({
           <div className="cq-pane-body">
             {tab === "question" ? (
               <div className="cq-question-panel">
+                <div className="cq-question-tools">
+                  <ReadAloudButton text={currentReadAloudText} waitForUpdatesMs={SPEECH_WAIT_FOR_REVIEW_MS} />
+                </div>
                 <p className="cq-prompt">{question.prompt}</p>
                 {question.code ? (
                   <pre className="cq-code">

@@ -429,8 +429,7 @@ body.dark .daily-tags span {
   line-height: 1.5;
 }
 
-[data-theme="dark"] .daily-practice-btn,
-body.dark .daily-practice-btn {
+body.coding-dark .coding-app .daily-practice-btn {
   background: var(--bg-secondary, #2a2a2a);
   color: var(--text-primary, #e0e0e0);
 }
@@ -537,27 +536,20 @@ body.dark .daily-practice-btn {
   line-height: 1.5;
 }
 
-[data-theme="dark"] .coding-section-nav,
-body.dark .coding-section-nav,
-[data-theme="dark"] .coding-problem-panel,
-body.dark .coding-problem-panel,
-[data-theme="dark"] .coding-editor-center,
-body.dark .coding-editor-center,
-[data-theme="dark"] .coding-page-panel,
-body.dark .coding-page-panel {
+body.coding-dark .coding-app .coding-section-nav,
+body.coding-dark .coding-app .coding-problem-panel,
+body.coding-dark .coding-app .coding-editor-center,
+body.coding-dark .coding-app .coding-page-panel {
   background: var(--bg-primary, #1a1a1a);
   border-color: rgba(66, 133, 244, 0.22);
 }
 
-[data-theme="dark"] .problem-example,
-body.dark .problem-example,
-[data-theme="dark"] .coding-progress-stats div,
-body.dark .coding-progress-stats div {
+body.coding-dark .coding-app .problem-example,
+body.coding-dark .coding-app .coding-progress-stats div {
   background: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="dark"] .ai-status-card,
-body.dark .ai-status-card {
+body.coding-dark .coding-app .ai-status-card {
   background: rgba(66, 133, 244, 0.12);
   border-color: rgba(66, 133, 244, 0.24);
 }
@@ -900,24 +892,17 @@ body.dark .ai-status-card {
   width: fit-content;
 }
 
-[data-theme="dark"] .practice-progress-overview,
-body.dark .practice-progress-overview,
-[data-theme="dark"] .quiz-library,
-body.dark .quiz-library,
-[data-theme="dark"] .quiz-insight-panel,
-body.dark .quiz-insight-panel,
-[data-theme="dark"] .daily-feature-card,
-body.dark .daily-feature-card {
+body.coding-dark .coding-app .practice-progress-overview,
+body.coding-dark .coding-app .quiz-library,
+body.coding-dark .coding-app .quiz-insight-panel,
+body.coding-dark .coding-app .daily-feature-card {
   background: var(--bg-primary, #1a1a1a);
   border-color: rgba(66, 133, 244, 0.22);
 }
 
-[data-theme="dark"] .quiz-problem-card,
-body.dark .quiz-problem-card,
-[data-theme="dark"] .workspace-hints-panel,
-body.dark .workspace-hints-panel,
-[data-theme="dark"] .workspace-discussion-panel,
-body.dark .workspace-discussion-panel {
+body.coding-dark .coding-app .quiz-problem-card,
+body.coding-dark .coding-app .workspace-hints-panel,
+body.coding-dark .coding-app .workspace-discussion-panel {
   background: rgba(255, 255, 255, 0.05);
 }
 

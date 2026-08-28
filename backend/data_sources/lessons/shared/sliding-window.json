@@ -53,7 +53,7 @@
           "kind": "visual",
           "title": "Grow right, shrink left",
           "concept": "sliding-window",
-          "caption": "Watch a running sum stay matched to the current window.",
+          "caption": "Keep the running sum matched to the current window.",
           "initial_state": {
             "items": [
               2,
@@ -560,7 +560,7 @@
           "kind": "visual",
           "title": "See a stale total bug",
           "concept": "sliding-window",
-          "caption": "Watch the stored total become wrong when left moves but the old **value** is not subtracted.",
+          "caption": "Trace how the stored total becomes wrong when left moves but the old **value** is not subtracted.",
           "initial_state": {
             "items": [
               2,

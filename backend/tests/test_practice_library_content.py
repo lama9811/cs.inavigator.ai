@@ -19,14 +19,23 @@ ANSWER_DIR = ROOT / "data_sources" / "quiz" / "answers"
 LANGUAGES = ("python", "javascript", "java", "cpp")
 ADVANCED_V1_TOPICS = {
     "binary search",
+    "bit manipulation",
+    "disjoint sets",
+    "dynamic programming",
     "graphs",
     "hash maps",
+    "heaps",
+    "intervals",
+    "linked lists",
     "queues",
     "recursion",
     "sliding window",
     "stacks",
+    "matrices",
+    "prefix sums",
     "trees",
     "two pointers",
+    "tries",
 }
 THIN_PRIORITY_TOPICS = {
     "disjoint sets",
@@ -39,6 +48,15 @@ THIN_PRIORITY_TOPICS = {
     "trees",
     "tries",
     "two pointers",
+}
+ADVANCED_ON_RAMP_DEPTH_TARGETS = {
+    "bit manipulation": {"easy": 4, "medium": 4},
+    "disjoint sets": {"easy": 4, "medium": 4},
+    "dynamic programming": {"easy": 4, "medium": 4},
+    "graphs": {"easy": 1, "medium": 3},
+    "matrices": {"easy": 4, "medium": 4},
+    "prefix sums": {"easy": 4, "medium": 4},
+    "tries": {"easy": 4, "medium": 4},
 }
 VISUALIZER_CONCEPTS = {
     "array-scan",
@@ -213,6 +231,40 @@ def test_priority_practice_topics_have_code_problem_coverage():
 
     assert missing_advanced == []
     assert missing_thin == []
+
+
+def test_advanced_topics_have_adaptive_learning_depth():
+    """Adaptive routing needs more than a token problem or two per topic.
+
+    The advanced bank now treats eight problems as the minimum signal floor. A topic can
+    still improve toward ten, but anything below eight is too thin to route students
+    with confidence.
+    """
+    counts = Counter(q.get("topic") for q in load_questions())
+    underfilled = sorted(
+        f"{topic} ({counts[topic]})"
+        for topic in ADVANCED_V1_TOPICS
+        if counts[topic] < 8
+    )
+
+    assert underfilled == []
+
+
+def test_advanced_on_ramp_topics_have_easy_and_medium_signal():
+    """Thin advanced topics need enough lower-pressure attempts for adaptive routing."""
+    questions = load_questions()
+    problems = []
+    for topic, targets in ADVANCED_ON_RAMP_DEPTH_TARGETS.items():
+        counts = Counter(
+            q.get("difficulty")
+            for q in questions
+            if q.get("topic") == topic
+        )
+        for difficulty, minimum in targets.items():
+            if counts[difficulty] < minimum:
+                problems.append(f"{topic}/{difficulty}: {counts[difficulty]} < {minimum}")
+
+    assert problems == []
 
 
 def test_answer_banks_match_questions_for_every_language():

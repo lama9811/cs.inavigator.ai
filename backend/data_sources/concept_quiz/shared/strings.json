@@ -359,10 +359,10 @@
           "code": null,
           "prompt": "What do you need before using std::string in a C++ file?",
           "choices": [
-            "Skip trimming input because spaces never affect text comparison.",
+            "Include the iostream header only; std::string is always included with output.",
             "Include the string header.",
-            "Use numeric addition rules for every `+` involving text.",
-            "Treat an empty string as if it has one blank character."
+            "Declare every string as a char array first.",
+            "Use the vector header because strings store characters in order."
           ],
           "answer_index": 1,
           "explanation": "std::string lives in the standard string header. Including <string> makes the type available, and then you can use size(), indexes, comparison, and concatenation with the expected string behavior."
@@ -383,10 +383,10 @@
           "code": null,
           "prompt": "What happens when Python code calls a string method but does not store or print the result?",
           "choices": [
-            "Assume slicing includes the stop position.",
-            "Index before checking that the string is long enough.",
+            "`name.upper()` changes name in place, so later code sees uppercase text.",
+            "`name.upper()` prints uppercase text automatically.",
             "`name.upper()` returns uppercase text, but the program discards it.",
-            "Use indexes as if counting starts at one."
+            "`name.upper()` raises an error unless it is inside print."
           ],
           "answer_index": 2,
           "explanation": "String methods return a value. If name.upper() is used alone, Python makes the uppercase string and immediately discards it because nothing stores, returns, or prints the result."
@@ -398,10 +398,10 @@
           "code": null,
           "prompt": "Why can Java string comparison with `==` be misleading?",
           "choices": [
-            "Assume substring includes the stop position.",
-            "Index before checking that the String is long enough.",
+            "`==` compares the characters and ignores capitalization.",
+            "`==` always throws an error for Strings.",
             "`==` asks whether both variables point to the same object.",
-            "Use indexes as if counting starts at one."
+            "`==` trims both Strings before comparing them."
           ],
           "answer_index": 2,
           "explanation": "For String text equality, use equals(). The == operator checks whether two references point to the same object, which can look right in tiny examples and fail when the same text comes from input or another calculation."
@@ -413,10 +413,10 @@
           "code": null,
           "prompt": "What should you do with the result of a JavaScript string transformation?",
           "choices": [
-            "Assume slicing includes the stop position.",
-            "Index before checking whether the string has enough characters.",
+            "Ignore it because string methods update the original string automatically.",
+            "Use it only if the string has more than one word.",
             "Save transformed strings.",
-            "Use a character index without remembering that counting starts at zero."
+            "Convert it to an array before it can be used."
           ],
           "answer_index": 2,
           "explanation": "String transformations return new values. If you call label.trim() or label.toUpperCase() without assigning, returning, or printing the result, the transformed text is discarded and label still holds the old string."
@@ -428,10 +428,10 @@
           "code": null,
           "prompt": "What index habit prevents many C++ string bugs?",
           "choices": [
-            "Assume slicing includes the stop position.",
-            "Index before checking whether the string has enough characters.",
+            "Count indexes from one.",
+            "Use size() as the final valid index.",
             "Count indexes from zero.",
-            "Use a character index without remembering that counting starts at zero."
+            "Use -1 as the first valid index."
           ],
           "answer_index": 2,
           "explanation": "Count indexes from 0, not from 1. For std::string text = \"code\", c is index 0 and e is index 3. Mixing up count and index is how text[text.size()] slips into code."
@@ -467,12 +467,12 @@
           "code": null,
           "prompt": "Why is a Java String method call by itself often a bug?",
           "choices": [
-            "Call a method and ignore its returned String.",
+            "The method returns a new String, but ignoring that return value loses the change.",
             "Change capitalization on one side of a comparison only.",
             "Assume every language uses the same text-comparison operator.",
-            "Store or use the returned String after trimming."
+            "The method changes the original String automatically, so no assignment is needed."
           ],
-          "answer_index": 3,
+          "answer_index": 0,
           "explanation": "Java Strings are immutable. name.trim() creates a trimmed String, but name still points to the original text unless you store the returned value or pass it directly into the next step."
         },
         "javascript": {
@@ -552,9 +552,9 @@
           "prompt": "When should JavaScript code trim a string before comparing it?",
           "choices": [
             "Trim input when appropriate.",
-            "Split text before checking whether the separator is present.",
-            "Store numbers as text when later code needs arithmetic.",
-            "Use the first character check when the rule depends on the whole string."
+            "Trim every string even when spaces are part of the answer.",
+            "Never trim prompt input because users cannot type extra spaces.",
+            "Trim only after comparing so the original comparison stays exact."
           ],
           "answer_index": 0,
           "explanation": "Trim input when extra spaces are not meaningful to the answer. For example, a typed value of \" yes \" should usually be trimmed before comparing it to \"yes\". Do not trim when spaces are part of the exact data."
@@ -567,9 +567,9 @@
           "prompt": "What should C++ code check before reading the last character of a string?",
           "choices": [
             "Check emptiness before using the last character.",
-            "Split text before checking whether the separator is present.",
-            "Store numbers as text when later code needs arithmetic.",
-            "Use the first character check when the rule depends on the whole string."
+            "Check whether the first character is lowercase.",
+            "Check whether the string was printed first.",
+            "Check whether size() is exactly 1, because longer strings have no last character."
           ],
           "answer_index": 0,
           "explanation": "Check that the string is not empty before using back() or size() - 1. An empty string has no last character, so reading one is out-of-bounds behavior."
@@ -620,10 +620,10 @@
           "code": null,
           "prompt": "What should JavaScript code remember after transforming a string?",
           "choices": [
-            "Concatenate values before deciding whether numeric addition was intended.",
+            "The original string variable changes automatically after trim or slice.",
             "Read and transform text without changing the original value.",
-            "Treat `null` or missing text as an ordinary string.",
-            "Ignore punctuation and spacing even when exact text matters."
+            "String transforms only work after converting the string to a number.",
+            "Every transform prints the result even if the code does not use it."
           ],
           "answer_index": 1,
           "explanation": "Methods such as trim(), slice(), and toUpperCase() return new text. Use that returned value; the original string variable is unchanged unless you assign the new value back."
@@ -635,12 +635,12 @@
           "code": null,
           "prompt": "What should C++ code remember before indexing std::string?",
           "choices": [
-            "Concatenate values before deciding whether numeric addition was intended.",
-            "Create, index, compare, and combine text.",
-            "Treat `null` or missing text as an ordinary string.",
-            "Ignore punctuation and spacing even when exact text matters."
+            "Check that the index is inside the string's valid range.",
+            "Use size() as the first character index.",
+            "Assume an empty string still has one blank character.",
+            "Use comparison operators before every index read."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "std::string supports indexing, comparison, and concatenation, but indexes must stay inside the string. size() gives the count; for a nonempty string, the last valid index is size() - 1."
         }
       }

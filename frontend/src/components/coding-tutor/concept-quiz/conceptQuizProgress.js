@@ -200,8 +200,8 @@ function readLessonSet() {
   }
 }
 
-// Mark one lesson as read. Idempotent — called on lesson open, so it fires often
-// and must stay cheap and side-effect-free beyond the write.
+// Mark one lesson as read. Returns true only when this call completes the lesson
+// for the first time, so streaks count completions instead of reopening.
 export function hasReadLesson(language, category) {
   if (!language || !category) return false;
   return readLessonSet().has(`${language}:${category}`);
@@ -216,16 +216,17 @@ export function countReadLessons(language, categories = []) {
 }
 
 export function markLessonRead(language, category) {
-  if (!language || !category) return;
+  if (!language || !category) return false;
   const set = readLessonSet();
   const id = `${language}:${category}`;
-  if (set.has(id)) return;
+  if (set.has(id)) return false;
   set.add(id);
   try {
     localStorage.setItem(lessonsKey(), JSON.stringify([...set]));
   } catch {
     // storage full / unavailable — non-fatal.
   }
+  return true;
 }
 
 // ── Aggregate progress for the badge system ─────────────────────────────────

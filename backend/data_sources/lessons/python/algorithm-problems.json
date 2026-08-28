@@ -23,7 +23,7 @@
           "kind": "visual",
           "title": "Track best-so-far state",
           "concept": "state-trace",
-          "caption": "Watch the active item, the comparison, and the best-so-far state move together.",
+          "caption": "Track the active item, comparison, and best-so-far state together.",
           "initial_state": {},
           "steps": [
             {

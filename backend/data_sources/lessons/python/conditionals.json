@@ -280,7 +280,7 @@
     {
       "id": "combined-conditions",
       "title": "Combined and nested conditions",
-      "summary": "Join conditions, nest decisions, and watch boundary cases.",
+      "summary": "Join conditions, nest decisions, and check boundary cases.",
       "blocks": [
         {
           "kind": "text",

@@ -58,7 +58,7 @@
         },
         {
           "kind": "visual",
-          "title": "Watch LIFO in action",
+          "title": "Trace LIFO in action",
           "concept": "stacks",
           "caption": "Step through push, peek, and pop so the top of the **stack** is visible.",
           "initial_state": {},
@@ -452,7 +452,7 @@
           "kind": "visual",
           "title": "Match parentheses with a stack",
           "concept": "stacks",
-          "caption": "Watch opening symbols wait on the **stack** until the matching closing symbol appears.",
+          "caption": "Keep opening symbols on the **stack** until the matching closing symbol appears.",
           "initial_state": {},
           "steps": [
             {
